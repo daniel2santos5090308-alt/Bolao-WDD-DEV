@@ -4,6 +4,39 @@
 
 const Storage = {
     SESSION_KEY: 'bolao_wdd_session',
+    _cache: null,
+    _cachePromise: null,
+    _cacheLoadedAt: null,
+
+    cloneData: (data) => JSON.parse(JSON.stringify(data || { users: [], rounds: [], matches: [], bets: {}, standings: [] })),
+
+    setCache: (data) => {
+        Storage._cache = Storage.cloneData(data);
+        Storage._cacheLoadedAt = new Date().toISOString();
+    },
+
+    clearCache: () => {
+        Storage._cache = null;
+        Storage._cachePromise = null;
+        Storage._cacheLoadedAt = null;
+    },
+
+    updateCachedList: (listName, item) => {
+        if (!Storage._cache || !Array.isArray(Storage._cache[listName])) return;
+
+        const nextItem = Storage.cloneData(item);
+        const index = Storage._cache[listName].findIndex((entry) => entry.id === nextItem.id);
+        if (index >= 0) {
+            Storage._cache[listName][index] = nextItem;
+        } else {
+            Storage._cache[listName].push(nextItem);
+        }
+    },
+
+    removeCachedListItem: (listName, id) => {
+        if (!Storage._cache || !Array.isArray(Storage._cache[listName])) return;
+        Storage._cache[listName] = Storage._cache[listName].filter((entry) => entry.id !== id);
+    },
 
     getLoginEmail: (username) => {
         const value = String(username || '').trim().toLowerCase();
@@ -97,9 +130,26 @@ const Storage = {
         goal_diff: standing.goalDiff
     }),
 
-    getData: async () => {
+    getData: async (options = {}) => {
+        const forceRefresh = Boolean(options.forceRefresh);
+
+        if (!forceRefresh && Storage._cache) {
+            return Storage.cloneData(Storage._cache);
+        }
+
+        if (!forceRefresh && Storage._cachePromise) {
+            return Storage.cloneData(await Storage._cachePromise);
+        }
+
+        Storage._cachePromise = Storage.fetchData();
+        const data = await Storage._cachePromise;
+        Storage._cachePromise = null;
+        return Storage.cloneData(data);
+    },
+
+    fetchData: async () => {
         try {
-            if (!supabaseClient) throw new Error('Supabase nao inicializado');
+            if (!supabaseClient) throw new Error('Supabase não inicializado');
 
             const [profilesRes, roundsRes, matchesRes, standingsRes] = await Promise.all([
                 supabaseClient.from('profiles').select('*').order('username'),
@@ -110,7 +160,7 @@ const Storage = {
 
             let betsRes = await supabaseClient.rpc('get_visible_bets');
             if (betsRes.error) {
-                console.warn('Funcao get_visible_bets indisponivel. Usando leitura direta temporaria de bets.', betsRes.error);
+                console.warn('Função get_visible_bets indisponível. Usando leitura direta temporária de bets.', betsRes.error);
                 betsRes = await supabaseClient.from('bets').select('*');
             }
 
@@ -132,10 +182,12 @@ const Storage = {
                 };
             });
 
-            return { users, rounds, matches, bets, standings };
+            const data = { users, rounds, matches, bets, standings };
+            Storage.setCache(data);
+            return data;
         } catch (error) {
             console.error('Erro ao buscar dados do Supabase:', error);
-            alert('Erro critico: falha ao conectar com o banco de dados.');
+            alert('Erro crítico: falha ao conectar com o banco de dados.');
             return { users: [], rounds: [], matches: [], bets: {}, standings: [] };
         }
     },
@@ -143,48 +195,61 @@ const Storage = {
     addRound: async (round) => {
         const { error } = await supabaseClient.from('rounds').upsert(round);
         if (error) console.error('Erro ao adicionar rodada:', error);
+        if (!error) Storage.updateCachedList('rounds', round);
         return !error;
     },
 
     deleteRound: async (roundId) => {
         const { error } = await supabaseClient.from('rounds').delete().eq('id', roundId);
         if (error) console.error('Erro ao deletar rodada:', error);
+        if (!error) Storage.removeCachedListItem('rounds', roundId);
         return !error;
     },
 
     addMatch: async (match) => {
         const { error } = await supabaseClient.from('matches').upsert(Storage.fromMatch(match));
         if (error) console.error('Erro ao adicionar jogo:', error);
+        if (!error) Storage.updateCachedList('matches', match);
         return !error;
     },
 
     updateMatch: async (match) => {
         const { error } = await supabaseClient.from('matches').update(Storage.fromMatch(match)).eq('id', match.id);
         if (error) console.error('Erro ao atualizar jogo:', error);
+        if (!error) Storage.updateCachedList('matches', match);
         return !error;
     },
 
     deleteMatch: async (matchId) => {
         const { error } = await supabaseClient.from('matches').delete().eq('id', matchId);
         if (error) console.error('Erro ao deletar jogo:', error);
+        if (!error && Storage._cache) {
+            Storage.removeCachedListItem('matches', matchId);
+            Object.keys(Storage._cache.bets || {}).forEach((userId) => {
+                delete Storage._cache.bets[userId][matchId];
+            });
+        }
         return !error;
     },
 
     addStanding: async (standing) => {
         const { error } = await supabaseClient.from('standings').upsert(Storage.fromStanding(standing));
         if (error) console.error('Erro ao adicionar classificação:', error);
+        if (!error) Storage.updateCachedList('standings', standing);
         return !error;
     },
 
     updateStanding: async (standing) => {
         const { error } = await supabaseClient.from('standings').update(Storage.fromStanding(standing)).eq('id', standing.id);
         if (error) console.error('Erro ao atualizar classificação:', error);
+        if (!error) Storage.updateCachedList('standings', standing);
         return !error;
     },
 
     deleteStanding: async (standingId) => {
         const { error } = await supabaseClient.from('standings').delete().eq('id', standingId);
         if (error) console.error('Erro ao deletar classificação:', error);
+        if (!error) Storage.removeCachedListItem('standings', standingId);
         return !error;
     },
 
@@ -204,6 +269,13 @@ const Storage = {
             .upsert(payload, { onConflict: 'user_id,match_id' });
 
         if (error) console.error('Erro ao salvar aposta:', error);
+        if (!error && Storage._cache) {
+            if (!Storage._cache.bets[userId]) Storage._cache.bets[userId] = {};
+            Storage._cache.bets[userId][matchId] = {
+                pick: betValue.pick,
+                createdAt: payload.created_at
+            };
+        }
         return !error;
     },
 
@@ -228,7 +300,7 @@ const Storage = {
         });
 
         if (signInError) {
-            console.error('Senha atual invalida:', signInError);
+            console.error('Senha atual inválida:', signInError);
             return false;
         }
 
@@ -243,7 +315,7 @@ const Storage = {
     },
 
     migrateFromJSON: async (jsonData) => {
-        console.warn('Importacao JSON desabilitada no cliente Supabase.', jsonData);
+        console.warn('Importação JSON desabilitada no cliente Supabase.', jsonData);
         return false;
     },
 
@@ -271,6 +343,7 @@ const Storage = {
 
     logout: async () => {
         localStorage.removeItem(Storage.SESSION_KEY);
+        Storage.clearCache();
         if (supabaseClient) await supabaseClient.auth.signOut();
     },
 

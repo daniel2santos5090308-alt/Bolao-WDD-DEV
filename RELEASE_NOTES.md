@@ -31,6 +31,7 @@ Esta versão consolida a migração do Bolão WDD para Supabase no ambiente `Bol
 - Criação de testes automatizados com `node:test`.
 - Criação de teste E2E com Playwright cobrindo login, criação/edição/exclusão de rodada/jogo, aposta e finalização de placar.
 - Criação de checklist de homologação e guia de publicação.
+- Criação de cache em memória no front-end para reduzir leituras repetidas no Supabase Free.
 
 ### Validações Realizadas
 
@@ -43,7 +44,7 @@ Esta versão consolida a migração do Bolão WDD para Supabase no ambiente `Bol
 - Classificação validada.
 - E2E real validado contra Supabase DEV com `npm run test:e2e`.
 - E2E visual validado com `npm run test:e2e:headed`.
-- `npm run validate` validado com 9 testes passando.
+- `npm run validate` validado com 10 testes passando.
 - `npm audit` validado com 0 vulnerabilidades.
 - Sintaxe dos principais arquivos JavaScript validada.
 

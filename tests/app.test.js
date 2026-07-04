@@ -213,6 +213,63 @@ test('Storage maps Supabase match rows to app match shape and back', () => {
   });
 });
 
+test('Storage.getData caches concurrent Supabase reads and returns cloned data', async () => {
+  const rows = {
+    profiles: [{ id: 'u1', legacy_id: 'u1', username: 'daniel', name: 'Daniel', role: 'user' }],
+    rounds: [{ id: 'r1', name: 'Rodada 18', number: 17 }],
+    matches: [],
+    standings: [],
+    bets: []
+  };
+  const calls = { from: 0, rpc: 0 };
+
+  const makeQuery = (table) => ({
+    select() {
+      return this;
+    },
+    order() {
+      return this;
+    },
+    upsert: async () => ({ error: null }),
+    then(resolve) {
+      resolve({ data: rows[table], error: null });
+    }
+  });
+
+  const { Storage: cachedStorage } = loadBrowserScript('public/assets/js/storage-supabase.js', {
+    supabaseClient: {
+      from(table) {
+        calls.from += 1;
+        return makeQuery(table);
+      },
+      rpc: async () => {
+        calls.rpc += 1;
+        return { data: rows.bets, error: null };
+      }
+    }
+  });
+
+  const [firstLoad, secondLoad] = await Promise.all([
+    cachedStorage.getData(),
+    cachedStorage.getData()
+  ]);
+
+  assert.equal(calls.from, 4);
+  assert.equal(calls.rpc, 1);
+  assert.deepEqual(firstLoad, secondLoad);
+
+  firstLoad.rounds.push({ id: 'mutated', name: 'Mutated', number: 99 });
+  const cachedLoad = await cachedStorage.getData();
+
+  assert.equal(cachedLoad.rounds.length, 1);
+
+  await cachedStorage.addRound({ id: 'r2', name: 'Rodada Cache', number: 18 });
+  const updatedLoad = await cachedStorage.getData();
+
+  assert.equal(updatedLoad.rounds.length, 2);
+  assert.equal(updatedLoad.rounds[1].name, 'Rodada Cache');
+});
+
 test('HTML pages only reference existing local assets', () => {
   const pages = ['index.html', 'admin.html', 'user.html', '404.html'];
 

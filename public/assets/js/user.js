@@ -29,7 +29,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (btnRefresh) {
         btnRefresh.addEventListener('click', () => {
-            loadRoundsAndMatches();
+            loadRoundsAndMatches({ forceRefresh: true });
             // Feedback visual
             const icon = btnRefresh.querySelector('i');
             icon.classList.add('spin-animation'); // Adicionar CSS para girar
@@ -211,11 +211,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Carregar rodadas no filtro
-    async function loadRoundsAndMatches() {
+    async function loadRoundsAndMatches(options = {}) {
         console.log("User.js v2.1 - Carregando dados...");
         try {
             console.log("Iniciando carregamento de rodadas e jogos...");
-            const data = await Storage.getData();
+            const data = await Storage.getData({ forceRefresh: Boolean(options.forceRefresh) });
             console.log("Dados recebidos do Storage:", data);
             
             const rounds = data.rounds || [];
