@@ -39,6 +39,16 @@ npm test
 
 A suite cobre regras criticas de ranking, apostas mascaradas, bloqueio por horario, escape HTML e mapeamento de dados Supabase.
 
+## Validacao antes de alteracoes
+
+Antes e depois de qualquer ajuste, rode:
+
+```bash
+npm run validate
+```
+
+Esse comando executa a suite automatizada e o `npm audit`.
+
 ## Seguranca
 
 - A pasta publicada deve ser somente `public/`.

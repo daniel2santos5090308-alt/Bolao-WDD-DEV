@@ -6,6 +6,7 @@
   "scripts": {
     "start": "python -m http.server 4173 -d public",
     "test": "node --test \"tests/*.test.js\"",
-    "audit": "npm audit"
+    "audit": "npm audit",
+    "validate": "npm test && npm audit"
   }
 }
