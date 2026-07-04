@@ -31,6 +31,8 @@ drop policy if exists "admin read all bets" on public.bets;
 
 drop policy if exists "users insert own bets" on public.bets;
 drop policy if exists "users update own bets" on public.bets;
+drop policy if exists "users insert own bets before match starts" on public.bets;
+drop policy if exists "users update own bets before match starts" on public.bets;
 
 drop policy if exists "admin manage profiles" on public.profiles;
 drop policy if exists "admin manage rounds" on public.rounds;
@@ -98,6 +100,8 @@ as $$
   where auth.uid() is not null;
 $$;
 
+revoke all on function public.get_visible_bets() from public;
+revoke all on function public.get_visible_bets() from anon;
 grant execute on function public.get_visible_bets() to authenticated;
 
 create policy "users insert own bets before match starts"
