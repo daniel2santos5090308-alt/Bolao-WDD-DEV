@@ -16,6 +16,7 @@ Sistema de bolao migrado para Supabase no ambiente `BolaoWDDDEV`.
 
 - Banco: Supabase Free / DEV.
 - Autenticacao: Supabase Auth com usuarios `@bolao.local`.
+- Cadastro publico removido do front-end; usuarios sao criados manualmente no Supabase Auth e vinculados em `profiles`.
 - Dados migrados: 4 usuarios, 17 rodadas, 167 jogos, 497 apostas e 20 linhas de classificacao.
 - Firebase: removido da superficie ativa desta pasta.
 

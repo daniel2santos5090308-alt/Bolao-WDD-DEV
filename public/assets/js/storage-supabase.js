@@ -209,11 +209,6 @@ const Storage = {
 
     ensureAdminExists: async () => false,
 
-    registerUser: async (name, username, password) => {
-        console.warn('Cadastro publico desabilitado.', { name, username, password: !!password });
-        throw new Error('Cadastro publico desabilitado. Solicite acesso ao administrador.');
-    },
-
     updateUserPassword: async (userId, newPassword) => {
         const currentUser = Storage.getCurrentUser();
         if (!currentUser || currentUser.id !== userId) return false;
