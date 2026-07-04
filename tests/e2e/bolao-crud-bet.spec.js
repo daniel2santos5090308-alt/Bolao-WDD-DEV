@@ -40,6 +40,25 @@ async function cleanupRound(page) {
   }
 }
 
+async function fillNumberInput(locator, value) {
+  await locator.fill(value);
+
+  if (await locator.inputValue() !== value) {
+    await locator.evaluate((input, nextValue) => {
+      input.value = nextValue;
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+      input.dispatchEvent(new Event('change', { bubbles: true }));
+    }, value);
+  }
+
+  await expect(locator).toHaveValue(value);
+}
+
+async function waitForListRender(page) {
+  await page.waitForLoadState('networkidle');
+  await page.waitForTimeout(500);
+}
+
 test.describe.serial('Bolao WDD - fluxo E2E CRUD e aposta', () => {
   test.skip(!hasCredentials, 'Configure E2E_ADMIN_PASSWORD e E2E_BETTOR_PASSWORD para rodar os testes E2E.');
 
@@ -94,14 +113,14 @@ test.describe.serial('Bolao WDD - fluxo E2E CRUD e aposta', () => {
 
       await login(page, adminUser, adminPassword, 'admin.html');
       await page.locator('#filterRound').selectOption({ label: roundName });
+      await waitForListRender(page);
 
       const adminMatchCard = page.locator('#matchesList .card', { hasText: editedAwayTeam }).first();
       await expect(adminMatchCard).toBeVisible();
-      const scoreInputs = adminMatchCard.locator('input[type="number"]');
-      await scoreInputs.nth(0).fill('2');
-      await expect(scoreInputs.nth(0)).toHaveValue('2');
-      await scoreInputs.nth(1).fill('1');
-      await expect(scoreInputs.nth(1)).toHaveValue('1');
+      const homeScoreInput = page.locator('#matchesList input[id^="score_home_"]').first();
+      const awayScoreInput = page.locator('#matchesList input[id^="score_away_"]').first();
+      await fillNumberInput(homeScoreInput, '2');
+      await fillNumberInput(awayScoreInput, '1');
       await adminMatchCard.getByRole('button', { name: 'Salvar Placar' }).click();
       await expect(page.locator('#matchesList')).toContainText('2 x 1');
 
