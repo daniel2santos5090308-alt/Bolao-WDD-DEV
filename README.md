@@ -31,6 +31,14 @@ Depois acesse:
 http://localhost:4173/index.html
 ```
 
+## Testes automatizados
+
+```bash
+npm test
+```
+
+A suite cobre regras criticas de ranking, apostas mascaradas, bloqueio por horario, escape HTML e mapeamento de dados Supabase.
+
 ## Seguranca
 
 - A pasta publicada deve ser somente `public/`.
