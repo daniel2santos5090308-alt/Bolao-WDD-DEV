@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bolão WDD - Minhas Apostas</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <link href="assets/css/styles.css?v=3.1" rel="stylesheet">
+</head>
+<body class="bg-light">
+    
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="#">Bolão WDD</a>
+            <div class="d-flex align-items-center text-white">
+                <span class="me-3">Olá, <span id="userNameDisplay">User</span></span>
+                <button id="btnLogout" class="btn btn-outline-light btn-sm">Sair</button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <div class="row">
+            <!-- Coluna Principal: Apostas -->
+            <div class="col-lg-8 order-2 order-lg-1">
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-white d-flex justify-content-between align-items-center flex-wrap gap-2">
+                        <div class="d-flex align-items-center gap-2">
+                            <h5 class="mb-0">Jogos e Apostas</h5>
+                            <button id="btnRefresh" class="btn btn-sm btn-outline-primary" title="Atualizar Jogos">
+                                <i class="bi bi-arrow-clockwise"></i>
+                            </button>
+                        </div>
+                        <div class="d-flex align-items-center gap-2 flex-wrap justify-content-end">
+                            <select id="teamFilter" class="form-select w-auto">
+                                <!-- JS -->
+                            </select>
+                            <select id="roundFilter" class="form-select w-auto">
+                                <!-- JS -->
+                            </select>
+                        </div>
+                    </div>
+                    <div class="card-body bg-light">
+                        <div id="matchesContainer" class="row">
+                            <!-- Cards de Jogos via JS -->
+                        </div>
+                        <nav class="d-flex justify-content-center" aria-label="Paginação de jogos">
+                            <ul id="matchesPagination" class="pagination mb-0"></ul>
+                        </nav>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Coluna Lateral: Ranking -->
+            <div class="col-lg-4 order-1 order-lg-2">
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-info text-white">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">Ranking da Rodada</h5>
+                            <span class="small" id="roundRankingTitle"></span>
+                        </div>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="p-2 small text-center" id="roundRankingSummary"></div>
+                        <table class="table table-striped mb-0">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Nome</th>
+                                    <th class="text-center">Pts</th>
+                                    <th class="text-center">✅</th>
+                                    <th class="text-center">🎲</th>
+                                    <th class="text-center">👁️</th>
+                                </tr>
+                            </thead>
+                            <tbody id="rankingRoundTableBody">
+                                <!-- JS -->
+                            </tbody>
+                        </table>
+                        <div class="p-2 text-muted small text-center">
+                            ✅ = Acertos | 🎲 = Jogos Apostados
+                        </div>
+                    </div>
+                </div>
+                <div class="card shadow-sm">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="mb-0">Ranking Geral</h5>
+                    </div>
+                    <div class="card-body p-0">
+                        <table class="table table-striped mb-0">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Nome</th>
+                                    <th class="text-center">Pts</th>
+                                    <th class="text-center">✅</th>
+                                    <th class="text-center">🎲</th>
+                                    <th class="text-center">👁️</th>
+                                </tr>
+                            </thead>
+                            <tbody id="rankingTableBody">
+                                <!-- JS -->
+                            </tbody>
+                        </table>
+                        <div class="p-2 text-muted small text-center">
+                            ✅ = Acertos | 🎲 = Jogos Apostados
+                        </div>
+                    </div>
+                </div>
+                <div class="card shadow-sm mt-4">
+                    <div class="card-header bg-warning text-dark">
+                        <h5 class="mb-0">Classificação Brasileirão 2026</h5>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="standings-legend p-3 pb-2">
+                            <div class="standings-legend__title">Qualificação/Rebaixamento</div>
+                            <div class="standings-legend__item"><span class="standings-legend__color standings-legend__color--lib-group"></span> Fase de grupos da CONMEBOL Libertadores</div>
+                            <div class="standings-legend__item"><span class="standings-legend__color standings-legend__color--lib-qual"></span> Qualificatórias da CONMEBOL Libertadores</div>
+                            <div class="standings-legend__item"><span class="standings-legend__color standings-legend__color--sula"></span> Fase de grupos da CONMEBOL Sudamericana</div>
+                            <div class="standings-legend__item"><span class="standings-legend__color standings-legend__color--relegation"></span> Rebaixamento</div>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table table-striped table-sm mb-0 align-middle">
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Time</th>
+                                        <th class="text-center">Pts</th>
+                                        <th class="text-center">J</th>
+                                        <th class="text-center">V</th>
+                                        <th class="text-center">E</th>
+                                        <th class="text-center">D</th>
+                                        <th class="text-center">SG</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="standingsTableUserBody">
+                                    <!-- JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Detalhes do Ranking -->
+    <div class="modal fade" id="rankingModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="rankingModalTitle">Extrato de Pontos</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="rankingModalBody">
+                    <!-- Conteúdo via JS -->
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Alterar Senha -->
+    <div class="modal fade" id="changePasswordModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Alterar Senha</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="changePasswordForm">
+                        <div class="mb-3">
+                            <label for="currentPassword" class="form-label">Senha Atual</label>
+                            <input type="password" class="form-control" id="currentPassword" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="newPassword" class="form-label">Nova Senha</label>
+                            <input type="password" class="form-control" id="newPassword" required>
+                        </div>
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary">Salvar</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap Bundle (com JS) necessário para o Modal -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Supabase SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="assets/js/supabase-init.js?v=3.0"></script>
+
+    <script src="assets/js/utils.js?v=3.1"></script>
+    <script src="assets/js/storage-supabase.js?v=3.4"></script>
+    <script src="assets/js/auth.js?v=3.1"></script>
+    <script src="assets/js/ranking.js?v=3.3"></script>
+    <script src="assets/js/teams.js?v=3.1"></script>
+    <script src="assets/js/user.js?v=3.2"></script>
+
+    <div class="container mt-5 pt-5 text-center text-muted small">
+        <hr>
+        <p>Bolão WDD - Versão 3.0 (Supabase)</p>
+        <div id="debugFooter"></div>
+    </div>
+</body>
+</html>

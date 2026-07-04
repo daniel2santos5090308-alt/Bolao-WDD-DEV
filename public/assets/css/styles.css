@@ -1,0 +1,225 @@
+body {
+    background-color: #f8f9fa;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.card {
+    border: none;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.card-header {
+    border-top-left-radius: 10px !important;
+    border-top-right-radius: 10px !important;
+    font-weight: bold;
+}
+
+.btn {
+    border-radius: 5px;
+}
+
+.badge {
+    font-weight: normal;
+    font-size: 0.9em;
+}
+
+/* Animação para o botão de refresh */
+.spin-animation {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.team-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    min-width: 0;
+}
+
+.team-badge--stacked {
+    flex-direction: column;
+    gap: 0.45rem;
+    text-align: center;
+}
+
+.team-badge__name {
+    font-weight: 600;
+    line-height: 1.2;
+}
+
+.team-logo,
+.team-logo-fallback {
+    width: 36px;
+    height: 36px;
+    max-width: 36px;
+    max-height: 36px;
+    border-radius: 50%;
+    flex: 0 0 auto;
+    overflow: hidden;
+}
+
+.team-logo {
+    display: block;
+    object-fit: contain;
+    background-color: #fff;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    padding: 3px;
+    box-sizing: border-box;
+}
+
+.team-logo-fallback {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #e9ecef;
+    color: #495057;
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.team-logo--sm {
+    width: 28px;
+    height: 28px;
+    max-width: 28px;
+    max-height: 28px;
+}
+
+.team-logo--md {
+    width: 40px;
+    height: 40px;
+    max-width: 40px;
+    max-height: 40px;
+}
+
+.team-logo--lg {
+    width: 52px;
+    height: 52px;
+    max-width: 52px;
+    max-height: 52px;
+}
+
+.match-teams {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+}
+
+.match-versus {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: #6c757d;
+}
+
+.match-center-info {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.match-score-display {
+    font-size: 1.35rem;
+    font-weight: 700;
+    color: #212529;
+    line-height: 1;
+    min-width: 56px;
+}
+
+.team-badge--stacked .team-badge__name {
+    max-width: 120px;
+}
+
+#standingsTableBody .team-badge,
+#standingsTableUserBody .team-badge {
+    justify-content: flex-start;
+}
+
+#standingsTableBody td,
+#standingsTableUserBody td {
+    vertical-align: middle;
+}
+
+.standings-legend {
+    font-size: 0.9rem;
+}
+
+.standings-legend__title {
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+}
+
+.standings-legend__item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.25rem;
+}
+
+.standings-legend__color {
+    width: 10px;
+    height: 10px;
+    display: inline-block;
+    border-radius: 2px;
+}
+
+.standings-legend__color--lib-group {
+    background-color: rgba(67, 137, 255, 0.14);
+}
+
+.standings-legend__color--lib-qual {
+    background-color: rgba(255, 140, 0, 0.16);
+}
+
+.standings-legend__color--sula {
+    background-color: rgba(46, 204, 113, 0.16);
+}
+
+.standings-legend__color--relegation {
+    background-color: rgba(255, 77, 77, 0.16);
+}
+
+.standing-row--lib-group > td {
+    background-color: rgba(67, 137, 255, 0.14) !important;
+}
+
+.standing-row--lib-qual > td {
+    background-color: rgba(255, 140, 0, 0.16) !important;
+}
+
+.standing-row--sula > td {
+    background-color: rgba(46, 204, 113, 0.16) !important;
+}
+
+.standing-row--relegation > td {
+    background-color: rgba(255, 77, 77, 0.16) !important;
+}
+
+.standing-row--lib-group > td:first-child {
+    box-shadow: inset 4px 0 0 #2f6fe4;
+}
+
+.standing-row--lib-qual > td:first-child {
+    box-shadow: inset 4px 0 0 #d97904;
+}
+
+.standing-row--sula > td:first-child {
+    box-shadow: inset 4px 0 0 #249a55;
+}
+
+.standing-row--relegation > td:first-child {
+    box-shadow: inset 4px 0 0 #d63333;
+}
+
+.standing-row--lib-group > td,
+.standing-row--lib-qual > td,
+.standing-row--sula > td,
+.standing-row--relegation > td {
+    color: #212529;
+}

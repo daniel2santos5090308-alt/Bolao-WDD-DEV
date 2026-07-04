@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bolão WDD - Admin</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <link href="assets/css/styles.css?v=3.1" rel="stylesheet">
+</head>
+<body class="bg-light">
+    
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="#">Bolão WDD - Admin</a>
+            <div class="d-flex align-items-center text-white">
+                <span class="me-3">Olá, <span id="userNameDisplay">Admin</span></span>
+                <button id="btnLogout" class="btn btn-outline-light btn-sm">Sair</button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        
+        <!-- Controles de Sistema -->
+        <div class="row mb-4">
+            <div class="col-12 text-end">
+                <div class="btn-group">
+                    <button id="btnExport" class="btn btn-success">Exportar Backup (JSON)</button>
+                    <button id="btnImport" class="btn btn-primary d-none" disabled>Importar Backup</button>
+                    <button id="btnReset" class="btn btn-danger d-none" disabled>Resetar Sistema</button>
+                </div>
+                <input type="file" id="fileImport" class="d-none" accept=".json">
+            </div>
+        </div>
+
+        <div class="row">
+            <!-- Gerenciar Rodadas -->
+            <div class="col-md-4">
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-secondary text-white">Nova Rodada</div>
+                    <div class="card-body">
+                        <form id="roundForm">
+                            <div class="mb-3">
+                                <label class="form-label">Nome da Rodada</label>
+                                <input type="text" id="roundName" class="form-control" placeholder="Ex: Rodada 1" required>
+                            </div>
+                            <button type="submit" class="btn btn-primary w-100">Adicionar Rodada</button>
+                        </form>
+                        <hr>
+                        <h6>Rodadas Cadastradas:</h6>
+                        <ul id="roundsList" class="list-group list-group-flush" style="max-height: 200px; overflow-y: auto;">
+                            <!-- Lista via JS -->
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Gerenciar Jogos -->
+            <div class="col-md-8">
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-primary text-white" id="matchFormTitle">Novo Jogo</div>
+                    <div class="card-body">
+                        <form id="matchForm">
+                            <input type="hidden" id="editingMatchId">
+                            <div class="row g-2">
+                                <div class="col-md-4">
+                                    <label class="form-label">Rodada</label>
+                                    <select id="matchRound" class="form-select" required>
+                                        <!-- Options via JS -->
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Data</label>
+                                    <input type="date" id="matchDate" class="form-control" required>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Horário</label>
+                                    <input type="time" id="matchTime" class="form-control" required>
+                                </div>
+                            </div>
+                            <div class="row g-2 mt-2">
+                                <div class="col-md-6">
+                                    <label class="form-label">Time Casa</label>
+                                    <input type="text" id="homeTeam" class="form-control" placeholder="Ex: Flamengo" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Time Visitante</label>
+                                    <input type="text" id="awayTeam" class="form-control" placeholder="Ex: Palmeiras" required>
+                                </div>
+                            </div>
+                            <div class="row g-2 mt-2">
+                                <div class="col-md-4">
+                                    <label class="form-label">Odd Casa</label>
+                                    <input type="number" step="0.01" min="1.01" id="oddHome" class="form-control" placeholder="1.50" required>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Odd Empate</label>
+                                    <input type="number" step="0.01" min="1.01" id="oddDraw" class="form-control" placeholder="3.00" required>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Odd Fora</label>
+                                    <input type="number" step="0.01" min="1.01" id="oddAway" class="form-control" placeholder="2.50" required>
+                                </div>
+                            </div>
+                            <div class="mt-3">
+                                <button type="submit" class="btn btn-primary" id="matchSubmitButton">Cadastrar Jogo</button>
+                                <button type="button" class="btn btn-outline-secondary d-none" id="cancelEditMatch">Cancelar Edição</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Lista de Jogos e Resultados -->
+                <div class="card shadow-sm">
+                    <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+                        <span>Jogos e Resultados</span>
+                        <select id="filterRound" class="form-select form-select-sm w-auto bg-light text-dark">
+                            <option value="all">Todas as Rodadas</option>
+                        </select>
+                    </div>
+                    <div class="card-body">
+                        <div id="matchesList">
+                            <!-- Lista via JS -->
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <div class="card shadow-sm mt-4">
+            <div class="card-header bg-success text-white" id="standingFormTitle">Classificação Brasileirão 2026</div>
+            <div class="card-body">
+                <form id="standingForm">
+                    <input type="hidden" id="editingStandingId">
+                    <div class="row g-2">
+                        <div class="col-md-2">
+                            <label class="form-label">Posição</label>
+                            <input type="number" min="1" step="1" id="standingPosition" class="form-control" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Time</label>
+                            <input type="text" id="standingTeam" class="form-control" placeholder="Ex: Flamengo" required>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Pontos</label>
+                            <input type="number" min="0" step="1" id="standingPoints" class="form-control" required>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Jogos</label>
+                            <input type="number" min="0" step="1" id="standingPlayed" class="form-control" required>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Vitórias</label>
+                            <input type="number" min="0" step="1" id="standingWins" class="form-control" required>
+                        </div>
+                    </div>
+                    <div class="row g-2 mt-2">
+                        <div class="col-md-2">
+                            <label class="form-label">Empates</label>
+                            <input type="number" min="0" step="1" id="standingDraws" class="form-control" required>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Derrotas</label>
+                            <input type="number" min="0" step="1" id="standingLosses" class="form-control" required>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">GP</label>
+                            <input type="number" min="0" step="1" id="standingGoalsFor" class="form-control" required>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">GC</label>
+                            <input type="number" min="0" step="1" id="standingGoalsAgainst" class="form-control" required>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">SG</label>
+                            <input type="text" id="standingGoalDiff" class="form-control" readonly>
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <button type="submit" class="btn btn-success" id="standingSubmitButton">Salvar Classificação</button>
+                        <button type="button" class="btn btn-outline-secondary d-none" id="cancelEditStanding">Cancelar Edição</button>
+                    </div>
+                </form>
+            </div>
+            <div class="card-body border-top">
+                <div class="standings-legend pb-3">
+                    <div class="standings-legend__title">Qualificação/Rebaixamento</div>
+                    <div class="standings-legend__item"><span class="standings-legend__color standings-legend__color--lib-group"></span> Fase de grupos da CONMEBOL Libertadores</div>
+                    <div class="standings-legend__item"><span class="standings-legend__color standings-legend__color--lib-qual"></span> Qualificatórias da CONMEBOL Libertadores</div>
+                    <div class="standings-legend__item"><span class="standings-legend__color standings-legend__color--sula"></span> Fase de grupos da CONMEBOL Sudamericana</div>
+                    <div class="standings-legend__item"><span class="standings-legend__color standings-legend__color--relegation"></span> Rebaixamento</div>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-striped align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Time</th>
+                                <th class="text-center">Pts</th>
+                                <th class="text-center">J</th>
+                                <th class="text-center">V</th>
+                                <th class="text-center">E</th>
+                                <th class="text-center">D</th>
+                                <th class="text-center">GP</th>
+                                <th class="text-center">GC</th>
+                                <th class="text-center">SG</th>
+                                <th class="text-center">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="standingsTableBody">
+                            <!-- Lista via JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Supabase SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="assets/js/supabase-init.js?v=3.0"></script>
+
+    <script src="assets/js/utils.js?v=3.1"></script>
+    <script src="assets/js/storage-supabase.js?v=3.4"></script>
+    <script src="assets/js/auth.js?v=3.1"></script>
+    <script src="assets/js/teams.js?v=3.1"></script>
+    <script src="assets/js/admin.js?v=3.1"></script>
+</body>
+</html>

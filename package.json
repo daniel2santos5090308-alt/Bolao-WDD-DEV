@@ -1,0 +1,10 @@
+{
+  "name": "bolao-wdd",
+  "version": "3.0.0",
+  "description": "Sistema de Bolao do Campeonato Brasileiro",
+  "private": true,
+  "scripts": {
+    "start": "python -m http.server 4173 -d public",
+    "audit": "npm audit"
+  }
+}
