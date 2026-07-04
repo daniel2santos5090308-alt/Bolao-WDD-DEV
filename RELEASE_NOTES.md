@@ -28,6 +28,9 @@ Esta versão consolida a migração do Bolão WDD para Supabase no ambiente `Bol
 - Criação do script `supabase_rls_hardening.sql` para endurecimento RLS no Supabase Free.
 - Ajuste do ranking para suportar apostas mascaradas antes do início das partidas.
 - Correção da exibição dos jogos da última rodada no painel do usuário.
+- Criação de testes automatizados com `node:test`.
+- Criação de teste E2E com Playwright cobrindo login, criação/edição/exclusão de rodada/jogo, aposta e finalização de placar.
+- Criação de checklist de homologação e guia de publicação.
 
 ### Validações Realizadas
 
@@ -38,6 +41,9 @@ Esta versão consolida a migração do Bolão WDD para Supabase no ambiente `Bol
 - Finalização de jogo validada.
 - Ranking geral e ranking por rodada validados.
 - Classificação validada.
+- E2E real validado contra Supabase DEV com `npm run test:e2e`.
+- E2E visual validado com `npm run test:e2e:headed`.
+- `npm run validate` validado com 9 testes passando.
 - `npm audit` validado com 0 vulnerabilidades.
 - Sintaxe dos principais arquivos JavaScript validada.
 
@@ -47,3 +53,4 @@ Esta versão consolida a migração do Bolão WDD para Supabase no ambiente `Bol
 - O script `supabase_rls_hardening.sql` deve ser rodado no SQL Editor do Supabase DEV antes de considerar o ambiente endurecido.
 - A chave `anon public` permanece no front-end por ser a chave pública esperada para apps Supabase client-side.
 - O arquivo `supabase_import_data.sql` contém dados migrados e não deve ser versionado.
+- Publicar somente a pasta `public/`.

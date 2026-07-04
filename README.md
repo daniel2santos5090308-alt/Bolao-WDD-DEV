@@ -11,6 +11,8 @@ Sistema de bolão migrado para Supabase no ambiente `BolaoWDDDEV`.
 - `public/assets/js/storage-supabase.js`: camada de dados Supabase.
 - `supabase_import_data.sql`: script histórico usado na migração inicial do backup.
 - `supabase_rls_hardening.sql`: policies RLS para reforçar permissões no Supabase Free.
+- `HOMOLOGATION_CHECKLIST.md`: checklist de validação antes de publicação.
+- `DEPLOYMENT_GUIDE.md`: guia para publicar somente a pasta correta.
 
 ## Ambiente atual
 
@@ -71,6 +73,12 @@ Depois rode:
 
 ```bash
 npm run test:e2e
+```
+
+Para acompanhar o navegador:
+
+```bash
+npm run test:e2e:headed
 ```
 
 Sem as senhas configuradas, o teste E2E fica marcado como `skipped` e não altera dados.
