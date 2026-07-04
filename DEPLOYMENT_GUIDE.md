@@ -19,6 +19,8 @@ Publicar somente a pasta:
 public/
 ```
 
+O arquivo `netlify.toml` já configura o Netlify para publicar somente `public/`.
+
 Não publicar:
 
 - `.env.e2e`
@@ -44,6 +46,35 @@ O arquivo `public/assets/js/supabase-init.js` deve conter apenas:
 - `SUPABASE_ANON_KEY`
 
 A chave `service_role` nunca deve aparecer no front-end.
+
+## Deploy no Netlify
+
+1. Acessar Netlify.
+2. Criar um novo site importando do GitHub.
+3. Selecionar o repositório `BolaoWDDdev`.
+4. Conferir as configurações detectadas:
+   - Base directory: vazio.
+   - Build command: vazio.
+   - Publish directory: `public`.
+5. Fazer o primeiro deploy.
+6. Abrir a URL temporária gerada pelo Netlify.
+7. Rodar a validação pós-publicação deste guia.
+
+## Domínio de Homologação
+
+Sugestão de subdomínio:
+
+```text
+homolog.bolaowdd.com.br
+```
+
+No Netlify:
+
+1. Abrir o site criado.
+2. Ir em Domain management.
+3. Adicionar o subdomínio de homologação.
+4. Criar os registros DNS pedidos pelo Netlify.
+5. Aguardar a emissão automática do HTTPS.
 
 ## Validação Pós-Publicação
 
