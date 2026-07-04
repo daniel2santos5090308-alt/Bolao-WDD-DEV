@@ -40,6 +40,41 @@ npm test
 
 A suite cobre regras críticas de ranking, apostas mascaradas, bloqueio por horário, escape HTML e mapeamento de dados Supabase.
 
+## Testes E2E
+
+Os testes E2E abrem a aplicação no navegador e executam o fluxo real contra o Supabase DEV:
+
+- login admin;
+- criação de rodada;
+- criação e edição de jogo;
+- login de usuário;
+- aposta;
+- finalização de placar;
+- exclusão do jogo e da rodada de teste.
+
+Antes da primeira execução, instale o navegador do Playwright:
+
+```bash
+npx playwright install chromium
+```
+
+Crie um arquivo local `.env.e2e` na raiz do projeto. Esse arquivo é ignorado pelo Git:
+
+```text
+E2E_ADMIN_USER=admin
+E2E_ADMIN_PASSWORD=sua_senha_admin
+E2E_BETTOR_USER=daniel
+E2E_BETTOR_PASSWORD=sua_senha_usuario
+```
+
+Depois rode:
+
+```bash
+npm run test:e2e
+```
+
+Sem as senhas configuradas, o teste E2E fica marcado como `skipped` e não altera dados.
+
 ## Validação antes de alterações
 
 Antes e depois de qualquer ajuste, rode:

@@ -6,7 +6,11 @@
   "scripts": {
     "start": "python -m http.server 4173 -d public",
     "test": "node --test \"tests/*.test.js\"",
+    "test:e2e": "playwright test",
     "audit": "npm audit",
     "validate": "npm test && npm audit"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.61.1"
   }
 }
