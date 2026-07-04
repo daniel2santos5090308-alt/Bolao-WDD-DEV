@@ -212,3 +212,34 @@ test('Storage maps Supabase match rows to app match shape and back', () => {
     score_away: 1
   });
 });
+
+test('HTML pages only reference existing local assets', () => {
+  const pages = ['index.html', 'admin.html', 'user.html', '404.html'];
+
+  for (const page of pages) {
+    const html = fs.readFileSync(path.join(rootDir, 'public', page), 'utf8');
+    const references = [...html.matchAll(/(?:src|href)="([^"]+)"/g)].map((match) => match[1]);
+
+    for (const reference of references) {
+      if (/^(https?:|#|mailto:)/.test(reference)) continue;
+
+      const localPath = reference.split('?')[0];
+      assert.ok(
+        fs.existsSync(path.join(rootDir, 'public', localPath)),
+        `${page} references missing asset ${reference}`
+      );
+    }
+  }
+});
+
+test('Public HTML does not expose Firebase or public signup flow', () => {
+  const pages = ['index.html', 'admin.html', 'user.html'];
+
+  for (const page of pages) {
+    const html = fs.readFileSync(path.join(rootDir, 'public', page), 'utf8').toLowerCase();
+
+    assert.equal(html.includes('firebase'), false, `${page} should not reference Firebase`);
+    assert.equal(html.includes('signup'), false, `${page} should not expose signup`);
+    assert.equal(html.includes('register'), false, `${page} should not expose register`);
+  }
+});

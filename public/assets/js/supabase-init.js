@@ -1,5 +1,5 @@
 ﻿/**
- * Configuracao do Supabase.
+ * Configuração do Supabase.
  *
  * Preencha SUPABASE_URL e SUPABASE_ANON_KEY com os valores do projeto:
  * Supabase > Project Settings > API.
@@ -11,13 +11,13 @@ let supabaseClient;
 
 try {
     if (!window.supabase) {
-        throw new Error('SDK do Supabase nao carregado.');
+        throw new Error('SDK do Supabase não carregado.');
     }
 
     supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     console.log('Supabase inicializado com sucesso!');
 } catch (error) {
     console.error('Erro ao inicializar Supabase.', error);
-    alert('Erro: configuracao do Supabase nao encontrada ou invalida. Verifique o console.');
+    alert('Erro: configuração do Supabase não encontrada ou inválida. Verifique o console.');
 }
 
