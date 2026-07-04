@@ -97,8 +97,11 @@ test.describe.serial('Bolao WDD - fluxo E2E CRUD e aposta', () => {
 
       const adminMatchCard = page.locator('#matchesList .card', { hasText: editedAwayTeam }).first();
       await expect(adminMatchCard).toBeVisible();
-      await adminMatchCard.locator('input[id^="score_home_"]').fill('2');
-      await adminMatchCard.locator('input[id^="score_away_"]').fill('1');
+      const scoreInputs = adminMatchCard.locator('input[type="number"]');
+      await scoreInputs.nth(0).fill('2');
+      await expect(scoreInputs.nth(0)).toHaveValue('2');
+      await scoreInputs.nth(1).fill('1');
+      await expect(scoreInputs.nth(1)).toHaveValue('1');
       await adminMatchCard.getByRole('button', { name: 'Salvar Placar' }).click();
       await expect(page.locator('#matchesList')).toContainText('2 x 1');
 
