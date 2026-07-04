@@ -172,19 +172,19 @@ const Storage = {
 
     addStanding: async (standing) => {
         const { error } = await supabaseClient.from('standings').upsert(Storage.fromStanding(standing));
-        if (error) console.error('Erro ao adicionar classificacao:', error);
+        if (error) console.error('Erro ao adicionar classificação:', error);
         return !error;
     },
 
     updateStanding: async (standing) => {
         const { error } = await supabaseClient.from('standings').update(Storage.fromStanding(standing)).eq('id', standing.id);
-        if (error) console.error('Erro ao atualizar classificacao:', error);
+        if (error) console.error('Erro ao atualizar classificação:', error);
         return !error;
     },
 
     deleteStanding: async (standingId) => {
         const { error } = await supabaseClient.from('standings').delete().eq('id', standingId);
-        if (error) console.error('Erro ao deletar classificacao:', error);
+        if (error) console.error('Erro ao deletar classificação:', error);
         return !error;
     },
 

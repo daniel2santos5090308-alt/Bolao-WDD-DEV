@@ -1,24 +1,24 @@
-# Bolao WDD - Supabase DEV
+# Bolão WDD - Supabase DEV
 
-Sistema de bolao migrado para Supabase no ambiente `BolaoWDDDEV`.
+Sistema de bolão migrado para Supabase no ambiente `BolaoWDDDEV`.
 
 ## Estrutura
 
 - `public/index.html`: login.
 - `public/admin.html`: painel administrativo.
-- `public/user.html`: painel do usuario.
-- `public/assets/js/supabase-init.js`: configuracao publica do Supabase.
+- `public/user.html`: painel do usuário.
+- `public/assets/js/supabase-init.js`: configuração pública do Supabase.
 - `public/assets/js/storage-supabase.js`: camada de dados Supabase.
-- `supabase_import_data.sql`: script historico usado na migracao inicial do backup.
-- `supabase_rls_hardening.sql`: policies RLS para reforcar permissoes no Supabase Free.
+- `supabase_import_data.sql`: script histórico usado na migração inicial do backup.
+- `supabase_rls_hardening.sql`: policies RLS para reforçar permissões no Supabase Free.
 
 ## Ambiente atual
 
 - Banco: Supabase Free / DEV.
-- Autenticacao: Supabase Auth com usuarios `@bolao.local`.
-- Cadastro publico removido do front-end; usuarios sao criados manualmente no Supabase Auth e vinculados em `profiles`.
-- Dados migrados: 4 usuarios, 17 rodadas, 167 jogos, 497 apostas e 20 linhas de classificacao.
-- Firebase: removido da superficie ativa desta pasta.
+- Autenticação: Supabase Auth com usuários `@bolao.local`.
+- Cadastro público removido do front-end; usuários são criados manualmente no Supabase Auth e vinculados em `profiles`.
+- Dados migrados: 4 usuários, 17 rodadas, 167 jogos, 497 apostas e 20 linhas de classificação.
+- Firebase: removido da superfície ativa desta pasta.
 
 ## Rodar localmente
 
@@ -38,9 +38,9 @@ http://localhost:4173/index.html
 npm test
 ```
 
-A suite cobre regras criticas de ranking, apostas mascaradas, bloqueio por horario, escape HTML e mapeamento de dados Supabase.
+A suite cobre regras críticas de ranking, apostas mascaradas, bloqueio por horário, escape HTML e mapeamento de dados Supabase.
 
-## Validacao antes de alteracoes
+## Validação antes de alterações
 
 Antes e depois de qualquer ajuste, rode:
 
@@ -50,10 +50,10 @@ npm run validate
 
 Esse comando executa a suite automatizada e o `npm audit`.
 
-## Seguranca
+## Segurança
 
 - A pasta publicada deve ser somente `public/`.
-- Nao publicar arquivos SQL, backups, `package.json` ou documentos internos.
+- Não publicar arquivos SQL, backups, `package.json` ou documentos internos.
 - Nunca colocar chave `service_role` do Supabase no front-end.
 - Usar apenas `Project URL` e `anon public key` em `supabase-init.js`.
-- Rodar `supabase_rls_hardening.sql` no SQL Editor para reforcar regras de leitura/escrita.
+- Rodar `supabase_rls_hardening.sql` no SQL Editor para reforçar regras de leitura/escrita.

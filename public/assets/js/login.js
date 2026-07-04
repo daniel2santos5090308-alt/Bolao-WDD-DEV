@@ -1,5 +1,5 @@
 /**
- * Logica de Login
+ * Lógica de Login
  */
 document.addEventListener('DOMContentLoaded', async () => {
     Storage.ensureAdminExists().then(created => {
@@ -30,7 +30,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             if (!success) {
                 if (errorDiv) {
-                    errorDiv.textContent = 'Usuario ou senha incorretos.';
+                    errorDiv.textContent = 'Usuário ou senha incorretos.';
                     errorDiv.classList.remove('d-none');
                 }
                 btn.textContent = originalText;

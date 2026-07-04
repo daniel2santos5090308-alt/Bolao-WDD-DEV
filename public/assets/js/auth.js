@@ -1,5 +1,5 @@
 /**
- * Autenticacao e controle de acesso.
+ * Autenticação e controle de acesso.
  */
 const Auth = {
     checkLogin: () => {

@@ -297,7 +297,7 @@ document.addEventListener('DOMContentLoaded', () => {
             try {
                 renderStandings(data.standings || []);
             } catch (standingsError) {
-                console.error("Erro ao renderizar classificacao:", standingsError);
+                console.error("Erro ao renderizar classificação:", standingsError);
             }
             
             // Verificação de segurança se dados vieram vazios
