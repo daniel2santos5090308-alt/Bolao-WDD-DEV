@@ -58,6 +58,7 @@ test.describe.serial('Bolao WDD - fluxo E2E CRUD e aposta', () => {
       await expect(page.locator('#roundsList')).toContainText(roundName);
 
       await page.locator('#matchRound').selectOption({ label: roundName });
+      await page.locator('#filterRound').selectOption({ label: roundName });
       await page.locator('#matchDate').fill('2099-12-31');
       await page.locator('#matchTime').fill('20:30');
       await page.locator('#homeTeam').fill(homeTeam);
@@ -70,8 +71,10 @@ test.describe.serial('Bolao WDD - fluxo E2E CRUD e aposta', () => {
       await expect(page.locator('#matchesList')).toContainText(homeTeam);
       await expect(page.locator('#matchesList')).toContainText(awayTeam);
 
-      const createdMatchCard = page.locator('#matchesList .card', { hasText: homeTeam }).first();
+      const createdMatchCard = page.locator('#matchesList > .card', { hasText: homeTeam }).first();
       await createdMatchCard.getByRole('button', { name: 'Editar' }).click();
+      await expect(page.locator('#matchSubmitButton')).toHaveText('Salvar Alterações');
+      await expect(page.locator('#editingMatchId')).not.toHaveValue('');
       await page.locator('#awayTeam').fill(editedAwayTeam);
       await page.locator('#oddAway').fill('4.80');
       await page.locator('#matchSubmitButton').click();
