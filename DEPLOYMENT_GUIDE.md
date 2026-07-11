@@ -9,6 +9,7 @@ Este guia organiza os passos para publicar o Bolão WDD com Supabase sem expor a
 - Rodar `npm run test:e2e`.
 - Rodar `npm run test:e2e:headed` quando quiser acompanhar visualmente.
 - Conferir `HOMOLOGATION_CHECKLIST.md`.
+- Conferir `SUPABASE_KEEPALIVE.md` para manter o Supabase DEV ativo.
 - Confirmar que o Supabase usado é o ambiente correto.
 
 ## Pasta Publicável

@@ -32,16 +32,7 @@ Esta versão consolida a migração do Bolão WDD para Supabase no ambiente `Bol
 - Criação de teste E2E com Playwright cobrindo login, criação/edição/exclusão de rodada/jogo, aposta e finalização de placar.
 - Criação de checklist de homologação e guia de publicação.
 - Criação de cache em memória no front-end para reduzir leituras repetidas no Supabase Free.
-- ### cd6abdd - feat: refresh frontend visual design
 
-- Atualização visual inicial do front-end.
-- Remodelagem da tela de login com identidade WDD.
-- Ajuste visual das navbars de admin e usuário.
-- Padronização de cards, tabelas, botões, formulários e sombras.
-- Melhorias responsivas para uso em desktop e mobile.
-- Substituição de emojis do ranking por ícones Bootstrap.
-- Atualização do cache-bust do CSS para `v=3.2`.
-- Validação com `npm run validate` e `npm run test:e2e`.
 
 ### Validações Realizadas
 
