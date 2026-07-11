@@ -32,7 +32,7 @@ Esta versão consolida a migração do Bolão WDD para Supabase no ambiente `Bol
 - Criação de teste E2E com Playwright cobrindo login, criação/edição/exclusão de rodada/jogo, aposta e finalização de placar.
 - Criação de checklist de homologação e guia de publicação.
 - Criação de cache em memória no front-end para reduzir leituras repetidas no Supabase Free.
-- Criação de GitHub Action agendada para reduzir risco de pausa do Supabase Free por inatividade.
+
 
 ### Validações Realizadas
 
