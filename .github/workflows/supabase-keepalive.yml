@@ -1,0 +1,36 @@
+name: Supabase keepalive
+
+on:
+  schedule:
+    - cron: "0 12 * * 1,4"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  ping:
+    name: Ping Supabase DEV
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+
+    steps:
+      - name: Check required secrets
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: |
+          test -n "$SUPABASE_URL"
+          test -n "$SUPABASE_ANON_KEY"
+
+      - name: Lightweight REST request
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: |
+          curl --fail --silent --show-error \
+            --header "apikey: $SUPABASE_ANON_KEY" \
+            --header "Authorization: Bearer $SUPABASE_ANON_KEY" \
+            "$SUPABASE_URL/rest/v1/rounds?select=id&limit=1" \
+            > /dev/null
+
