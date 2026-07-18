@@ -725,3 +725,89 @@ body {
 .theme-dark .match-card--bonus > .card-header {
     background: #2b2411 !important;
 }
+
+.theme-dark .match-card {
+    background: var(--wdd-surface) !important;
+    border-color: #334155 !important;
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.28);
+}
+
+.theme-dark .match-card > .card-header {
+    background: #101a2b !important;
+    border-bottom-color: var(--wdd-line);
+    color: var(--wdd-ink);
+}
+
+.theme-dark .match-card > .card-body {
+    background: var(--wdd-surface);
+}
+
+.theme-dark .match-card.border-primary {
+    border-color: #3b82f6 !important;
+}
+
+.theme-dark .match-card.border-warning {
+    border-color: #f4b321 !important;
+}
+
+.theme-dark .match-card.border-secondary {
+    border-color: #475569 !important;
+}
+
+.theme-dark .match-card hr {
+    border-color: var(--wdd-line);
+    opacity: 1;
+}
+
+.theme-dark .match-card .match-versus,
+.theme-dark .match-card .match-score-display,
+.theme-dark .match-card .team-badge__name,
+.theme-dark .match-card .fw-bold {
+    color: var(--wdd-ink);
+}
+
+.theme-dark .match-card .form-control {
+    background: #0f172a;
+    border-color: #334155;
+    color: var(--wdd-ink);
+}
+
+.theme-dark .match-card .form-control:focus {
+    border-color: #60a5fa;
+    box-shadow: 0 0 0 0.2rem rgba(96, 165, 250, 0.18);
+}
+
+.theme-dark .match-card .alert-primary {
+    background: #12264b;
+    border-color: #2563eb;
+    color: #dbeafe;
+}
+
+.theme-dark .match-card .alert-success {
+    background: #0f2f24;
+    border-color: #16a34a;
+    color: #bbf7d0;
+}
+
+.theme-dark .match-card .alert-warning {
+    background: #2b2411;
+    border-color: #ca8a04;
+    color: #fde68a;
+}
+
+.theme-dark .match-card .alert-danger {
+    background: #35171a;
+    border-color: #dc2626;
+    color: #fecdd3;
+}
+
+.theme-dark .match-card .alert-secondary {
+    background: #1f2937;
+    border-color: #475569;
+    color: #d1d5db;
+}
+
+.theme-dark .match-card--bonus {
+    border-color: #f4b321 !important;
+    box-shadow: 0 0 0 3px rgba(244, 179, 33, 0.22), 0 12px 24px rgba(0, 0, 0, 0.34);
+}
