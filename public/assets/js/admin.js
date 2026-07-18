@@ -20,6 +20,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const standingsTableBody = document.getElementById('standingsTableBody');
     const roundSelect = document.getElementById('matchRound');
     const filterRound = document.getElementById('filterRound');
+    const randomBonusButton = document.getElementById('randomBonusButton');
 
     const roundForm = document.getElementById('roundForm');
     const matchForm = document.getElementById('matchForm');
@@ -91,6 +92,33 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function hasSelectOption(select, value) {
         return value && Array.from(select.options).some(option => option.value === value);
+    }
+
+    function getRandomIndex(max) {
+        if (max <= 1) return 0;
+
+        if (window.crypto && typeof window.crypto.getRandomValues === 'function') {
+            const values = new Uint32Array(1);
+            window.crypto.getRandomValues(values);
+            return values[0] % max;
+        }
+
+        return Math.floor(Math.random() * max);
+    }
+
+    async function setRoundBonusMatch(data, roundId, bonusMatchId) {
+        const roundMatches = data.matches.filter(item => item.roundId === roundId);
+        let success = true;
+
+        for (const match of roundMatches) {
+            const nextIsBonus = Boolean(bonusMatchId && match.id === bonusMatchId);
+            if (Boolean(match.isBonus) !== nextIsBonus) {
+                const updated = await Storage.updateMatch({ ...match, isBonus: nextIsBonus });
+                success = success && updated;
+            }
+        }
+
+        return success;
     }
 
     function setMatchFormMode(isEditing) {
@@ -427,6 +455,43 @@ document.addEventListener('DOMContentLoaded', () => {
 
     filterRound.addEventListener('change', loadMatches);
 
+    if (randomBonusButton) {
+        randomBonusButton.addEventListener('click', async () => {
+            const selectedRoundId = filterRound.value;
+
+            if (!selectedRoundId || selectedRoundId === 'all') {
+                alert('Selecione uma rodada no filtro antes de sortear o jogo bonus.');
+                return;
+            }
+
+            const data = await Storage.getData();
+            const selectedRound = data.rounds.find(item => item.id === selectedRoundId);
+            const roundMatches = data.matches.filter(item => item.roundId === selectedRoundId);
+
+            if (roundMatches.length === 0) {
+                alert('Esta rodada ainda nao possui jogos cadastrados.');
+                return;
+            }
+
+            const currentBonus = roundMatches.find(item => item.isBonus);
+            if (currentBonus && !confirm('Esta rodada ja possui um jogo bonus. Deseja sortear novamente e substituir o atual?')) {
+                return;
+            }
+
+            const selectedMatch = roundMatches[getRandomIndex(roundMatches.length)];
+            const success = await setRoundBonusMatch(data, selectedRoundId, selectedMatch.id);
+
+            if (!success) {
+                alert('Erro ao sortear o jogo bonus.');
+                return;
+            }
+
+            loadMatches();
+            const roundName = selectedRound ? selectedRound.name : 'Rodada';
+            Utils.showAlert(`Jogo bonus sorteado para ${roundName}: ${selectedMatch.homeTeam} x ${selectedMatch.awayTeam}.`);
+        });
+    }
+
     async function loadMatches() {
         const data = await Storage.getData();
         const selectedRoundId = filterRound.value;
@@ -615,13 +680,11 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         const shouldEnable = !selectedMatch.isBonus;
-        const roundMatches = data.matches.filter(item => item.roundId === selectedMatch.roundId);
+        const success = await setRoundBonusMatch(data, selectedMatch.roundId, shouldEnable ? matchId : null);
 
-        for (const match of roundMatches) {
-            const nextIsBonus = shouldEnable && match.id === matchId;
-            if (Boolean(match.isBonus) !== nextIsBonus) {
-                await Storage.updateMatch({ ...match, isBonus: nextIsBonus });
-            }
+        if (!success) {
+            alert('Erro ao atualizar o jogo bonus.');
+            return;
         }
 
         loadMatches();

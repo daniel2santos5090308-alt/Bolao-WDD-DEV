@@ -101,9 +101,14 @@
                 <div class="card section-card shadow-sm">
                     <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
                         <span>Jogos e Resultados</span>
-                        <select id="filterRound" class="form-select form-select-sm w-auto bg-light text-dark">
-                            <option value="all">Todas as Rodadas</option>
-                        </select>
+                        <div class="d-flex align-items-center flex-wrap gap-2">
+                            <button type="button" class="btn btn-sm btn-warning text-dark" id="randomBonusButton">
+                                Sortear bonus
+                            </button>
+                            <select id="filterRound" class="form-select form-select-sm w-auto bg-light text-dark">
+                                <option value="all">Todas as Rodadas</option>
+                            </select>
+                        </div>
                     </div>
                     <div class="card-body">
                         <div id="matchesList">
@@ -245,6 +250,6 @@
     <script src="assets/js/storage-supabase.js?v=4.2"></script>
     <script src="assets/js/auth.js?v=3.6"></script>
     <script src="assets/js/teams.js?v=3.1"></script>
-    <script src="assets/js/admin.js?v=4.1"></script>
+    <script src="assets/js/admin.js?v=4.2"></script>
 </body>
 </html>
