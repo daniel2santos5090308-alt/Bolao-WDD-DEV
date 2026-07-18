@@ -33,6 +33,7 @@ Esta versão consolida a migração do Bolão WDD para Supabase no ambiente `Bol
 - Criação de checklist de homologação e guia de publicação.
 - Criação de cache em memória no front-end para reduzir leituras repetidas no Supabase Free.
 
+
 ### Validações Realizadas
 
 - Login admin validado.
