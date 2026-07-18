@@ -21,11 +21,18 @@ document.addEventListener('DOMContentLoaded', () => {
     const roundFilter = document.getElementById('roundFilter');
     const teamFilter = document.getElementById('teamFilter');
     const btnRefresh = document.getElementById('btnRefresh');
+    const btnThemeToggle = document.getElementById('btnThemeToggle');
     const paginationContainer = document.getElementById('matchesPagination');
     const standingsTableUserBody = document.getElementById('standingsTableUserBody');
+    const dashboardHighlights = document.getElementById('dashboardHighlights');
+    const roundHighlights = document.getElementById('roundHighlights');
+    const generalInsights = document.getElementById('generalInsights');
     const pageSize = 5;
     let currentPage = 1;
     let cachedData = null;
+
+    setupTabs();
+    setupTheme();
 
     if (btnRefresh) {
         btnRefresh.addEventListener('click', () => {
@@ -35,6 +42,41 @@ document.addEventListener('DOMContentLoaded', () => {
             icon.classList.add('spin-animation'); // Adicionar CSS para girar
             setTimeout(() => icon.classList.remove('spin-animation'), 1000);
         });
+    }
+
+    function setupTabs() {
+        document.querySelectorAll('[data-tab-target]').forEach((button) => {
+            button.addEventListener('click', () => {
+                const targetId = button.getAttribute('data-tab-target');
+                document.querySelectorAll('[data-tab-target]').forEach(item => item.classList.remove('active'));
+                document.querySelectorAll('.tab-panel').forEach(panel => panel.classList.remove('active'));
+                button.classList.add('active');
+                const target = document.getElementById(targetId);
+                if (target) target.classList.add('active');
+            });
+        });
+    }
+
+    function setupTheme() {
+        const savedTheme = localStorage.getItem('bolao_wdd_theme') || 'light';
+        document.body.classList.toggle('theme-dark', savedTheme === 'dark');
+        updateThemeButton(savedTheme);
+
+        if (!btnThemeToggle) return;
+        btnThemeToggle.addEventListener('click', () => {
+            const isDark = !document.body.classList.contains('theme-dark');
+            document.body.classList.toggle('theme-dark', isDark);
+            const nextTheme = isDark ? 'dark' : 'light';
+            localStorage.setItem('bolao_wdd_theme', nextTheme);
+            updateThemeButton(nextTheme);
+        });
+    }
+
+    function updateThemeButton(theme) {
+        if (!btnThemeToggle) return;
+        btnThemeToggle.innerHTML = theme === 'dark'
+            ? '<i class="bi bi-sun"></i>'
+            : '<i class="bi bi-moon-stars"></i>';
     }
 
     function getStandingZone(position) {
@@ -88,6 +130,128 @@ document.addEventListener('DOMContentLoaded', () => {
             `;
             standingsTableUserBody.appendChild(tr);
         });
+    }
+
+    function getTopBy(list, field) {
+        const safeList = Array.isArray(list) ? list : [];
+        return safeList.reduce((best, item) => {
+            if (!best) return item;
+            if (Number(item[field] || 0) > Number(best[field] || 0)) return item;
+            if (Number(item[field] || 0) === Number(best[field] || 0) && Number(item.points || 0) > Number(best.points || 0)) return item;
+            return best;
+        }, null);
+    }
+
+    function getBestSingleGame(data, matches) {
+        const usersById = new Map((data.users || []).map(user => [user.id, user]));
+        const settings = Ranking.getSettings(data);
+        let best = null;
+
+        (matches || []).forEach((match) => {
+            Object.entries(data.bets || {}).forEach(([userId, userBets]) => {
+                const bet = userBets ? userBets[match.id] : null;
+                if (!bet) return;
+                const result = Ranking.calculateMatchPoints(match, bet, settings);
+                if (!result || !result.points) return;
+                if (!best || result.points > best.points) {
+                    best = {
+                        points: result.points,
+                        label: result.label,
+                        match: `${match.homeTeam} x ${match.awayTeam}`,
+                        user: usersById.get(userId)
+                    };
+                }
+            });
+        });
+
+        return best;
+    }
+
+    function renderDashboard(data, selectedRoundId) {
+        if (!dashboardHighlights || !roundHighlights || !generalInsights || typeof Ranking === 'undefined') return;
+
+        const matches = Array.isArray(data.matches) ? data.matches : [];
+        const roundMatches = selectedRoundId && selectedRoundId !== 'all'
+            ? matches.filter(match => match.roundId === selectedRoundId)
+            : matches;
+        const generalRanking = Ranking.calculate(data);
+        const roundRanking = Ranking.calculateForMatches(data, roundMatches);
+        const leader = generalRanking[0];
+        const roundBest = roundRanking[0];
+        const exactLeader = getTopBy(generalRanking, 'exactHits');
+        const nearLeader = getTopBy(generalRanking, 'nearMisses');
+        const efficiencyLeader = getTopBy(generalRanking.filter(item => item.betsCount > 0), 'efficiency');
+        const bonusLeader = getTopBy(generalRanking, 'bonusHits');
+        const bestSingleGame = getBestSingleGame(data, roundMatches);
+        const bonusMatch = roundMatches.find(match => match.isBonus);
+        const totalRoundBets = roundRanking.reduce((sum, item) => sum + Number(item.betsCount || 0), 0);
+        const totalRoundExact = roundRanking.reduce((sum, item) => sum + Number(item.exactHits || 0), 0);
+
+        const card = (title, value, detail, icon, tone = 'primary') => `
+            <div class="col-sm-6 col-xl-3">
+                <div class="metric-card metric-card--${tone}">
+                    <div class="metric-card__icon"><i class="bi ${icon}"></i></div>
+                    <div>
+                        <div class="metric-card__label">${title}</div>
+                        <div class="metric-card__value">${value || '-'}</div>
+                        <div class="metric-card__detail">${detail || '&nbsp;'}</div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        dashboardHighlights.innerHTML = [
+            card('Líder geral', leader ? Utils.escapeHtml(leader.name) : '-', leader ? `${leader.points.toFixed(2)} pts` : 'Sem dados', 'bi-trophy', 'blue'),
+            card('Melhor da rodada', roundBest ? Utils.escapeHtml(roundBest.name) : '-', roundBest ? `${roundBest.points.toFixed(2)} pts` : 'Sem dados', 'bi-star', 'cyan'),
+            card('Cravador geral', exactLeader ? Utils.escapeHtml(exactLeader.name) : '-', exactLeader ? `${exactLeader.exactHits} exatos` : 'Sem dados', 'bi-bullseye', 'green'),
+            card('Rei da trave', nearLeader ? Utils.escapeHtml(nearLeader.name) : '-', nearLeader ? `${nearLeader.nearMisses} na trave` : 'Sem dados', 'bi-signpost-split', 'yellow')
+        ].join('');
+
+        roundHighlights.innerHTML = `
+            <div class="insight-list">
+                <div class="insight-row">
+                    <span>Melhor jogador</span>
+                    <strong>${roundBest ? `${Utils.escapeHtml(roundBest.name)} (${roundBest.points.toFixed(2)} pts)` : '-'}</strong>
+                </div>
+                <div class="insight-row">
+                    <span>Maior pontuação em um jogo</span>
+                    <strong>${bestSingleGame ? `${Utils.escapeHtml(bestSingleGame.user ? bestSingleGame.user.name : '-')} - ${bestSingleGame.points.toFixed(2)} pts` : '-'}</strong>
+                </div>
+                <div class="insight-row">
+                    <span>Placares exatos na rodada</span>
+                    <strong>${totalRoundExact}</strong>
+                </div>
+                <div class="insight-row">
+                    <span>Apostas registradas</span>
+                    <strong>${totalRoundBets}</strong>
+                </div>
+                <div class="insight-row">
+                    <span>Jogo bônus</span>
+                    <strong>${bonusMatch ? `${Utils.escapeHtml(bonusMatch.homeTeam)} x ${Utils.escapeHtml(bonusMatch.awayTeam)}` : '-'}</strong>
+                </div>
+            </div>
+        `;
+
+        generalInsights.innerHTML = `
+            <div class="insight-list">
+                <div class="insight-row">
+                    <span>Melhor aproveitamento</span>
+                    <strong>${efficiencyLeader ? `${Utils.escapeHtml(efficiencyLeader.name)} (${efficiencyLeader.efficiency.toFixed(2)} pts/aposta)` : '-'}</strong>
+                </div>
+                <div class="insight-row">
+                    <span>Maior pontuação em bônus</span>
+                    <strong>${bonusLeader ? `${Utils.escapeHtml(bonusLeader.name)} (${bonusLeader.bonusHits} acertos)` : '-'}</strong>
+                </div>
+                <div class="insight-row">
+                    <span>Participantes ativos</span>
+                    <strong>${generalRanking.filter(item => item.betsCount > 0).length}</strong>
+                </div>
+                <div class="insight-row">
+                    <span>Total de apostas</span>
+                    <strong>${generalRanking.reduce((sum, item) => sum + Number(item.betsCount || 0), 0)}</strong>
+                </div>
+            </div>
+        `;
     }
 
     loadRoundsAndMatches();
@@ -289,6 +453,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 try {
                     await Ranking.render('rankingTableBody', data);
                     await Ranking.renderRound('rankingRoundTableBody', selectedRoundId, data);
+                    renderDashboard(data, selectedRoundId);
                 } catch (rankingError) {
                     console.error("Erro ao renderizar ranking:", rankingError);
                 }

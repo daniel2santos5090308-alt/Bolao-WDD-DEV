@@ -283,7 +283,31 @@ const Ranking = {
             if (!user.history || user.history.length === 0) {
                 modalBody.innerHTML = '<p class="text-center text-muted">Nenhuma aposta registrada.</p>';
             } else {
-                let html = '<div class="list-group">';
+                let html = `
+                    <div class="participant-summary">
+                        <div>
+                            <span>Pontos</span>
+                            <strong>${user.points.toFixed(2)}</strong>
+                        </div>
+                        <div>
+                            <span>Exatos</span>
+                            <strong>${user.exactHits}</strong>
+                        </div>
+                        <div>
+                            <span>Na trave</span>
+                            <strong>${user.nearMisses}</strong>
+                        </div>
+                        <div>
+                            <span>Bônus</span>
+                            <strong>${user.bonusHits}</strong>
+                        </div>
+                        <div>
+                            <span>Aproveitamento</span>
+                            <strong>${user.efficiency.toFixed(2)}</strong>
+                        </div>
+                    </div>
+                    <div class="list-group">
+                `;
                 const sortedHistory = [...user.history].sort((a, b) => new Date(`${b.date}T${b.time || '00:00'}`) - new Date(`${a.date}T${a.time || '00:00'}`));
 
                 sortedHistory.forEach(h => {
