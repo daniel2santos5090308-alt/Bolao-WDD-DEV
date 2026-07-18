@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bolão WDD - Minhas Apostas</title>
+    <title>BolÃ£o WDD - Minhas Apostas</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <link href="assets/css/styles.css?v=3.1" rel="stylesheet">
@@ -12,9 +12,9 @@
     
     <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
         <div class="container">
-            <a class="navbar-brand" href="#">Bolão WDD</a>
+            <a class="navbar-brand" href="#">BolÃ£o WDD</a>
             <div class="d-flex align-items-center text-white">
-                <span class="me-3">Olá, <span id="userNameDisplay">User</span></span>
+                <span class="me-3">OlÃ¡, <span id="userNameDisplay">User</span></span>
                 <button id="btnLogout" class="btn btn-outline-light btn-sm">Sair</button>
             </div>
         </div>
@@ -45,7 +45,7 @@
                         <div id="matchesContainer" class="row">
                             <!-- Cards de Jogos via JS -->
                         </div>
-                        <nav class="d-flex justify-content-center" aria-label="Paginação de jogos">
+                        <nav class="d-flex justify-content-center" aria-label="PaginaÃ§Ã£o de jogos">
                             <ul id="matchesPagination" class="pagination mb-0"></ul>
                         </nav>
                     </div>
@@ -69,9 +69,9 @@
                                     <th>#</th>
                                     <th>Nome</th>
                                     <th class="text-center">Pts</th>
-                                    <th class="text-center">✅</th>
-                                    <th class="text-center">🎲</th>
-                                    <th class="text-center">👁️</th>
+                                    <th class="text-center">âœ…</th>
+                                    <th class="text-center">ðŸŽ²</th>
+                                    <th class="text-center">ðŸ‘ï¸</th>
                                 </tr>
                             </thead>
                             <tbody id="rankingRoundTableBody">
@@ -79,7 +79,7 @@
                             </tbody>
                         </table>
                         <div class="p-2 text-muted small text-center">
-                            ✅ = Acertos | 🎲 = Jogos Apostados
+                            âœ… = Placares exatos | ðŸŽ² = Jogos Apostados
                         </div>
                     </div>
                 </div>
@@ -94,9 +94,9 @@
                                     <th>#</th>
                                     <th>Nome</th>
                                     <th class="text-center">Pts</th>
-                                    <th class="text-center">✅</th>
-                                    <th class="text-center">🎲</th>
-                                    <th class="text-center">👁️</th>
+                                    <th class="text-center">âœ…</th>
+                                    <th class="text-center">ðŸŽ²</th>
+                                    <th class="text-center">ðŸ‘ï¸</th>
                                 </tr>
                             </thead>
                             <tbody id="rankingTableBody">
@@ -104,19 +104,19 @@
                             </tbody>
                         </table>
                         <div class="p-2 text-muted small text-center">
-                            ✅ = Acertos | 🎲 = Jogos Apostados
+                            âœ… = Placares exatos | ðŸŽ² = Jogos Apostados
                         </div>
                     </div>
                 </div>
                 <div class="card shadow-sm mt-4">
                     <div class="card-header bg-warning text-dark">
-                        <h5 class="mb-0">Classificação Brasileirão 2026</h5>
+                        <h5 class="mb-0">ClassificaÃ§Ã£o BrasileirÃ£o 2026</h5>
                     </div>
                     <div class="card-body p-0">
                         <div class="standings-legend p-3 pb-2">
-                            <div class="standings-legend__title">Qualificação/Rebaixamento</div>
+                            <div class="standings-legend__title">QualificaÃ§Ã£o/Rebaixamento</div>
                             <div class="standings-legend__item"><span class="standings-legend__color standings-legend__color--lib-group"></span> Fase de grupos da CONMEBOL Libertadores</div>
-                            <div class="standings-legend__item"><span class="standings-legend__color standings-legend__color--lib-qual"></span> Qualificatórias da CONMEBOL Libertadores</div>
+                            <div class="standings-legend__item"><span class="standings-legend__color standings-legend__color--lib-qual"></span> QualificatÃ³rias da CONMEBOL Libertadores</div>
                             <div class="standings-legend__item"><span class="standings-legend__color standings-legend__color--sula"></span> Fase de grupos da CONMEBOL Sudamericana</div>
                             <div class="standings-legend__item"><span class="standings-legend__color standings-legend__color--relegation"></span> Rebaixamento</div>
                         </div>
@@ -154,7 +154,7 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body" id="rankingModalBody">
-                    <!-- Conteúdo via JS -->
+                    <!-- ConteÃºdo via JS -->
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
@@ -190,7 +190,7 @@
         </div>
     </div>
 
-    <!-- Bootstrap Bundle (com JS) necessário para o Modal -->
+    <!-- Bootstrap Bundle (com JS) necessÃ¡rio para o Modal -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
     <!-- Supabase SDK -->
@@ -198,15 +198,15 @@
     <script src="assets/js/supabase-init.js?v=3.6"></script>
 
     <script src="assets/js/utils.js?v=3.1"></script>
-    <script src="assets/js/storage-supabase.js?v=3.7"></script>
+    <script src="assets/js/storage-supabase.js?v=4.0"></script>
     <script src="assets/js/auth.js?v=3.6"></script>
-    <script src="assets/js/ranking.js?v=3.3"></script>
+    <script src="assets/js/ranking.js?v=4.0"></script>
     <script src="assets/js/teams.js?v=3.1"></script>
-    <script src="assets/js/user.js?v=3.7"></script>
+    <script src="assets/js/user.js?v=4.0"></script>
 
     <div class="container mt-5 pt-5 text-center text-muted small">
         <hr>
-        <p>Bolão WDD - Versão 3.0 (Supabase)</p>
+        <p>BolÃ£o WDD - VersÃ£o 3.0 (Supabase)</p>
         <div id="debugFooter"></div>
     </div>
 </body>

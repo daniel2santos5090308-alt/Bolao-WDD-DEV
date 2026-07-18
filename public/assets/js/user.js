@@ -387,10 +387,10 @@ document.addEventListener('DOMContentLoaded', () => {
                         : match.awayTeam;
                     
                     // Buscar aposta do usuário
-                    let userPick = null;
+                    let userBet = null;
                     // Correção: Estrutura é bets[userId][matchId]
                     if (data.bets && data.bets[currentUser.id] && data.bets[currentUser.id][match.id]) {
-                        userPick = data.bets[currentUser.id][match.id].pick;
+                        userBet = data.bets[currentUser.id][match.id];
                     }
 
                     // Determinar status e cor
@@ -411,45 +411,44 @@ document.addEventListener('DOMContentLoaded', () => {
                     // Resultado oficial se houver
                     let resultDisplay = '';
                     if (isFinished) {
-                        const resultMap = { 'home': 'Casa', 'draw': 'Empate', 'away': 'Visitante' };
                         const hasScore = match.score
                             && Number.isFinite(Number(match.score.home))
                             && Number.isFinite(Number(match.score.away));
-                        
-                        // Comparação robusta (igual ao Ranking)
-                        const safePick = userPick ? String(userPick).trim() : null;
-                        const safeResult = match.result ? String(match.result).trim() : null;
-                        const hit = safePick === safeResult;
-                        
-                        // Odds seguras
-                        const resultOdd = (match.odds && match.odds[match.result]) ? match.odds[match.result] : 0;
+                        const finalScoreText = hasScore ? `${Number(match.score.home)} x ${Number(match.score.away)}` : 'Finalizado';
+                        const scoreResult = typeof Ranking !== 'undefined'
+                            ? Ranking.calculateMatchPoints(match, userBet, Ranking.getSettings(data))
+                            : null;
 
-                        if (userPick) {
-                            if (hit) {
-                                const pointsWon = Number(resultOdd).toFixed(2);
+                        if (userBet) {
+                            if (scoreResult && scoreResult.isHit) {
                                 resultDisplay = `
                                     <div class="alert alert-success mt-3 mb-0 text-center">
-                                        <i class="bi bi-trophy-fill"></i> <strong>ACERTOU!</strong><br>
-                                        Você ganhou <strong>${pointsWon}</strong> pontos nesta aposta.
+                                        <i class="bi bi-trophy-fill"></i> <strong>${Utils.escapeHtml(scoreResult.label)}</strong><br>
+                                        Voce ganhou <strong>${Number(scoreResult.points).toFixed(2)}</strong> pontos nesta aposta.
                                     </div>
                                 `;
                             } else {
                                 resultDisplay = `
                                     <div class="alert alert-danger mt-3 mb-0 text-center">
                                         <strong>Errou!</strong><br>
-                                        O resultado foi <strong>${resultMap[match.result]}</strong>.
+                                        O placar foi <strong>${finalScoreText}</strong>.
                                     </div>
                                 `;
                             }
                         } else {
                             resultDisplay = `
                                 <div class="alert alert-secondary mt-3 mb-0 text-center">
-                                    Resultado: <strong>${resultMap[match.result]}</strong><br>
-                                    <small>Você não apostou neste jogo.</small>
+                                    Resultado: <strong>${finalScoreText}</strong><br>
+                                    <small>Voce nao apostou neste jogo.</small>
                                 </div>
                             `;
                         }
                     }
+
+                    const betScoreHome = userBet && userBet.scoreHome !== null && userBet.scoreHome !== undefined ? Number(userBet.scoreHome) : '';
+                    const betScoreAway = userBet && userBet.scoreAway !== null && userBet.scoreAway !== undefined ? Number(userBet.scoreAway) : '';
+                    const userBetText = betScoreHome !== '' && betScoreAway !== '' ? `${betScoreHome} x ${betScoreAway}` : '';
+                    const bonusBadge = match.isBonus ? '<span class="badge bg-warning text-dark ms-2">Bonus 2x</span>' : '';
 
                     const card = document.createElement('div');
                     card.className = `col-md-6 mb-4`;
@@ -473,34 +472,36 @@ document.addEventListener('DOMContentLoaded', () => {
                                 </div>
                                 
                                 <div class="mb-3">
-                                    <small class="text-muted d-block mb-1">Odds (Cotações)</small>
-                                    <span class="badge bg-light text-dark border me-1">Casa: ${Utils.formatDecimal(match.odds.home)}</span>
-                                    <span class="badge bg-light text-dark border me-1">Empate: ${Utils.formatDecimal(match.odds.draw)}</span>
-                                    <span class="badge bg-light text-dark border">Fora: ${Utils.formatDecimal(match.odds.away)}</span>
+                                    <span class="badge bg-light text-dark border">Placar exato / Na trave / Resultado certo</span>
+                                    ${bonusBadge}
                                 </div>
 
                                 ${!isLocked ? `
                                     <hr>
-                                    <p class="mb-2">Sua Aposta:</p>
-                                    <div class="btn-group w-100" role="group">
-                                        <input type="radio" class="btn-check" name="bet_${match.id}" id="bet_home_${match.id}" autocomplete="off" ${userPick === 'home' ? 'checked' : ''} onchange="placeBet('${match.id}', 'home')">
-                                        <label class="btn btn-outline-primary" for="bet_home_${match.id}">Casa</label>
-
-                                        <input type="radio" class="btn-check" name="bet_${match.id}" id="bet_draw_${match.id}" autocomplete="off" ${userPick === 'draw' ? 'checked' : ''} onchange="placeBet('${match.id}', 'draw')">
-                                        <label class="btn btn-outline-secondary" for="bet_draw_${match.id}">Empate</label>
-
-                                        <input type="radio" class="btn-check" name="bet_${match.id}" id="bet_away_${match.id}" autocomplete="off" ${userPick === 'away' ? 'checked' : ''} onchange="placeBet('${match.id}', 'away')">
-                                        <label class="btn btn-outline-danger" for="bet_away_${match.id}">Fora</label>
+                                    <p class="mb-2">Seu Palpite:</p>
+                                    <div class="row g-2 align-items-end justify-content-center">
+                                        <div class="col-4">
+                                            <label class="form-label small mb-1">${Utils.escapeHtml(match.homeTeam)}</label>
+                                            <input type="number" min="0" step="1" class="form-control text-center" id="bet_score_home_${match.id}" value="${betScoreHome}">
+                                        </div>
+                                        <div class="col-auto pb-2 fw-bold">X</div>
+                                        <div class="col-4">
+                                            <label class="form-label small mb-1">${Utils.escapeHtml(match.awayTeam)}</label>
+                                            <input type="number" min="0" step="1" class="form-control text-center" id="bet_score_away_${match.id}" value="${betScoreAway}">
+                                        </div>
+                                        <div class="col-12">
+                                            <button type="button" class="btn btn-primary w-100" onclick="placeScoreBet('${match.id}')">Salvar Palpite</button>
+                                        </div>
                                     </div>
                                 ` : `
                                     <hr>
-                                    ${userPick ? `
+                                    ${userBetText ? `
                                         <div class="alert alert-primary mb-0">
-                                            Sua aposta: <strong>${userPick === 'home' ? 'Casa' : (userPick === 'draw' ? 'Empate' : 'Fora')}</strong>
+                                            Seu palpite: <strong>${userBetText}</strong>
                                         </div>
                                     ` : `
                                         <div class="alert alert-warning mb-0">
-                                            Você não apostou neste jogo.
+                                            Voce nao apostou neste jogo.
                                         </div>
                                     `}
                                 `}
@@ -538,21 +539,30 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    window.placeBet = async (matchId, pick) => {
+    window.placeScoreBet = async (matchId) => {
         const data = await Storage.getData();
         const match = data.matches.find(m => m.id === matchId);
         
-        // Validação de tempo novamente
         if (Utils.isMatchLocked(match.date, match.time) || match.result !== null) {
             alert('Apostas encerradas para este jogo.');
-            location.reload(); // Recarregar para atualizar status visual
+            location.reload();
             return;
         }
 
         const currentUser = Storage.getCurrentUser();
+        const homeInput = document.getElementById(`bet_score_home_${matchId}`);
+        const awayInput = document.getElementById(`bet_score_away_${matchId}`);
+        const scoreHome = parseInt(homeInput ? homeInput.value : '', 10);
+        const scoreAway = parseInt(awayInput ? awayInput.value : '', 10);
+
+        if (!Number.isInteger(scoreHome) || scoreHome < 0 || !Number.isInteger(scoreAway) || scoreAway < 0) {
+            alert('Informe um placar valido com numeros inteiros maiores ou iguais a zero.');
+            return;
+        }
         
         const betValue = {
-            pick: pick,
+            scoreHome,
+            scoreAway,
             createdAt: new Date().toISOString()
         };
 

@@ -8,7 +8,25 @@ const Storage = {
     _cachePromise: null,
     _cacheLoadedAt: null,
 
-    cloneData: (data) => JSON.parse(JSON.stringify(data || { users: [], rounds: [], matches: [], bets: {}, standings: [] })),
+    cloneData: (data) => JSON.parse(JSON.stringify(data || {
+        users: [],
+        rounds: [],
+        matches: [],
+        bets: {},
+        standings: [],
+        scoringSettings: Storage.getDefaultScoringSettings()
+    })),
+
+    getDefaultScoringSettings: () => ({
+        id: 'default',
+        exactScorePoints: 10,
+        nearMissPoints: 7,
+        correctResultPoints: 5,
+        wrongPoints: 0,
+        nearMissGoalDiff: 1,
+        bonusMultiplier: 2,
+        bonusEnabled: true
+    }),
 
     setCache: (data) => {
         Storage._cache = Storage.cloneData(data);
@@ -76,10 +94,11 @@ const Storage = {
         homeTeam: match.home_team,
         awayTeam: match.away_team,
         odds: {
-            home: Number(match.odd_home),
-            draw: Number(match.odd_draw),
-            away: Number(match.odd_away)
+            home: Number(match.odd_home || 1),
+            draw: Number(match.odd_draw || 1),
+            away: Number(match.odd_away || 1)
         },
+        isBonus: Boolean(match.is_bonus),
         result: match.result,
         score: match.score_home === null || match.score_away === null ? null : {
             home: Number(match.score_home),
@@ -108,12 +127,40 @@ const Storage = {
         match_time: match.time,
         home_team: match.homeTeam,
         away_team: match.awayTeam,
-        odd_home: match.odds ? match.odds.home : null,
-        odd_draw: match.odds ? match.odds.draw : null,
-        odd_away: match.odds ? match.odds.away : null,
+        odd_home: match.odds ? match.odds.home : 1,
+        odd_draw: match.odds ? match.odds.draw : 1,
+        odd_away: match.odds ? match.odds.away : 1,
+        is_bonus: Boolean(match.isBonus),
         result: match.result || null,
         score_home: match.score ? match.score.home : null,
         score_away: match.score ? match.score.away : null
+    }),
+
+    toScoringSettings: (settings) => {
+        const defaults = Storage.getDefaultScoringSettings();
+        if (!settings) return defaults;
+        return {
+            id: settings.id || defaults.id,
+            exactScorePoints: Number(settings.exact_score_points ?? defaults.exactScorePoints),
+            nearMissPoints: Number(settings.near_miss_points ?? defaults.nearMissPoints),
+            correctResultPoints: Number(settings.correct_result_points ?? defaults.correctResultPoints),
+            wrongPoints: Number(settings.wrong_points ?? defaults.wrongPoints),
+            nearMissGoalDiff: Number(settings.near_miss_goal_diff ?? defaults.nearMissGoalDiff),
+            bonusMultiplier: Number(settings.bonus_multiplier ?? defaults.bonusMultiplier),
+            bonusEnabled: settings.bonus_enabled ?? defaults.bonusEnabled
+        };
+    },
+
+    fromScoringSettings: (settings) => ({
+        id: settings.id || 'default',
+        exact_score_points: Number(settings.exactScorePoints),
+        near_miss_points: Number(settings.nearMissPoints),
+        correct_result_points: Number(settings.correctResultPoints),
+        wrong_points: Number(settings.wrongPoints),
+        near_miss_goal_diff: Number(settings.nearMissGoalDiff),
+        bonus_multiplier: Number(settings.bonusMultiplier),
+        bonus_enabled: Boolean(settings.bonusEnabled),
+        updated_at: new Date().toISOString()
     }),
 
     fromStanding: (standing) => ({
@@ -151,11 +198,12 @@ const Storage = {
         try {
             if (!supabaseClient) throw new Error('Supabase não inicializado');
 
-            const [profilesRes, roundsRes, matchesRes, standingsRes] = await Promise.all([
+            const [profilesRes, roundsRes, matchesRes, standingsRes, settingsRes] = await Promise.all([
                 supabaseClient.from('profiles').select('*').order('username'),
                 supabaseClient.from('rounds').select('*').order('number'),
                 supabaseClient.from('matches').select('*').order('match_date').order('match_time'),
-                supabaseClient.from('standings').select('*').order('position')
+                supabaseClient.from('standings').select('*').order('position'),
+                supabaseClient.from('scoring_settings').select('*').eq('id', 'default').maybeSingle()
             ]);
 
             let betsRes = await supabaseClient.rpc('get_visible_bets');
@@ -172,23 +220,28 @@ const Storage = {
             const rounds = roundsRes.data.map(Storage.toRound);
             const matches = matchesRes.data.map(Storage.toMatch);
             const standings = standingsRes.data.map(Storage.toStanding);
+            const scoringSettings = settingsRes && !settingsRes.error
+                ? Storage.toScoringSettings(settingsRes.data)
+                : Storage.getDefaultScoringSettings();
             const bets = {};
 
             betsRes.data.forEach((bet) => {
                 if (!bets[bet.user_id]) bets[bet.user_id] = {};
                 bets[bet.user_id][bet.match_id] = {
                     pick: bet.pick,
+                    scoreHome: bet.score_home === null || bet.score_home === undefined ? null : Number(bet.score_home),
+                    scoreAway: bet.score_away === null || bet.score_away === undefined ? null : Number(bet.score_away),
                     createdAt: bet.created_at
                 };
             });
 
-            const data = { users, rounds, matches, bets, standings };
+            const data = { users, rounds, matches, bets, standings, scoringSettings };
             Storage.setCache(data);
             return data;
         } catch (error) {
             console.error('Erro ao buscar dados do Supabase:', error);
             alert('Erro crítico: falha ao conectar com o banco de dados.');
-            return { users: [], rounds: [], matches: [], bets: {}, standings: [] };
+            return { users: [], rounds: [], matches: [], bets: {}, standings: [], scoringSettings: Storage.getDefaultScoringSettings() };
         }
     },
 
@@ -253,13 +306,38 @@ const Storage = {
         return !error;
     },
 
+    updateScoringSettings: async (settings) => {
+        const nextSettings = {
+            ...Storage.getDefaultScoringSettings(),
+            ...(settings || {}),
+            id: 'default'
+        };
+
+        const { error } = await supabaseClient
+            .from('scoring_settings')
+            .upsert(Storage.fromScoringSettings(nextSettings), { onConflict: 'id' });
+
+        if (error) console.error('Erro ao atualizar pontuaÃ§Ã£o:', error);
+        if (!error && Storage._cache) {
+            Storage._cache.scoringSettings = Storage.cloneData(nextSettings);
+        }
+        return !error;
+    },
+
     saveBet: async (userId, matchId, betValue) => {
         const currentUser = Storage.getCurrentUser();
+        const scoreHome = Number.isInteger(Number(betValue.scoreHome)) ? Number(betValue.scoreHome) : null;
+        const scoreAway = Number.isInteger(Number(betValue.scoreAway)) ? Number(betValue.scoreAway) : null;
+        const computedPick = scoreHome === null || scoreAway === null
+            ? (betValue.pick || null)
+            : (scoreHome > scoreAway ? 'home' : (scoreHome < scoreAway ? 'away' : 'draw'));
         const payload = {
             user_id: userId,
             legacy_user_id: currentUser ? (currentUser.legacyId || currentUser.legacy_id || userId) : userId,
             match_id: matchId,
-            pick: betValue.pick,
+            pick: computedPick,
+            score_home: scoreHome,
+            score_away: scoreAway,
             created_at: betValue.createdAt || new Date().toISOString(),
             updated_at: new Date().toISOString()
         };
@@ -272,7 +350,9 @@ const Storage = {
         if (!error && Storage._cache) {
             if (!Storage._cache.bets[userId]) Storage._cache.bets[userId] = {};
             Storage._cache.bets[userId][matchId] = {
-                pick: betValue.pick,
+                pick: computedPick,
+                scoreHome,
+                scoreAway,
                 createdAt: payload.created_at
             };
         }

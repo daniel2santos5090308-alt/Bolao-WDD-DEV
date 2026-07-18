@@ -24,6 +24,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const roundForm = document.getElementById('roundForm');
     const matchForm = document.getElementById('matchForm');
     const standingForm = document.getElementById('standingForm');
+    const scoringSettingsForm = document.getElementById('scoringSettingsForm');
     const editingMatchIdInput = document.getElementById('editingMatchId');
     const editingStandingIdInput = document.getElementById('editingStandingId');
     const matchFormTitle = document.getElementById('matchFormTitle');
@@ -38,6 +39,7 @@ document.addEventListener('DOMContentLoaded', () => {
     loadRounds();
     loadMatches();
     loadStandings();
+    loadScoringSettings();
 
     function getRoundNumber(round) {
         if (round && typeof round.number === 'number' && Number.isFinite(round.number)) return round.number;
@@ -143,9 +145,6 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('matchTime').value = match.time || '';
         document.getElementById('homeTeam').value = match.homeTeam || '';
         document.getElementById('awayTeam').value = match.awayTeam || '';
-        document.getElementById('oddHome').value = match.odds ? match.odds.home : '';
-        document.getElementById('oddDraw').value = match.odds ? match.odds.draw : '';
-        document.getElementById('oddAway').value = match.odds ? match.odds.away : '';
         setMatchFormMode(true);
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }
@@ -282,10 +281,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const time = document.getElementById('matchTime').value;
         const homeTeam = document.getElementById('homeTeam').value.trim();
         const awayTeam = document.getElementById('awayTeam').value.trim();
-        const oddHome = parseFloat(document.getElementById('oddHome').value);
-        const oddDraw = parseFloat(document.getElementById('oddDraw').value);
-        const oddAway = parseFloat(document.getElementById('oddAway').value);
-
         if (!roundId) {
             alert('Selecione uma rodada.');
             return;
@@ -310,10 +305,11 @@ document.addEventListener('DOMContentLoaded', () => {
             homeTeam,
             awayTeam,
             odds: {
-                home: oddHome,
-                draw: oddDraw,
-                away: oddAway
+                home: 1,
+                draw: 1,
+                away: 1
             },
+            isBonus: existingMatch ? Boolean(existingMatch.isBonus) : false,
             result: existingMatch ? (existingMatch.result ?? null) : null,
             score: existingMatch ? (existingMatch.score ?? null) : null
         };
@@ -333,6 +329,60 @@ document.addEventListener('DOMContentLoaded', () => {
             alert(editingMatchId ? 'Erro ao atualizar jogo.' : 'Erro ao cadastrar jogo.');
         }
     });
+
+    async function loadScoringSettings() {
+        if (!scoringSettingsForm) return;
+
+        const data = await Storage.getData();
+        const settings = data.scoringSettings || Storage.getDefaultScoringSettings();
+
+        document.getElementById('exactScorePoints').value = settings.exactScorePoints;
+        document.getElementById('nearMissPoints').value = settings.nearMissPoints;
+        document.getElementById('correctResultPoints').value = settings.correctResultPoints;
+        document.getElementById('wrongPoints').value = settings.wrongPoints;
+        document.getElementById('nearMissGoalDiff').value = settings.nearMissGoalDiff;
+        document.getElementById('bonusMultiplier').value = settings.bonusMultiplier;
+        document.getElementById('bonusEnabled').checked = Boolean(settings.bonusEnabled);
+    }
+
+    if (scoringSettingsForm) {
+        scoringSettingsForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const settings = {
+                id: 'default',
+                exactScorePoints: Number(document.getElementById('exactScorePoints').value),
+                nearMissPoints: Number(document.getElementById('nearMissPoints').value),
+                correctResultPoints: Number(document.getElementById('correctResultPoints').value),
+                wrongPoints: Number(document.getElementById('wrongPoints').value),
+                nearMissGoalDiff: Number(document.getElementById('nearMissGoalDiff').value),
+                bonusMultiplier: Number(document.getElementById('bonusMultiplier').value),
+                bonusEnabled: document.getElementById('bonusEnabled').checked
+            };
+
+            const values = [
+                settings.exactScorePoints,
+                settings.nearMissPoints,
+                settings.correctResultPoints,
+                settings.wrongPoints,
+                settings.nearMissGoalDiff,
+                settings.bonusMultiplier
+            ];
+
+            if (values.some(value => !Number.isFinite(value) || value < 0) || settings.bonusMultiplier < 1) {
+                alert('Preencha a pontuacao com valores validos.');
+                return;
+            }
+
+            const success = await Storage.updateScoringSettings(settings);
+            if (success) {
+                Utils.showAlert('Pontuacao atualizada com sucesso!');
+                loadMatches();
+            } else {
+                alert('Erro ao salvar a pontuacao.');
+            }
+        });
+    }
 
     standingForm.addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -439,10 +489,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     </div>
 
                     <div class="mt-3 text-center">
-                        <div class="small text-muted">Odds</div>
-                        <span class="badge bg-primary">${Utils.formatDecimal(match.odds.home)}</span>
-                        <span class="badge bg-secondary">${Utils.formatDecimal(match.odds.draw)}</span>
-                        <span class="badge bg-danger">${Utils.formatDecimal(match.odds.away)}</span>
+                        ${match.isBonus ? '<span class="badge bg-warning text-dark">Jogo bonus 2x</span>' : '<span class="badge bg-light text-dark border">Pontuacao normal</span>'}
+                        <button class="btn btn-sm ${match.isBonus ? 'btn-outline-warning' : 'btn-outline-primary'} ms-2" onclick="toggleBonusMatch('${match.id}')">
+                            ${match.isBonus ? 'Remover bonus' : 'Marcar bonus'}
+                        </button>
                     </div>
 
                     <hr>
@@ -560,6 +610,28 @@ document.addEventListener('DOMContentLoaded', () => {
         } else {
             alert('Erro ao excluir a classificação.');
         }
+    };
+
+    window.toggleBonusMatch = async (matchId) => {
+        const data = await Storage.getData();
+        const selectedMatch = data.matches.find(item => item.id === matchId);
+        if (!selectedMatch) {
+            alert('Jogo nao encontrado.');
+            return;
+        }
+
+        const shouldEnable = !selectedMatch.isBonus;
+        const roundMatches = data.matches.filter(item => item.roundId === selectedMatch.roundId);
+
+        for (const match of roundMatches) {
+            const nextIsBonus = shouldEnable && match.id === matchId;
+            if (Boolean(match.isBonus) !== nextIsBonus) {
+                await Storage.updateMatch({ ...match, isBonus: nextIsBonus });
+            }
+        }
+
+        loadMatches();
+        Utils.showAlert(shouldEnable ? 'Jogo bonus definido para a rodada!' : 'Bonus removido da rodada.');
     };
 
     window.saveMatchScore = async (matchId) => {

@@ -78,8 +78,17 @@ test('Utils.isMatchLocked respects current date and match time', () => {
   assert.equal(fakeDateUtils.isMatchLocked('2026-07-04', '12:01'), false);
 });
 
-test('Ranking.calculate excludes admin and scores users by result odds', () => {
+test('Ranking.calculate excludes admin and scores users by score prediction rules', () => {
   const data = {
+    scoringSettings: {
+      exactScorePoints: 10,
+      nearMissPoints: 7,
+      correctResultPoints: 5,
+      wrongPoints: 0,
+      nearMissGoalDiff: 1,
+      bonusMultiplier: 2,
+      bonusEnabled: true
+    },
     users: [
       { id: 'admin', name: 'Admin', role: 'admin' },
       { id: 'u1', name: 'Daniel', role: 'user' },
@@ -91,30 +100,33 @@ test('Ranking.calculate excludes admin and scores users by result odds', () => {
         homeTeam: 'A',
         awayTeam: 'B',
         result: 'home',
-        odds: { home: 1.5, draw: 3.1, away: 4.2 }
+        score: { home: 2, away: 1 },
+        isBonus: true
       },
       {
         id: 'm2',
         homeTeam: 'C',
         awayTeam: 'D',
         result: 'draw',
-        odds: { home: 2.1, draw: 3.25, away: 3.8 }
+        score: { home: 1, away: 1 }
       }
     ],
     bets: {
-      u1: { m1: { pick: 'home' }, m2: { pick: 'draw' } },
-      u2: { m1: { pick: 'away' } }
+      u1: { m1: { scoreHome: 2, scoreAway: 1 }, m2: { scoreHome: 2, scoreAway: 2 } },
+      u2: { m1: { scoreHome: 1, scoreAway: 0 } }
     }
   };
 
   const ranking = Ranking.calculate(data);
 
   assert.deepEqual(ranking.map((user) => user.id), ['u1', 'u2']);
-  assert.equal(ranking[0].points, 4.75);
+  assert.equal(ranking[0].points, 27);
   assert.equal(ranking[0].hits, 2);
+  assert.equal(ranking[0].exactHits, 1);
+  assert.equal(ranking[0].nearMisses, 1);
   assert.equal(ranking[0].betsCount, 2);
-  assert.equal(ranking[1].points, 0);
-  assert.equal(ranking[1].hits, 0);
+  assert.equal(ranking[1].points, 14);
+  assert.equal(ranking[1].hits, 1);
 });
 
 test('Ranking.calculate counts masked bets without awarding hidden picks', () => {
@@ -126,11 +138,11 @@ test('Ranking.calculate counts masked bets without awarding hidden picks', () =>
         homeTeam: 'A',
         awayTeam: 'B',
         result: 'home',
-        odds: { home: 1.5, draw: 3.1, away: 4.2 }
+        score: { home: 2, away: 1 }
       }
     ],
     bets: {
-      u1: { m1: { pick: null } }
+      u1: { m1: { scoreHome: null, scoreAway: null } }
     }
   };
 
@@ -140,24 +152,24 @@ test('Ranking.calculate counts masked bets without awarding hidden picks', () =>
   assert.equal(user.points, 0);
   assert.equal(user.hits, 0);
   assert.equal(user.history.length, 1);
-  assert.equal(user.history[0].pick, null);
+  assert.equal(user.history[0].betScore, null);
 });
 
 test('Ranking.calculateByRound filters matches by round', () => {
   const data = {
     users: [{ id: 'u1', name: 'Daniel', role: 'user' }],
     matches: [
-      { id: 'm1', roundId: 'r1', homeTeam: 'A', awayTeam: 'B', result: 'home', odds: { home: 2, draw: 3, away: 4 } },
-      { id: 'm2', roundId: 'r2', homeTeam: 'C', awayTeam: 'D', result: 'away', odds: { home: 2, draw: 3, away: 5 } }
+      { id: 'm1', roundId: 'r1', homeTeam: 'A', awayTeam: 'B', result: 'home', score: { home: 2, away: 1 } },
+      { id: 'm2', roundId: 'r2', homeTeam: 'C', awayTeam: 'D', result: 'away', score: { home: 0, away: 1 } }
     ],
     bets: {
-      u1: { m1: { pick: 'home' }, m2: { pick: 'away' } }
+      u1: { m1: { scoreHome: 2, scoreAway: 1 }, m2: { scoreHome: 0, scoreAway: 1 } }
     }
   };
 
   const [roundRanking] = Ranking.calculateByRound(data, 'r2');
 
-  assert.equal(roundRanking.points, 5);
+  assert.equal(roundRanking.points, 10);
   assert.equal(roundRanking.betsCount, 1);
 });
 
@@ -178,6 +190,7 @@ test('Storage maps Supabase match rows to app match shape and back', () => {
     odd_home: '1.75',
     odd_draw: '3.25',
     odd_away: '4.10',
+    is_bonus: true,
     result: 'home',
     score_home: 2,
     score_away: 1
@@ -193,6 +206,7 @@ test('Storage maps Supabase match rows to app match shape and back', () => {
     homeTeam: 'Flamengo',
     awayTeam: 'Palmeiras',
     odds: { home: 1.75, draw: 3.25, away: 4.1 },
+    isBonus: true,
     result: 'home',
     score: { home: 2, away: 1 }
   });
@@ -207,6 +221,7 @@ test('Storage maps Supabase match rows to app match shape and back', () => {
     odd_home: 1.75,
     odd_draw: 3.25,
     odd_away: 4.1,
+    is_bonus: true,
     result: 'home',
     score_home: 2,
     score_away: 1
@@ -219,6 +234,7 @@ test('Storage.getData caches concurrent Supabase reads and returns cloned data',
     rounds: [{ id: 'r1', name: 'Rodada 18', number: 17 }],
     matches: [],
     standings: [],
+    scoring_settings: [{ id: 'default', exact_score_points: 10, near_miss_points: 7, correct_result_points: 5, wrong_points: 0, near_miss_goal_diff: 1, bonus_multiplier: 2, bonus_enabled: true }],
     bets: []
   };
   const calls = { from: 0, rpc: 0 };
@@ -230,6 +246,10 @@ test('Storage.getData caches concurrent Supabase reads and returns cloned data',
     order() {
       return this;
     },
+    eq() {
+      return this;
+    },
+    maybeSingle: async () => ({ data: rows[table][0], error: null }),
     upsert: async () => ({ error: null }),
     then(resolve) {
       resolve({ data: rows[table], error: null });
@@ -254,7 +274,7 @@ test('Storage.getData caches concurrent Supabase reads and returns cloned data',
     cachedStorage.getData()
   ]);
 
-  assert.equal(calls.from, 4);
+  assert.equal(calls.from, 5);
   assert.equal(calls.rpc, 1);
   assert.deepEqual(firstLoad, secondLoad);
 

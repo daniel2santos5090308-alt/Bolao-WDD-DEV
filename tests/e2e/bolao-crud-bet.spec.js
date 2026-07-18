@@ -82,9 +82,6 @@ test.describe.serial('Bolao WDD - fluxo E2E CRUD e aposta', () => {
       await page.locator('#matchTime').fill('20:30');
       await page.locator('#homeTeam').fill(homeTeam);
       await page.locator('#awayTeam').fill(awayTeam);
-      await page.locator('#oddHome').fill('1.80');
-      await page.locator('#oddDraw').fill('3.20');
-      await page.locator('#oddAway').fill('4.50');
       await page.locator('#matchSubmitButton').click();
 
       await expect(page.locator('#matchesList')).toContainText(homeTeam);
@@ -95,7 +92,6 @@ test.describe.serial('Bolao WDD - fluxo E2E CRUD e aposta', () => {
       await expect(page.locator('#matchSubmitButton')).toHaveText('Salvar Alterações');
       await expect(page.locator('#editingMatchId')).not.toHaveValue('');
       await page.locator('#awayTeam').fill(editedAwayTeam);
-      await page.locator('#oddAway').fill('4.80');
       await page.locator('#matchSubmitButton').click();
       await expect(page.locator('#matchesList')).toContainText(editedAwayTeam);
 
@@ -106,8 +102,10 @@ test.describe.serial('Bolao WDD - fluxo E2E CRUD e aposta', () => {
 
       const userMatchCard = page.locator('#matchesContainer .card', { hasText: editedAwayTeam }).first();
       await expect(userMatchCard).toBeVisible();
-      await userMatchCard.locator('label', { hasText: 'Casa' }).click();
-      await expect(userMatchCard.locator('input[id^="bet_home_"]')).toBeChecked();
+      await fillNumberInput(userMatchCard.locator('input[id^="bet_score_home_"]').first(), '2');
+      await fillNumberInput(userMatchCard.locator('input[id^="bet_score_away_"]').first(), '1');
+      await userMatchCard.getByRole('button', { name: 'Salvar Palpite' }).click();
+      await expect(userMatchCard.locator('input[id^="bet_score_home_"]').first()).toHaveValue('2');
 
       await logout(page);
 

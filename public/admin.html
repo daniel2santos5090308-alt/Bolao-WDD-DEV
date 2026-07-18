@@ -89,20 +89,6 @@
                                     <input type="text" id="awayTeam" class="form-control" placeholder="Ex: Palmeiras" required>
                                 </div>
                             </div>
-                            <div class="row g-2 mt-2">
-                                <div class="col-md-4">
-                                    <label class="form-label">Odd Casa</label>
-                                    <input type="number" step="0.01" min="1.01" id="oddHome" class="form-control" placeholder="1.50" required>
-                                </div>
-                                <div class="col-md-4">
-                                    <label class="form-label">Odd Empate</label>
-                                    <input type="number" step="0.01" min="1.01" id="oddDraw" class="form-control" placeholder="3.00" required>
-                                </div>
-                                <div class="col-md-4">
-                                    <label class="form-label">Odd Fora</label>
-                                    <input type="number" step="0.01" min="1.01" id="oddAway" class="form-control" placeholder="2.50" required>
-                                </div>
-                            </div>
                             <div class="mt-3">
                                 <button type="submit" class="btn btn-primary" id="matchSubmitButton">Cadastrar Jogo</button>
                                 <button type="button" class="btn btn-outline-secondary d-none" id="cancelEditMatch">Cancelar Edição</button>
@@ -126,6 +112,47 @@
                     </div>
                 </div>
 
+            </div>
+        </div>
+
+        <div class="card shadow-sm mt-4">
+            <div class="card-header bg-info text-white">Pontuacao do Bolao</div>
+            <div class="card-body">
+                <form id="scoringSettingsForm">
+                    <div class="row g-2 align-items-end">
+                        <div class="col-md-2">
+                            <label class="form-label">Placar exato</label>
+                            <input type="number" min="0" step="0.01" id="exactScorePoints" class="form-control" required>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Na trave</label>
+                            <input type="number" min="0" step="0.01" id="nearMissPoints" class="form-control" required>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Resultado certo</label>
+                            <input type="number" min="0" step="0.01" id="correctResultPoints" class="form-control" required>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Erro</label>
+                            <input type="number" min="0" step="0.01" id="wrongPoints" class="form-control" required>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Trave por gols</label>
+                            <input type="number" min="0" step="1" id="nearMissGoalDiff" class="form-control" required>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Bonus</label>
+                            <input type="number" min="1" step="0.1" id="bonusMultiplier" class="form-control" required>
+                        </div>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mt-3">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" role="switch" id="bonusEnabled">
+                            <label class="form-check-label" for="bonusEnabled">Ativar jogo bonus da rodada</label>
+                        </div>
+                        <button type="submit" class="btn btn-info text-white">Salvar Pontuacao</button>
+                    </div>
+                </form>
             </div>
         </div>
 
@@ -223,9 +250,9 @@
     <script src="assets/js/supabase-init.js?v=3.6"></script>
 
     <script src="assets/js/utils.js?v=3.1"></script>
-    <script src="assets/js/storage-supabase.js?v=3.7"></script>
+    <script src="assets/js/storage-supabase.js?v=4.0"></script>
     <script src="assets/js/auth.js?v=3.6"></script>
     <script src="assets/js/teams.js?v=3.1"></script>
-    <script src="assets/js/admin.js?v=3.1"></script>
+    <script src="assets/js/admin.js?v=4.0"></script>
 </body>
 </html>
