@@ -238,6 +238,7 @@ body {
 .ranking-panel .table td {
     padding: 0.48rem 0.36rem;
     vertical-align: middle;
+    border-color: #e8edf3;
 }
 
 .ranking-panel .table th:first-child,
@@ -585,35 +586,35 @@ body {
 }
 
 .standings-legend__color--lib-group {
-    background-color: rgba(67, 137, 255, 0.14);
+    background-color: #dbeafe;
 }
 
 .standings-legend__color--lib-qual {
-    background-color: rgba(255, 140, 0, 0.16);
+    background-color: #ffedd5;
 }
 
 .standings-legend__color--sula {
-    background-color: rgba(46, 204, 113, 0.16);
+    background-color: #dcfce7;
 }
 
 .standings-legend__color--relegation {
-    background-color: rgba(255, 77, 77, 0.16);
+    background-color: #fee2e2;
 }
 
 .standing-row--lib-group > td {
-    background-color: rgba(67, 137, 255, 0.10) !important;
+    background-color: #eff6ff !important;
 }
 
 .standing-row--lib-qual > td {
-    background-color: rgba(255, 140, 0, 0.11) !important;
+    background-color: #fff7ed !important;
 }
 
 .standing-row--sula > td {
-    background-color: rgba(46, 204, 113, 0.11) !important;
+    background-color: #f0fdf4 !important;
 }
 
 .standing-row--relegation > td {
-    background-color: rgba(255, 77, 77, 0.11) !important;
+    background-color: #fef2f2 !important;
 }
 
 .standing-row--lib-group > td:first-child {
@@ -704,10 +705,101 @@ body {
     --bs-table-striped-bg: #162033;
     --bs-table-bg: var(--wdd-surface);
     --bs-table-color: var(--wdd-ink);
+    --bs-table-border-color: var(--wdd-line);
 }
 
 .theme-dark .table thead th,
 .theme-dark .form-label {
+    color: var(--wdd-ink);
+}
+
+.theme-dark .table tbody td {
+    border-color: var(--wdd-line);
+}
+
+.theme-dark .table-striped > tbody > tr:nth-of-type(odd) > * {
+    --bs-table-bg-type: #151f31;
+    color: var(--wdd-ink);
+}
+
+.theme-dark .table-warning > * {
+    --bs-table-bg-state: #302711;
+    --bs-table-color-state: #fde68a;
+    border-color: #6f5a1a;
+}
+
+.theme-dark .ranking-panel .card-body,
+.theme-dark .ranking-panel .table-responsive {
+    background: var(--wdd-surface);
+}
+
+.theme-dark .ranking-panel .card-header.bg-success {
+    background: #147243 !important;
+}
+
+.theme-dark .ranking-panel .card-header.bg-info {
+    background: #0e7490 !important;
+}
+
+.theme-dark .ranking-name-link {
+    color: #93c5fd;
+}
+
+.theme-dark .ranking-name-link:hover,
+.theme-dark .ranking-name-link:focus {
+    color: #bfdbfe;
+}
+
+.theme-dark .ranking-icon {
+    color: var(--wdd-muted);
+}
+
+.theme-dark .card-header.bg-warning {
+    background: #d99a00 !important;
+    color: #111827 !important;
+}
+
+.theme-dark .standings-legend {
+    background: var(--wdd-surface);
+    color: var(--wdd-ink);
+}
+
+.theme-dark .standings-legend__color--lib-group {
+    background-color: #1d4ed8;
+}
+
+.theme-dark .standings-legend__color--lib-qual {
+    background-color: #b45309;
+}
+
+.theme-dark .standings-legend__color--sula {
+    background-color: #15803d;
+}
+
+.theme-dark .standings-legend__color--relegation {
+    background-color: #b91c1c;
+}
+
+.theme-dark .standing-row--lib-group > td {
+    background-color: rgba(29, 78, 216, 0.20) !important;
+}
+
+.theme-dark .standing-row--lib-qual > td {
+    background-color: rgba(180, 83, 9, 0.20) !important;
+}
+
+.theme-dark .standing-row--sula > td {
+    background-color: rgba(21, 128, 61, 0.20) !important;
+}
+
+.theme-dark .standing-row--relegation > td {
+    background-color: rgba(185, 28, 28, 0.20) !important;
+}
+
+.theme-dark .standing-row--lib-group > td,
+.theme-dark .standing-row--lib-qual > td,
+.theme-dark .standing-row--sula > td,
+.theme-dark .standing-row--relegation > td {
     color: var(--wdd-ink);
 }
 
