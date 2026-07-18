@@ -231,11 +231,39 @@ body {
 }
 
 .ranking-panel .table {
-    font-size: 0.92rem;
+    font-size: 0.84rem;
 }
 
-.ranking-panel .table .btn {
-    white-space: nowrap;
+.ranking-panel .table th,
+.ranking-panel .table td {
+    padding: 0.48rem 0.36rem;
+    vertical-align: middle;
+}
+
+.ranking-panel .table th:first-child,
+.ranking-panel .table td:first-child {
+    width: 30px;
+}
+
+.ranking-panel .table th:nth-child(2),
+.ranking-panel .table td:nth-child(2) {
+    min-width: 88px;
+}
+
+.ranking-name-link {
+    border: 0;
+    background: transparent;
+    color: var(--wdd-blue);
+    font-weight: 750;
+    padding: 0;
+    text-align: left;
+    text-decoration: none;
+}
+
+.ranking-name-link:hover,
+.ranking-name-link:focus {
+    color: #0b5ed7;
+    text-decoration: underline;
 }
 
 .ranking-icon {

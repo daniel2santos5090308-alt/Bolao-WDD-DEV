@@ -6,9 +6,7 @@ const Ranking = {
     getSettings: (data) => ({
         exactScorePoints: 10,
         nearMissPoints: 7,
-        correctResultPoints: 5,
         wrongPoints: 0,
-        nearMissGoalDiff: 1,
         bonusMultiplier: 2,
         bonusEnabled: true,
         ...(data && data.scoringSettings ? data.scoringSettings : {})
@@ -60,10 +58,6 @@ const Ranking = {
 
         const betResult = Ranking.getResultFromScore(betScore);
         const finalResult = Ranking.getResultFromScore(finalScore);
-        const homeDiff = Math.abs(betScore.home - finalScore.home);
-        const awayDiff = Math.abs(betScore.away - finalScore.away);
-        const threshold = Math.max(0, Number(settings.nearMissGoalDiff || 0));
-
         let basePoints = Number(settings.wrongPoints || 0);
         let label = 'Errou';
         let isExact = false;
@@ -75,14 +69,10 @@ const Ranking = {
             label = 'Placar exato';
             isExact = true;
             isCorrectResult = true;
-        } else if (betResult === finalResult && homeDiff <= threshold && awayDiff <= threshold) {
+        } else if (betResult === finalResult) {
             basePoints = Number(settings.nearMissPoints || 0);
             label = 'Na trave';
             isNearMiss = true;
-            isCorrectResult = true;
-        } else if (betResult === finalResult) {
-            basePoints = Number(settings.correctResultPoints || 0);
-            label = 'Resultado certo';
             isCorrectResult = true;
         }
 
@@ -115,7 +105,7 @@ const Ranking = {
             let hits = 0;
             let exactHits = 0;
             let nearMisses = 0;
-            let resultHits = 0;
+            let bonusHits = 0;
             let betsCount = 0;
             const history = [];
             const processedMatches = new Set();
@@ -135,7 +125,7 @@ const Ranking = {
 
                 if (scoreResult.isExact) exactHits++;
                 if (scoreResult.isNearMiss) nearMisses++;
-                if (scoreResult.isCorrectResult) resultHits++;
+                if (match.isBonus && scoreResult.isHit) bonusHits++;
                 if (scoreResult.isHit) hits++;
 
                 history.push({
@@ -166,8 +156,9 @@ const Ranking = {
                 hits,
                 exactHits,
                 nearMisses,
-                resultHits,
+                bonusHits,
                 betsCount,
+                efficiency: betsCount > 0 ? parseFloat((points / betsCount).toFixed(2)) : 0,
                 history
             };
         });
@@ -175,7 +166,10 @@ const Ranking = {
         ranking.sort((a, b) => {
             if (b.points !== a.points) return b.points - a.points;
             if (b.exactHits !== a.exactHits) return b.exactHits - a.exactHits;
-            return b.hits - a.hits;
+            if (b.nearMisses !== a.nearMisses) return b.nearMisses - a.nearMisses;
+            if (b.efficiency !== a.efficiency) return b.efficiency - a.efficiency;
+            if (b.betsCount !== a.betsCount) return b.betsCount - a.betsCount;
+            return String(a.name || '').localeCompare(String(b.name || ''), 'pt-BR');
         });
 
         return ranking;
@@ -193,6 +187,22 @@ const Ranking = {
         return Ranking.calculateForMatches(data, filtered);
     },
 
+    getNameButtonHtml: (user, onClick, title) => `
+        <button type="button" class="ranking-name-link" onclick="${onClick}" title="${Utils.escapeHtml(title)}">
+            ${Utils.escapeHtml(user.name)}
+        </button>
+    `,
+
+    getRankingRowHtml: (user, index, detailsCall, title) => `
+        <td>${index + 1}&ordm;</td>
+        <td>${Ranking.getNameButtonHtml(user, detailsCall, title)}</td>
+        <td class="text-center">${user.points.toFixed(2)}</td>
+        <td class="text-center">${user.exactHits}</td>
+        <td class="text-center">${user.nearMisses}</td>
+        <td class="text-center">${user.bonusHits}</td>
+        <td class="text-center">${user.betsCount}</td>
+    `,
+
     render: async (containerId, providedData = null) => {
         const data = providedData || await Storage.getData();
         const rankingData = Ranking.calculate(data);
@@ -203,26 +213,14 @@ const Ranking = {
         container.innerHTML = '';
 
         if (rankingData.length === 0) {
-            container.innerHTML = '<tr><td colspan="6" class="text-center">Sem dados.</td></tr>';
+            container.innerHTML = '<tr><td colspan="7" class="text-center">Sem dados.</td></tr>';
             return;
         }
 
         rankingData.forEach((r, index) => {
             const tr = document.createElement('tr');
             if (index === 0) tr.classList.add('table-warning', 'fw-bold');
-
-            tr.innerHTML = `
-                <td>${index + 1}º</td>
-                <td>${Utils.escapeHtml(r.name)}</td>
-                <td class="text-center">${r.points.toFixed(2)}</td>
-                <td class="text-center">${r.exactHits}</td>
-                <td class="text-center">${r.betsCount}</td>
-                <td class="text-center">
-                    <button class="btn btn-sm btn-info text-white" onclick="Ranking.showDetails('${r.id}')" title="Ver Extrato">
-                        <i class="bi bi-list-ul"></i> Detalhes
-                    </button>
-                </td>
-            `;
+            tr.innerHTML = Ranking.getRankingRowHtml(r, index, `Ranking.showDetails('${r.id}')`, `Ver extrato de ${r.name}`);
             container.appendChild(tr);
         });
     },
@@ -239,7 +237,7 @@ const Ranking = {
         if (!roundId || roundId === 'all') {
             if (titleEl) titleEl.textContent = 'Selecione uma rodada no filtro acima';
             if (summaryEl) summaryEl.innerHTML = '';
-            container.innerHTML = '<tr><td colspan="6" class="text-center text-muted">Selecione uma rodada para ver o ranking desta rodada.</td></tr>';
+            container.innerHTML = '<tr><td colspan="7" class="text-center text-muted">Selecione uma rodada para ver o ranking desta rodada.</td></tr>';
             window.currentRoundRankingData = [];
             window.currentRoundRankingId = null;
             return;
@@ -255,7 +253,7 @@ const Ranking = {
 
         if (rankingData.length === 0) {
             if (summaryEl) summaryEl.innerHTML = '';
-            container.innerHTML = '<tr><td colspan="6" class="text-center">Sem dados.</td></tr>';
+            container.innerHTML = '<tr><td colspan="7" class="text-center">Sem dados.</td></tr>';
             return;
         }
 
@@ -267,19 +265,7 @@ const Ranking = {
         rankingData.forEach((r, index) => {
             const tr = document.createElement('tr');
             if (index === 0) tr.classList.add('table-warning', 'fw-bold');
-
-            tr.innerHTML = `
-                <td>${index + 1}º</td>
-                <td>${Utils.escapeHtml(r.name)}</td>
-                <td class="text-center">${r.points.toFixed(2)}</td>
-                <td class="text-center">${r.exactHits}</td>
-                <td class="text-center">${r.betsCount}</td>
-                <td class="text-center">
-                    <button class="btn btn-sm btn-info text-white" onclick="Ranking.showRoundDetails('${r.id}')" title="Ver Extrato da Rodada">
-                        <i class="bi bi-list-ul"></i> Detalhes
-                    </button>
-                </td>
-            `;
+            tr.innerHTML = Ranking.getRankingRowHtml(r, index, `Ranking.showRoundDetails('${r.id}')`, `Ver extrato da rodada de ${r.name}`);
             container.appendChild(tr);
         });
     },
@@ -323,7 +309,7 @@ const Ranking = {
                     const canRevealPick = isSelf || isLocked;
                     const pickText = canRevealPick && h.betScore
                         ? `<strong>${Number(h.betScore.home)} x ${Number(h.betScore.away)}</strong>`
-                        : '<em>Oculta ate o inicio do jogo</em>';
+                        : '<em>Oculta até o início do jogo</em>';
                     const finalScoreText = h.finalScore
                         ? `${Number(h.finalScore.home)} x ${Number(h.finalScore.away)}`
                         : 'Aguardando';

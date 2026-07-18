@@ -155,9 +155,9 @@ const Storage = {
         id: settings.id || 'default',
         exact_score_points: Number(settings.exactScorePoints),
         near_miss_points: Number(settings.nearMissPoints),
-        correct_result_points: Number(settings.correctResultPoints),
+        correct_result_points: Number(settings.correctResultPoints ?? settings.nearMissPoints),
         wrong_points: Number(settings.wrongPoints),
-        near_miss_goal_diff: Number(settings.nearMissGoalDiff),
+        near_miss_goal_diff: Number(settings.nearMissGoalDiff ?? 999),
         bonus_multiplier: Number(settings.bonusMultiplier),
         bonus_enabled: Boolean(settings.bonusEnabled),
         updated_at: new Date().toISOString()

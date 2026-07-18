@@ -83,9 +83,7 @@ test('Ranking.calculate excludes admin and scores users by score prediction rule
     scoringSettings: {
       exactScorePoints: 10,
       nearMissPoints: 7,
-      correctResultPoints: 5,
       wrongPoints: 0,
-      nearMissGoalDiff: 1,
       bonusMultiplier: 2,
       bonusEnabled: true
     },
@@ -124,9 +122,44 @@ test('Ranking.calculate excludes admin and scores users by score prediction rule
   assert.equal(ranking[0].hits, 2);
   assert.equal(ranking[0].exactHits, 1);
   assert.equal(ranking[0].nearMisses, 1);
+  assert.equal(ranking[0].bonusHits, 1);
   assert.equal(ranking[0].betsCount, 2);
   assert.equal(ranking[1].points, 14);
   assert.equal(ranking[1].hits, 1);
+  assert.equal(ranking[1].bonusHits, 1);
+});
+
+test('Ranking.calculate applies tie-breakers after points', () => {
+  const data = {
+    users: [
+      { id: 'u1', name: 'Bruno', role: 'user' },
+      { id: 'u2', name: 'Ana', role: 'user' },
+      { id: 'u3', name: 'Carlos', role: 'user' }
+    ],
+    matches: [
+      { id: 'm1', homeTeam: 'A', awayTeam: 'B', result: 'home', score: { home: 2, away: 1 } },
+      { id: 'm2', homeTeam: 'C', awayTeam: 'D', result: 'home', score: { home: 3, away: 1 } }
+    ],
+    scoringSettings: {
+      exactScorePoints: 10,
+      nearMissPoints: 5,
+      wrongPoints: 0,
+      bonusMultiplier: 2,
+      bonusEnabled: true
+    },
+    bets: {
+      u1: { m1: { scoreHome: 1, scoreAway: 0 } },
+      u2: { m2: { scoreHome: 4, scoreAway: 2 } },
+      u3: { m1: { scoreHome: 4, scoreAway: 0 } }
+    }
+  };
+
+  const ranking = Ranking.calculate(data);
+
+  assert.deepEqual(ranking.map((user) => user.id), ['u2', 'u1', 'u3']);
+  assert.equal(ranking[0].nearMisses, 1);
+  assert.equal(ranking[1].nearMisses, 1);
+  assert.equal(ranking[2].nearMisses, 1);
 });
 
 test('Ranking.calculate counts masked bets without awarding hidden picks', () => {

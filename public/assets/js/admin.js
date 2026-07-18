@@ -338,9 +338,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         document.getElementById('exactScorePoints').value = settings.exactScorePoints;
         document.getElementById('nearMissPoints').value = settings.nearMissPoints;
-        document.getElementById('correctResultPoints').value = settings.correctResultPoints;
         document.getElementById('wrongPoints').value = settings.wrongPoints;
-        document.getElementById('nearMissGoalDiff').value = settings.nearMissGoalDiff;
         document.getElementById('bonusMultiplier').value = settings.bonusMultiplier;
         document.getElementById('bonusEnabled').checked = Boolean(settings.bonusEnabled);
     }
@@ -353,9 +351,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 id: 'default',
                 exactScorePoints: Number(document.getElementById('exactScorePoints').value),
                 nearMissPoints: Number(document.getElementById('nearMissPoints').value),
-                correctResultPoints: Number(document.getElementById('correctResultPoints').value),
                 wrongPoints: Number(document.getElementById('wrongPoints').value),
-                nearMissGoalDiff: Number(document.getElementById('nearMissGoalDiff').value),
                 bonusMultiplier: Number(document.getElementById('bonusMultiplier').value),
                 bonusEnabled: document.getElementById('bonusEnabled').checked
             };
@@ -363,9 +359,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const values = [
                 settings.exactScorePoints,
                 settings.nearMissPoints,
-                settings.correctResultPoints,
                 settings.wrongPoints,
-                settings.nearMissGoalDiff,
                 settings.bonusMultiplier
             ];
 
