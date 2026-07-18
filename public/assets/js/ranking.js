@@ -327,12 +327,12 @@ const Ranking = {
                     const finalScoreText = h.finalScore
                         ? `${Number(h.finalScore.home)} x ${Number(h.finalScore.away)}`
                         : 'Aguardando';
-                    const bonusText = h.isBonus && h.multiplier > 1 ? ` | Bonus ${h.multiplier}x` : '';
+                    const bonusText = h.isBonus && h.multiplier > 1 ? ` | Bônus ${h.multiplier}x` : '';
 
                     html += `
                         <div class="list-group-item ${itemClass} d-flex justify-content-between align-items-center">
                             <div>
-                                <div class="fw-bold">${Utils.escapeHtml(h.match)} ${h.isBonus ? '<span class="badge bg-warning text-dark ms-1">Bonus</span>' : ''}</div>
+                                <div class="fw-bold">${Utils.escapeHtml(h.match)} ${h.isBonus ? '<span class="badge bg-warning text-dark ms-1">Bônus</span>' : ''}</div>
                                 <div class="small mt-1">
                                     <span class="me-2">Aposta: ${pickText}</span>
                                     <span>Resultado: <strong>${finalScoreText}</strong></span>

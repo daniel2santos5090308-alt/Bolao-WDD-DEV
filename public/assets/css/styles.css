@@ -354,6 +354,15 @@ body {
     line-height: 1;
 }
 
+.match-card--bonus {
+    border: 2px solid #ffc107 !important;
+    box-shadow: 0 0 0 3px rgba(255, 193, 7, 0.18), 0 8px 18px rgba(33, 37, 41, 0.12);
+}
+
+.match-card--bonus > .card-header {
+    background: #fff8df;
+}
+
 .team-badge--stacked .team-badge__name {
     max-width: 120px;
 }
@@ -366,6 +375,35 @@ body {
 #standingsTableBody td,
 #standingsTableUserBody td {
     vertical-align: middle;
+}
+
+#standingsTableBody tr,
+#standingsTableUserBody tr {
+    border-bottom: 1px solid rgba(33, 37, 41, 0.08);
+}
+
+#standingsTableBody td,
+#standingsTableUserBody td,
+#standingsTableBody th,
+#standingsTableUserBody th {
+    padding: 0.55rem 0.45rem;
+    white-space: nowrap;
+}
+
+#standingsTableBody td:nth-child(2),
+#standingsTableUserBody td:nth-child(2) {
+    min-width: 140px;
+}
+
+#standingsTableBody td:first-child,
+#standingsTableUserBody td:first-child {
+    width: 34px;
+    font-variant-numeric: tabular-nums;
+}
+
+#standingsTableBody td:not(:nth-child(2)),
+#standingsTableUserBody td:not(:nth-child(2)) {
+    font-variant-numeric: tabular-nums;
 }
 
 .standings-legend {
@@ -408,19 +446,19 @@ body {
 }
 
 .standing-row--lib-group > td {
-    background-color: rgba(67, 137, 255, 0.14) !important;
+    background-color: rgba(67, 137, 255, 0.10) !important;
 }
 
 .standing-row--lib-qual > td {
-    background-color: rgba(255, 140, 0, 0.16) !important;
+    background-color: rgba(255, 140, 0, 0.11) !important;
 }
 
 .standing-row--sula > td {
-    background-color: rgba(46, 204, 113, 0.16) !important;
+    background-color: rgba(46, 204, 113, 0.11) !important;
 }
 
 .standing-row--relegation > td {
-    background-color: rgba(255, 77, 77, 0.16) !important;
+    background-color: rgba(255, 77, 77, 0.11) !important;
 }
 
 .standing-row--lib-group > td:first-child {

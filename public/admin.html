@@ -6,7 +6,7 @@
     <title>Bolão WDD - Admin</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
-    <link href="assets/css/styles.css?v=3.2" rel="stylesheet">
+    <link href="assets/css/styles.css?v=4.1" rel="stylesheet">
 </head>
 <body class="app-shell admin-shell">
     
@@ -116,7 +116,7 @@
         </div>
 
         <div class="card shadow-sm mt-4">
-            <div class="card-header bg-info text-white">Pontuacao do Bolao</div>
+            <div class="card-header bg-info text-white">Pontuação do Bolão</div>
             <div class="card-body">
                 <form id="scoringSettingsForm">
                     <div class="row g-2 align-items-end">
@@ -141,16 +141,16 @@
                             <input type="number" min="0" step="1" id="nearMissGoalDiff" class="form-control" required>
                         </div>
                         <div class="col-md-2">
-                            <label class="form-label">Bonus</label>
+                            <label class="form-label">Bônus</label>
                             <input type="number" min="1" step="0.1" id="bonusMultiplier" class="form-control" required>
                         </div>
                     </div>
                     <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mt-3">
                         <div class="form-check form-switch">
                             <input class="form-check-input" type="checkbox" role="switch" id="bonusEnabled">
-                            <label class="form-check-label" for="bonusEnabled">Ativar jogo bonus da rodada</label>
+                            <label class="form-check-label" for="bonusEnabled">Ativar jogo bônus da rodada</label>
                         </div>
-                        <button type="submit" class="btn btn-info text-white">Salvar Pontuacao</button>
+                        <button type="submit" class="btn btn-info text-white">Salvar Pontuação</button>
                     </div>
                 </form>
             </div>
@@ -253,6 +253,6 @@
     <script src="assets/js/storage-supabase.js?v=4.0"></script>
     <script src="assets/js/auth.js?v=3.6"></script>
     <script src="assets/js/teams.js?v=3.1"></script>
-    <script src="assets/js/admin.js?v=4.0"></script>
+    <script src="assets/js/admin.js?v=4.1"></script>
 </body>
 </html>

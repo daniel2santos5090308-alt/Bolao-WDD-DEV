@@ -424,7 +424,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                 resultDisplay = `
                                     <div class="alert alert-success mt-3 mb-0 text-center">
                                         <i class="bi bi-trophy-fill"></i> <strong>${Utils.escapeHtml(scoreResult.label)}</strong><br>
-                                        Voce ganhou <strong>${Number(scoreResult.points).toFixed(2)}</strong> pontos nesta aposta.
+                                        Você ganhou <strong>${Number(scoreResult.points).toFixed(2)}</strong> pontos nesta aposta.
                                     </div>
                                 `;
                             } else {
@@ -439,7 +439,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             resultDisplay = `
                                 <div class="alert alert-secondary mt-3 mb-0 text-center">
                                     Resultado: <strong>${finalScoreText}</strong><br>
-                                    <small>Voce nao apostou neste jogo.</small>
+                                    <small>Você não apostou neste jogo.</small>
                                 </div>
                             `;
                         }
@@ -448,15 +448,18 @@ document.addEventListener('DOMContentLoaded', () => {
                     const betScoreHome = userBet && userBet.scoreHome !== null && userBet.scoreHome !== undefined ? Number(userBet.scoreHome) : '';
                     const betScoreAway = userBet && userBet.scoreAway !== null && userBet.scoreAway !== undefined ? Number(userBet.scoreAway) : '';
                     const userBetText = betScoreHome !== '' && betScoreAway !== '' ? `${betScoreHome} x ${betScoreAway}` : '';
-                    const bonusBadge = match.isBonus ? '<span class="badge bg-warning text-dark ms-2">Bonus 2x</span>' : '';
+                    const bonusBadge = match.isBonus ? '<span class="badge bg-warning text-dark">Bônus 2x</span>' : '';
 
                     const card = document.createElement('div');
                     card.className = `col-md-6 mb-4`;
                     card.innerHTML = `
-                        <div class="card h-100 ${cardClass}">
+                        <div class="card h-100 match-card ${match.isBonus ? 'match-card--bonus' : ''} ${cardClass}">
                             <div class="card-header d-flex justify-content-between align-items-center">
                                 <small class="text-muted">${safeRoundName} | ${safeDateTime}</small>
-                                ${statusBadge}
+                                <div class="d-flex align-items-center gap-2">
+                                    ${match.isBonus ? bonusBadge : ''}
+                                    ${statusBadge}
+                                </div>
                             </div>
                             <div class="card-body text-center">
                                 <div class="match-teams mb-4">
@@ -471,11 +474,6 @@ document.addEventListener('DOMContentLoaded', () => {
                                     ${awayTeamDisplay}
                                 </div>
                                 
-                                <div class="mb-3">
-                                    <span class="badge bg-light text-dark border">Placar exato / Na trave / Resultado certo</span>
-                                    ${bonusBadge}
-                                </div>
-
                                 ${!isLocked ? `
                                     <hr>
                                     <p class="mb-2">Seu Palpite:</p>
@@ -501,7 +499,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                         </div>
                                     ` : `
                                         <div class="alert alert-warning mb-0">
-                                            Voce nao apostou neste jogo.
+                                            Você não apostou neste jogo.
                                         </div>
                                     `}
                                 `}
@@ -556,7 +554,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const scoreAway = parseInt(awayInput ? awayInput.value : '', 10);
 
         if (!Number.isInteger(scoreHome) || scoreHome < 0 || !Number.isInteger(scoreAway) || scoreAway < 0) {
-            alert('Informe um placar valido com numeros inteiros maiores ou iguais a zero.');
+            alert('Informe um placar válido com números inteiros maiores ou iguais a zero.');
             return;
         }
         

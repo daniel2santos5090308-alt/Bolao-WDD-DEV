@@ -370,16 +370,16 @@ document.addEventListener('DOMContentLoaded', () => {
             ];
 
             if (values.some(value => !Number.isFinite(value) || value < 0) || settings.bonusMultiplier < 1) {
-                alert('Preencha a pontuacao com valores validos.');
+                alert('Preencha a pontuação com valores válidos.');
                 return;
             }
 
             const success = await Storage.updateScoringSettings(settings);
             if (success) {
-                Utils.showAlert('Pontuacao atualizada com sucesso!');
+                Utils.showAlert('Pontuação atualizada com sucesso!');
                 loadMatches();
             } else {
-                alert('Erro ao salvar a pontuacao.');
+                alert('Erro ao salvar a pontuação.');
             }
         });
     }
@@ -468,7 +468,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 : match.awayTeam;
 
             const card = document.createElement('div');
-            card.className = `card mb-3 ${isFinished ? 'border-secondary bg-light' : ''}`;
+            card.className = `card mb-3 match-card ${match.isBonus ? 'match-card--bonus' : ''} ${isFinished ? 'border-secondary bg-light' : ''}`;
             card.innerHTML = `
                 <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
                     <small class="text-muted">${safeRoundName} - ${Utils.escapeHtml(Utils.formatDateTime(match.date, match.time))}</small>
@@ -489,9 +489,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     </div>
 
                     <div class="mt-3 text-center">
-                        ${match.isBonus ? '<span class="badge bg-warning text-dark">Jogo bonus 2x</span>' : '<span class="badge bg-light text-dark border">Pontuacao normal</span>'}
+                        ${match.isBonus ? '<span class="badge bg-warning text-dark">Jogo bônus 2x</span>' : '<span class="badge bg-light text-dark border">Pontuação normal</span>'}
                         <button class="btn btn-sm ${match.isBonus ? 'btn-outline-warning' : 'btn-outline-primary'} ms-2" onclick="toggleBonusMatch('${match.id}')">
-                            ${match.isBonus ? 'Remover bonus' : 'Marcar bonus'}
+                            ${match.isBonus ? 'Remover bônus' : 'Marcar bônus'}
                         </button>
                     </div>
 
@@ -616,7 +616,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const data = await Storage.getData();
         const selectedMatch = data.matches.find(item => item.id === matchId);
         if (!selectedMatch) {
-            alert('Jogo nao encontrado.');
+            alert('Jogo não encontrado.');
             return;
         }
 
@@ -631,7 +631,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         loadMatches();
-        Utils.showAlert(shouldEnable ? 'Jogo bonus definido para a rodada!' : 'Bonus removido da rodada.');
+        Utils.showAlert(shouldEnable ? 'Jogo bônus definido para a rodada!' : 'Bônus removido da rodada.');
     };
 
     window.saveMatchScore = async (matchId) => {
