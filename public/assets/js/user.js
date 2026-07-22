@@ -33,6 +33,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     setupTabs();
     setupTheme();
+    setupWelcomeModal();
 
     if (btnRefresh) {
         btnRefresh.addEventListener('click', () => {
@@ -77,6 +78,34 @@ document.addEventListener('DOMContentLoaded', () => {
         btnThemeToggle.innerHTML = theme === 'dark'
             ? '<i class="bi bi-sun"></i>'
             : '<i class="bi bi-moon-stars"></i>';
+    }
+
+    function setupWelcomeModal() {
+        const modalEl = document.getElementById('welcomeModal');
+        const confirmButton = document.getElementById('welcomeModalConfirm');
+        const storageKey = 'bolao_wdd_welcome_prod_2026_07_25_12';
+        const expiresAt = new Date(2026, 6, 25, 12, 0, 0);
+
+        if (!modalEl || new Date() >= expiresAt || typeof bootstrap === 'undefined') return;
+
+        try {
+            if (localStorage.getItem(storageKey) === 'dismissed') return;
+        } catch (error) {
+            console.warn('Nao foi possivel ler a confirmacao do aviso de boas-vindas.', error);
+        }
+
+        const modal = new bootstrap.Modal(modalEl);
+        modal.show();
+
+        if (confirmButton) {
+            confirmButton.addEventListener('click', () => {
+                try {
+                    localStorage.setItem(storageKey, 'dismissed');
+                } catch (error) {
+                    console.warn('Nao foi possivel salvar a confirmacao do aviso de boas-vindas.', error);
+                }
+            }, { once: true });
+        }
     }
 
     function getStandingZone(position) {

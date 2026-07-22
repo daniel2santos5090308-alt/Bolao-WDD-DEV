@@ -59,6 +59,14 @@ async function waitForListRender(page) {
   await page.waitForTimeout(500);
 }
 
+async function dismissWelcomeModal(page) {
+  const welcomeButton = page.getByRole('button', { name: 'Entendi, vamos para os palpites' });
+  if (await welcomeButton.isVisible().catch(() => false)) {
+    await welcomeButton.click();
+    await expect(page.locator('#welcomeModal')).toBeHidden();
+  }
+}
+
 test.describe.serial('Bolao WDD - fluxo E2E CRUD e aposta', () => {
   test.skip(!hasCredentials, 'Configure E2E_ADMIN_PASSWORD e E2E_BETTOR_PASSWORD para rodar os testes E2E.');
 
@@ -98,6 +106,7 @@ test.describe.serial('Bolao WDD - fluxo E2E CRUD e aposta', () => {
       await logout(page);
 
       await login(page, bettorUser, bettorPassword, 'user.html');
+      await dismissWelcomeModal(page);
       await page.locator('#roundFilter').selectOption({ label: roundName });
 
       const userMatchCard = page.locator('#matchesContainer .card', { hasText: editedAwayTeam }).first();
