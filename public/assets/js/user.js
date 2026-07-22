@@ -201,8 +201,8 @@ document.addEventListener('DOMContentLoaded', () => {
         `;
 
         dashboardHighlights.innerHTML = [
-            card('Líder geral', leader ? Utils.escapeHtml(leader.name) : '-', leader ? `${leader.points.toFixed(2)} pts` : 'Sem dados', 'bi-trophy', 'blue'),
-            card('Melhor da rodada', roundBest ? Utils.escapeHtml(roundBest.name) : '-', roundBest ? `${roundBest.points.toFixed(2)} pts` : 'Sem dados', 'bi-star', 'cyan'),
+            card('Líder geral', leader ? Utils.escapeHtml(leader.name) : '-', leader ? `${Ranking.formatPoints(leader.points)} pts` : 'Sem dados', 'bi-trophy', 'blue'),
+            card('Melhor da rodada', roundBest ? Utils.escapeHtml(roundBest.name) : '-', roundBest ? `${Ranking.formatPoints(roundBest.points)} pts` : 'Sem dados', 'bi-star', 'cyan'),
             card('Cravador geral', exactLeader ? Utils.escapeHtml(exactLeader.name) : '-', exactLeader ? `${exactLeader.exactHits} exatos` : 'Sem dados', 'bi-bullseye', 'green'),
             card('Rei da trave', nearLeader ? Utils.escapeHtml(nearLeader.name) : '-', nearLeader ? `${nearLeader.nearMisses} na trave` : 'Sem dados', 'bi-signpost-split', 'yellow')
         ].join('');
@@ -211,11 +211,11 @@ document.addEventListener('DOMContentLoaded', () => {
             <div class="insight-list">
                 <div class="insight-row">
                     <span>Melhor jogador</span>
-                    <strong>${roundBest ? `${Utils.escapeHtml(roundBest.name)} (${roundBest.points.toFixed(2)} pts)` : '-'}</strong>
+                    <strong>${roundBest ? `${Utils.escapeHtml(roundBest.name)} (${Ranking.formatPoints(roundBest.points)} pts)` : '-'}</strong>
                 </div>
                 <div class="insight-row">
                     <span>Maior pontuação em um jogo</span>
-                    <strong>${bestSingleGame ? `${Utils.escapeHtml(bestSingleGame.user ? bestSingleGame.user.name : '-')} - ${bestSingleGame.points.toFixed(2)} pts` : '-'}</strong>
+                    <strong>${bestSingleGame ? `${Utils.escapeHtml(bestSingleGame.user ? bestSingleGame.user.name : '-')} - ${Ranking.formatPoints(bestSingleGame.points)} pts` : '-'}</strong>
                 </div>
                 <div class="insight-row">
                     <span>Placares exatos na rodada</span>
@@ -589,7 +589,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                 resultDisplay = `
                                     <div class="alert alert-success mt-3 mb-0 text-center">
                                         <i class="bi bi-trophy-fill"></i> <strong>${Utils.escapeHtml(scoreResult.label)}</strong><br>
-                                        Você ganhou <strong>${Number(scoreResult.points).toFixed(2)}</strong> pontos nesta aposta.
+                                        Você ganhou <strong>${Ranking.formatPoints(scoreResult.points)}</strong> pontos nesta aposta.
                                     </div>
                                 `;
                             } else {

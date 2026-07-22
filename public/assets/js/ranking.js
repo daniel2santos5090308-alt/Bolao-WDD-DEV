@@ -193,10 +193,19 @@ const Ranking = {
         </button>
     `,
 
+    formatPoints: (value) => {
+        const number = Number(value || 0);
+        if (!Number.isFinite(number)) return '0';
+        return new Intl.NumberFormat('pt-BR', {
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 2
+        }).format(number);
+    },
+
     getRankingRowHtml: (user, index, detailsCall, title) => `
         <td>${index + 1}&ordm;</td>
         <td>${Ranking.getNameButtonHtml(user, detailsCall, title)}</td>
-        <td class="text-center">${user.points.toFixed(2)}</td>
+        <td class="text-center">${Ranking.formatPoints(user.points)}</td>
         <td class="text-center">${user.exactHits}</td>
         <td class="text-center">${user.nearMisses}</td>
         <td class="text-center">${user.bonusHits}</td>
@@ -259,7 +268,7 @@ const Ranking = {
 
         const best = rankingData[0];
         if (summaryEl) {
-            summaryEl.innerHTML = `<span class="fw-bold">Melhor da rodada:</span> ${Utils.escapeHtml(best.name)} (${best.points.toFixed(2)} pts)`;
+            summaryEl.innerHTML = `<span class="fw-bold">Melhor da rodada:</span> ${Utils.escapeHtml(best.name)} (${Ranking.formatPoints(best.points)} pts)`;
         }
 
         rankingData.forEach((r, index) => {
@@ -287,7 +296,7 @@ const Ranking = {
                     <div class="participant-summary">
                         <div>
                             <span>Pontos</span>
-                            <strong>${user.points.toFixed(2)}</strong>
+                            <strong>${Ranking.formatPoints(user.points)}</strong>
                         </div>
                         <div>
                             <span>Exatos</span>
@@ -322,11 +331,11 @@ const Ranking = {
                     } else if (h.isHit) {
                         itemClass = 'list-group-item-success';
                         icon = `<span class="badge bg-success">${Utils.escapeHtml(h.label || 'Acertou')}</span>`;
-                        pointsText = `+${h.points.toFixed(2)}`;
+                        pointsText = `+${Ranking.formatPoints(h.points)}`;
                     } else {
                         itemClass = 'list-group-item-danger';
                         icon = '<span class="badge bg-danger">Errou</span>';
-                        pointsText = Number(h.points || 0).toFixed(2);
+                        pointsText = Ranking.formatPoints(h.points);
                     }
 
                     const isLocked = h.time ? Utils.isMatchLocked(h.date, h.time) : h.isFinished;
@@ -347,7 +356,7 @@ const Ranking = {
                                     <span class="me-2">Aposta: ${pickText}</span>
                                     <span>Resultado: <strong>${finalScoreText}</strong></span>
                                 </div>
-                                ${h.isFinished ? `<div class="small ${h.isHit ? 'text-success' : 'text-muted'}">${Utils.escapeHtml(h.label || 'Resultado')} | Base: ${Number(h.basePoints || 0).toFixed(2)}${bonusText} | Ganhou: +${Number(h.points || 0).toFixed(2)}</div>` : ''}
+                                ${h.isFinished ? `<div class="small ${h.isHit ? 'text-success' : 'text-muted'}">${Utils.escapeHtml(h.label || 'Resultado')} | Base: ${Ranking.formatPoints(h.basePoints)}${bonusText} | Ganhou: +${Ranking.formatPoints(h.points)}</div>` : ''}
                             </div>
                             <div class="text-end">
                                 <div>${icon}</div>

@@ -206,6 +206,13 @@ test('Ranking.calculateByRound filters matches by round', () => {
   assert.equal(roundRanking.betsCount, 1);
 });
 
+test('Ranking.formatPoints omits unnecessary decimal zeros', () => {
+  assert.equal(Ranking.formatPoints(50), '50');
+  assert.equal(Ranking.formatPoints(103.00), '103');
+  assert.equal(Ranking.formatPoints(10.5), '10,5');
+  assert.equal(Ranking.formatPoints(7.25), '7,25');
+});
+
 test('Storage.getLoginEmail keeps emails and maps usernames to bolao.local', () => {
   assert.equal(Storage.getLoginEmail('daniel'), 'daniel@bolao.local');
   assert.equal(Storage.getLoginEmail('Daniel'), 'daniel@bolao.local');
