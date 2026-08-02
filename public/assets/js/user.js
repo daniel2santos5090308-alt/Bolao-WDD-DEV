@@ -761,6 +761,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const success = await Storage.saveBet(currentUser.id, matchId, betValue);
         
         if (success) {
+            Utils.showAlert(`Palpite salvo com sucesso: ${scoreHome} x ${scoreAway}.`);
             renderMatches();
         } else {
             alert('Erro ao salvar aposta.');
