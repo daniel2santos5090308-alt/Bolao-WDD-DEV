@@ -4,7 +4,8 @@
   "description": "Sistema de Bolao do Campeonato Brasileiro",
   "private": true,
   "scripts": {
-    "start": "python -m http.server 4173 -d public",
+    "write-env": "node scripts/write-runtime-config.js",
+    "start": "npm run write-env && python -m http.server 4173 -d public",
     "test": "node --test \"tests/*.test.js\"",
     "test:e2e": "playwright test",
     "test:e2e:headed": "playwright test --headed",

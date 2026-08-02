@@ -67,6 +67,7 @@ node_modules/
 # dotenv environment variables file
 .env
 .env.*
+!.env.example
 !.env.e2e.example
 
 # Local data exports and migration payloads

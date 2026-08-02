@@ -1,11 +1,13 @@
 ﻿/**
  * Configuração do Supabase.
  *
- * Preencha SUPABASE_URL e SUPABASE_ANON_KEY com os valores do projeto:
- * Supabase > Project Settings > API.
+ * Em producao/DEV no Netlify, os valores vem de runtime-config.js,
+ * gerado a partir das variaveis SUPABASE_URL e SUPABASE_ANON_KEY.
  */
-const SUPABASE_URL = 'https://iwsmofannnpgeikgwxio.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml3c21vZmFubm5wZ2Vpa2d3eGlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMxMTU0NTgsImV4cCI6MjA5ODY5MTQ1OH0.kgNcr9MNSYPZ85wi12YEa-IOZ_SwWNLxbu60fNM0eo4';
+const runtimeConfig = window.BOLAO_RUNTIME_CONFIG || {};
+const SUPABASE_URL = runtimeConfig.SUPABASE_URL || '';
+const SUPABASE_ANON_KEY = runtimeConfig.SUPABASE_ANON_KEY || '';
+const APP_ENV = runtimeConfig.APP_ENV || 'local';
 
 let supabaseClient;
 
@@ -14,8 +16,12 @@ try {
         throw new Error('SDK do Supabase não carregado.');
     }
 
+    if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+        throw new Error('SUPABASE_URL e SUPABASE_ANON_KEY não configurados.');
+    }
+
     supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-    console.log('Supabase inicializado com sucesso!');
+    console.log(`Supabase inicializado com sucesso (${APP_ENV}).`);
 } catch (error) {
     console.error('Erro ao inicializar Supabase.', error);
     alert('Erro: configuração do Supabase não encontrada ou inválida. Verifique o console.');
