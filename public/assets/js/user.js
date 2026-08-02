@@ -683,6 +683,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                         </div>
                                         <div class="col-12">
                                             <button type="button" class="btn btn-primary w-100" onclick="placeScoreBet('${match.id}')">Salvar Palpite</button>
+                                            <div class="bet-feedback alert alert-success d-none mt-2 mb-0 py-2" id="bet_feedback_${match.id}" role="status"></div>
                                         </div>
                                     </div>
                                 ` : `
@@ -731,6 +732,24 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    function showBetFeedback(matchId, type, message) {
+        const feedback = document.getElementById(`bet_feedback_${matchId}`);
+        if (!feedback) {
+            alert(message);
+            return;
+        }
+
+        feedback.className = `bet-feedback alert alert-${type} mt-2 mb-0 py-2`;
+        feedback.textContent = message;
+
+        if (feedback.hideTimer) clearTimeout(feedback.hideTimer);
+        if (type === 'success') {
+            feedback.hideTimer = setTimeout(() => {
+                feedback.classList.add('d-none');
+            }, 5000);
+        }
+    }
+
     window.placeScoreBet = async (matchId) => {
         const data = await Storage.getData();
         const match = data.matches.find(m => m.id === matchId);
@@ -748,7 +767,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const scoreAway = parseInt(awayInput ? awayInput.value : '', 10);
 
         if (!Number.isInteger(scoreHome) || scoreHome < 0 || !Number.isInteger(scoreAway) || scoreAway < 0) {
-            alert('Informe um placar válido com números inteiros maiores ou iguais a zero.');
+            showBetFeedback(matchId, 'warning', 'Informe um placar válido com números inteiros maiores ou iguais a zero.');
             return;
         }
         
@@ -761,10 +780,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const success = await Storage.saveBet(currentUser.id, matchId, betValue);
         
         if (success) {
-            Utils.showAlert(`Palpite salvo com sucesso: ${scoreHome} x ${scoreAway}.`);
-            renderMatches();
+            showBetFeedback(matchId, 'success', `Palpite salvo com sucesso: ${scoreHome} x ${scoreAway}.`);
         } else {
-            alert('Erro ao salvar aposta.');
+            showBetFeedback(matchId, 'danger', 'Erro ao salvar aposta. Tente novamente.');
         }
     };
 
