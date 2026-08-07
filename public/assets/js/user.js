@@ -524,8 +524,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 try {
                     await Ranking.render('homeRankingTableBody', data);
                     renderHomeRoundRanking(data, selectedRoundId);
-                    await Ranking.render('rankingTableBody', data);
-                    await Ranking.renderRound('rankingRoundTableBody', selectedRoundId, data);
                     renderDashboard(data, selectedRoundId);
                 } catch (rankingError) {
                     console.error("Erro ao renderizar ranking:", rankingError);

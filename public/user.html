@@ -30,9 +30,6 @@
                         <button class="nav-link active" type="button" data-tab-target="tabGames">Jogos</button>
                     </li>
                     <li class="nav-item" role="presentation">
-                        <button class="nav-link" type="button" data-tab-target="tabRanking">Ranking</button>
-                    </li>
-                    <li class="nav-item" role="presentation">
                         <button class="nav-link" type="button" data-tab-target="tabDashboard">Dashboard</button>
                     </li>
                     <li class="nav-item" role="presentation">
@@ -107,72 +104,6 @@
                                 </thead>
                                 <tbody id="homeRankingTableBody"></tbody>
                             </table>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <section id="tabRanking" class="tab-panel">
-            <div class="row g-4">
-                <div class="col-xl-6">
-                    <div class="card ranking-panel section-card shadow-sm h-100">
-                        <div class="card-header bg-info text-white">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <h5 class="mb-0">Ranking da Rodada</h5>
-                                <span class="small" id="roundRankingTitle"></span>
-                            </div>
-                        </div>
-                        <div class="card-body p-0">
-                            <div class="p-2 small text-center" id="roundRankingSummary"></div>
-                            <div class="table-responsive">
-                                <table class="table table-striped mb-0">
-                                    <thead>
-                                        <tr>
-                                            <th>#</th>
-                                            <th>Nome</th>
-                                            <th class="text-center">Pts</th>
-                                            <th class="text-center" title="Placares exatos">Exa.</th>
-                                            <th class="text-center" title="Na trave">Trav.</th>
-                                            <th class="text-center" title="Acertos em jogos bônus">Bôn.</th>
-                                            <th class="text-center" title="Jogos apostados">Apostas</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="rankingRoundTableBody"></tbody>
-                                </table>
-                            </div>
-                            <div class="p-2 text-muted small text-center">
-                                Clique no nome para ver detalhes. Desempate: pontos, exatos, trave, aproveitamento, apostas e nome.
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-xl-6">
-                    <div class="card ranking-panel section-card shadow-sm h-100">
-                        <div class="card-header bg-success text-white">
-                            <h5 class="mb-0">Ranking Geral</h5>
-                        </div>
-                        <div class="card-body p-0">
-                            <div class="table-responsive">
-                                <table class="table table-striped mb-0">
-                                    <thead>
-                                        <tr>
-                                            <th>#</th>
-                                            <th>Nome</th>
-                                            <th class="text-center">Pts</th>
-                                            <th class="text-center" title="Placares exatos">Exa.</th>
-                                            <th class="text-center" title="Na trave">Trav.</th>
-                                            <th class="text-center" title="Acertos em jogos bônus">Bôn.</th>
-                                            <th class="text-center" title="Jogos apostados">Apostas</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="rankingTableBody"></tbody>
-                                </table>
-                            </div>
-                            <div class="p-2 text-muted small text-center">
-                                Clique no nome para ver detalhes. Desempate: pontos, exatos, trave, aproveitamento, apostas e nome.
-                            </div>
                         </div>
                     </div>
                 </div>
@@ -315,7 +246,7 @@
     <script src="assets/js/auth.js?v=3.6"></script>
     <script src="assets/js/ranking.js?v=4.4"></script>
     <script src="assets/js/teams.js?v=3.1"></script>
-    <script src="assets/js/user.js?v=5.0"></script>
+    <script src="assets/js/user.js?v=5.1"></script>
 
     <div class="container mt-5 pt-5 text-center text-muted small">
         <hr>
