@@ -480,6 +480,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (typeof Ranking !== 'undefined') {
                 try {
+                    await Ranking.render('homeRankingTableBody', data);
                     await Ranking.render('rankingTableBody', data);
                     await Ranking.renderRound('rankingRoundTableBody', selectedRoundId, data);
                     renderDashboard(data, selectedRoundId);

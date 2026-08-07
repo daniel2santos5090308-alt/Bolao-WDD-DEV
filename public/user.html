@@ -50,15 +50,42 @@
         </div>
 
         <section id="tabGames" class="tab-panel active">
-            <div class="card dashboard-panel section-card shadow-sm mb-4">
-                <div class="card-header bg-white">
-                    <h5 class="mb-0">Jogos e Apostas</h5>
+            <div class="row g-4">
+                <div class="col-xl-8">
+                    <div class="card dashboard-panel section-card shadow-sm mb-4">
+                        <div class="card-header bg-white">
+                            <h5 class="mb-0">Jogos e Apostas</h5>
+                        </div>
+                        <div class="card-body bg-light">
+                            <div id="matchesContainer" class="row"></div>
+                            <nav class="d-flex justify-content-center" aria-label="Paginação de jogos">
+                                <ul id="matchesPagination" class="pagination mb-0"></ul>
+                            </nav>
+                        </div>
+                    </div>
                 </div>
-                <div class="card-body bg-light">
-                    <div id="matchesContainer" class="row"></div>
-                    <nav class="d-flex justify-content-center" aria-label="Paginação de jogos">
-                        <ul id="matchesPagination" class="pagination mb-0"></ul>
-                    </nav>
+                <div class="col-xl-4">
+                    <div class="card ranking-panel section-card shadow-sm mb-4">
+                        <div class="card-header bg-success text-white">
+                            <h5 class="mb-0">Ranking Geral</h5>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table table-sm mb-0 align-middle">
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Nome</th>
+                                        <th class="text-center">Pts</th>
+                                        <th class="text-center" title="Placares exatos">PE</th>
+                                        <th class="text-center" title="Na trave">NT</th>
+                                        <th class="text-center" title="Acertos em jogos bônus">B</th>
+                                        <th class="text-center" title="Jogos apostados">J</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="homeRankingTableBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
                 </div>
             </div>
         </section>
@@ -265,7 +292,7 @@
     <script src="assets/js/auth.js?v=3.6"></script>
     <script src="assets/js/ranking.js?v=4.4"></script>
     <script src="assets/js/teams.js?v=3.1"></script>
-    <script src="assets/js/user.js?v=4.8"></script>
+    <script src="assets/js/user.js?v=4.9"></script>
 
     <div class="container mt-5 pt-5 text-center text-muted small">
         <hr>
