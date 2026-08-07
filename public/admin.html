@@ -120,6 +120,57 @@
             </div>
         </div>
 
+        <div class="row g-3 mt-1">
+            <div class="col-lg-6">
+                <div class="card ranking-panel section-card shadow-sm h-100">
+                    <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">Ranking da Rodada</h5>
+                        <span class="small" id="roundRankingTitle"></span>
+                    </div>
+                    <div class="p-2 small text-center" id="roundRankingSummary"></div>
+                    <div class="table-responsive">
+                        <table class="table table-sm mb-0 align-middle">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Nome</th>
+                                    <th class="text-center">Pts</th>
+                                    <th class="text-center"><span title="Placar exato">PE</span></th>
+                                    <th class="text-center"><span title="Na trave">NT</span></th>
+                                    <th class="text-center"><span title="Jogos bonus">B</span></th>
+                                    <th class="text-center"><span title="Jogos apostados">J</span></th>
+                                </tr>
+                            </thead>
+                            <tbody id="adminRankingRoundTableBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-6">
+                <div class="card ranking-panel section-card shadow-sm h-100">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="mb-0">Ranking Geral</h5>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-sm mb-0 align-middle">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Nome</th>
+                                    <th class="text-center">Pts</th>
+                                    <th class="text-center"><span title="Placar exato">PE</span></th>
+                                    <th class="text-center"><span title="Na trave">NT</span></th>
+                                    <th class="text-center"><span title="Jogos bonus">B</span></th>
+                                    <th class="text-center"><span title="Jogos apostados">J</span></th>
+                                </tr>
+                            </thead>
+                            <tbody id="adminRankingTableBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <div class="card shadow-sm mt-4">
             <div class="card-header bg-info text-white">Pontuação do Bolão</div>
             <div class="card-body">
@@ -280,7 +331,23 @@
         </div>
     </div>
 
+    <div class="modal fade" id="rankingModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="rankingModalTitle">Extrato de Pontos</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                </div>
+                <div class="modal-body" id="rankingModalBody"></div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Supabase SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="assets/js/runtime-config.js?v=1.0"></script>
     <script src="assets/js/supabase-init.js?v=3.7"></script>
@@ -288,7 +355,8 @@
     <script src="assets/js/utils.js?v=3.1"></script>
     <script src="assets/js/storage-supabase.js?v=4.2"></script>
     <script src="assets/js/auth.js?v=3.6"></script>
+    <script src="assets/js/ranking.js?v=4.4"></script>
     <script src="assets/js/teams.js?v=3.1"></script>
-    <script src="assets/js/admin.js?v=4.5"></script>
+    <script src="assets/js/admin.js?v=4.6"></script>
 </body>
 </html>
