@@ -209,6 +209,44 @@
                 </form>
             </div>
             <div class="card-body border-top">
+                <div class="mb-4">
+                    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
+                        <div>
+                            <h6 class="mb-1">Atualização em lote via CSV</h6>
+                            <div class="text-muted small">
+                                Cole a classificação completa e salve todos os times de uma vez.
+                            </div>
+                        </div>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" id="standingCsvSampleButton">
+                            Usar modelo
+                        </button>
+                    </div>
+                    <textarea id="standingCsvInput" class="form-control font-monospace" rows="6" spellcheck="false" placeholder="position;team;points;played;wins;draws;losses;goals_for;goals_against;goal_diff"></textarea>
+                    <div class="d-flex align-items-center flex-wrap gap-2 mt-2">
+                        <button type="button" class="btn btn-outline-primary" id="previewStandingsCsvButton">Pré-visualizar CSV</button>
+                        <button type="button" class="btn btn-success d-none" id="saveStandingsCsvButton">Salvar classificação em lote</button>
+                        <span class="small text-muted" id="standingCsvStatus"></span>
+                    </div>
+                    <div class="table-responsive mt-3 d-none" id="standingCsvPreviewWrapper">
+                        <table class="table table-sm table-striped align-middle mb-0">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Time</th>
+                                    <th class="text-center">Pts</th>
+                                    <th class="text-center">J</th>
+                                    <th class="text-center">V</th>
+                                    <th class="text-center">E</th>
+                                    <th class="text-center">D</th>
+                                    <th class="text-center">GP</th>
+                                    <th class="text-center">GC</th>
+                                    <th class="text-center">SG</th>
+                                </tr>
+                            </thead>
+                            <tbody id="standingCsvPreviewBody"></tbody>
+                        </table>
+                    </div>
+                </div>
                 <div class="standings-legend pb-3">
                     <div class="standings-legend__title">Qualificação/Rebaixamento</div>
                     <div class="standings-legend__item"><span class="standings-legend__color standings-legend__color--lib-group"></span> Fase de grupos da CONMEBOL Libertadores</div>
@@ -251,6 +289,6 @@
     <script src="assets/js/storage-supabase.js?v=4.2"></script>
     <script src="assets/js/auth.js?v=3.6"></script>
     <script src="assets/js/teams.js?v=3.1"></script>
-    <script src="assets/js/admin.js?v=4.2"></script>
+    <script src="assets/js/admin.js?v=4.3"></script>
 </body>
 </html>

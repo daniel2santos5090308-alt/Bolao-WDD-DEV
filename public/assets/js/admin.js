@@ -34,8 +34,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const standingSubmitButton = document.getElementById('standingSubmitButton');
     const cancelEditMatchButton = document.getElementById('cancelEditMatch');
     const cancelEditStandingButton = document.getElementById('cancelEditStanding');
+    const standingCsvInput = document.getElementById('standingCsvInput');
+    const standingCsvSampleButton = document.getElementById('standingCsvSampleButton');
+    const previewStandingsCsvButton = document.getElementById('previewStandingsCsvButton');
+    const saveStandingsCsvButton = document.getElementById('saveStandingsCsvButton');
+    const standingCsvStatus = document.getElementById('standingCsvStatus');
+    const standingCsvPreviewWrapper = document.getElementById('standingCsvPreviewWrapper');
+    const standingCsvPreviewBody = document.getElementById('standingCsvPreviewBody');
 
     const resultMap = { home: 'Casa', draw: 'Empate', away: 'Visitante' };
+    let parsedStandingsCsvRows = [];
 
     loadRounds();
     loadMatches();
@@ -78,6 +86,155 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function getGoalDifference(goalsFor, goalsAgainst) {
         return goalsFor - goalsAgainst;
+    }
+
+    function normalizeStandingTeamName(team) {
+        return String(team || '').trim().toLocaleLowerCase('pt-BR');
+    }
+
+    function detectCsvDelimiter(line) {
+        const delimiters = [';', ',', '\t'];
+        return delimiters
+            .map(delimiter => ({ delimiter, count: line.split(delimiter).length }))
+            .sort((a, b) => b.count - a.count)[0].delimiter;
+    }
+
+    function parseCsvLine(line, delimiter) {
+        const result = [];
+        let current = '';
+        let inQuotes = false;
+
+        for (let i = 0; i < line.length; i++) {
+            const char = line[i];
+            const next = line[i + 1];
+
+            if (char === '"' && inQuotes && next === '"') {
+                current += '"';
+                i++;
+                continue;
+            }
+
+            if (char === '"') {
+                inQuotes = !inQuotes;
+                continue;
+            }
+
+            if (char === delimiter && !inQuotes) {
+                result.push(current.trim());
+                current = '';
+                continue;
+            }
+
+            current += char;
+        }
+
+        result.push(current.trim());
+        return result;
+    }
+
+    function parseIntegerField(value, label, lineNumber) {
+        const normalized = String(value || '').trim();
+        const number = parseInt(normalized, 10);
+        if (!Number.isInteger(number) || number < 0 || String(number) !== normalized) {
+            throw new Error(`Linha ${lineNumber}: ${label} deve ser um número inteiro maior ou igual a zero.`);
+        }
+        return number;
+    }
+
+    function parseStandingsCsv(csvText) {
+        const lines = String(csvText || '')
+            .split(/\r?\n/)
+            .map(line => line.trim())
+            .filter(Boolean);
+
+        if (lines.length < 2) {
+            throw new Error('Informe o cabeçalho e pelo menos uma linha de classificação.');
+        }
+
+        const delimiter = detectCsvDelimiter(lines[0]);
+        const headers = parseCsvLine(lines[0], delimiter).map(header => header.trim().toLowerCase());
+        const requiredHeaders = [
+            'position',
+            'team',
+            'points',
+            'played',
+            'wins',
+            'draws',
+            'losses',
+            'goals_for',
+            'goals_against',
+            'goal_diff'
+        ];
+
+        const missing = requiredHeaders.filter(header => !headers.includes(header));
+        if (missing.length > 0) {
+            throw new Error(`Cabeçalho incompleto. Campos ausentes: ${missing.join(', ')}.`);
+        }
+
+        const headerIndex = Object.fromEntries(headers.map((header, index) => [header, index]));
+        const seenPositions = new Set();
+        const seenTeams = new Set();
+
+        return lines.slice(1).map((line, index) => {
+            const lineNumber = index + 2;
+            const fields = parseCsvLine(line, delimiter);
+            const team = String(fields[headerIndex.team] || '').trim();
+
+            if (!team) {
+                throw new Error(`Linha ${lineNumber}: time é obrigatório.`);
+            }
+
+            const standing = {
+                position: parseIntegerField(fields[headerIndex.position], 'position', lineNumber),
+                team,
+                points: parseIntegerField(fields[headerIndex.points], 'points', lineNumber),
+                played: parseIntegerField(fields[headerIndex.played], 'played', lineNumber),
+                wins: parseIntegerField(fields[headerIndex.wins], 'wins', lineNumber),
+                draws: parseIntegerField(fields[headerIndex.draws], 'draws', lineNumber),
+                losses: parseIntegerField(fields[headerIndex.losses], 'losses', lineNumber),
+                goalsFor: parseIntegerField(fields[headerIndex.goals_for], 'goals_for', lineNumber),
+                goalsAgainst: parseIntegerField(fields[headerIndex.goals_against], 'goals_against', lineNumber),
+                goalDiff: parseInt(fields[headerIndex.goal_diff], 10)
+            };
+
+            if (!Number.isInteger(standing.goalDiff)) {
+                throw new Error(`Linha ${lineNumber}: goal_diff deve ser um número inteiro.`);
+            }
+
+            if (seenPositions.has(standing.position)) {
+                throw new Error(`Linha ${lineNumber}: posição duplicada (${standing.position}).`);
+            }
+
+            const normalizedTeam = normalizeStandingTeamName(team);
+            if (seenTeams.has(normalizedTeam)) {
+                throw new Error(`Linha ${lineNumber}: time duplicado (${team}).`);
+            }
+
+            seenPositions.add(standing.position);
+            seenTeams.add(normalizedTeam);
+            return standing;
+        }).sort((a, b) => a.position - b.position);
+    }
+
+    function renderStandingsCsvPreview(rows) {
+        if (!standingCsvPreviewWrapper || !standingCsvPreviewBody) return;
+
+        standingCsvPreviewBody.innerHTML = rows.map(row => `
+            <tr>
+                <td>${row.position}</td>
+                <td>${Utils.escapeHtml(row.team)}</td>
+                <td class="text-center">${row.points}</td>
+                <td class="text-center">${row.played}</td>
+                <td class="text-center">${row.wins}</td>
+                <td class="text-center">${row.draws}</td>
+                <td class="text-center">${row.losses}</td>
+                <td class="text-center">${row.goalsFor}</td>
+                <td class="text-center">${row.goalsAgainst}</td>
+                <td class="text-center">${row.goalDiff}</td>
+            </tr>
+        `).join('');
+
+        standingCsvPreviewWrapper.classList.remove('d-none');
     }
 
     function getStandingZone(position) {
@@ -452,6 +609,99 @@ document.addEventListener('DOMContentLoaded', () => {
             alert(editingStandingId ? 'Erro ao atualizar a classificação.' : 'Erro ao cadastrar a classificação.');
         }
     });
+
+    if (standingCsvSampleButton && standingCsvInput) {
+        standingCsvSampleButton.addEventListener('click', () => {
+            standingCsvInput.value = [
+                'position;team;points;played;wins;draws;losses;goals_for;goals_against;goal_diff',
+                '1;Palmeiras;41;18;12;5;1;30;13;17',
+                '2;Flamengo;34;17;10;4;3;28;13;15'
+            ].join('\n');
+            parsedStandingsCsvRows = [];
+            if (standingCsvPreviewWrapper) standingCsvPreviewWrapper.classList.add('d-none');
+            if (saveStandingsCsvButton) saveStandingsCsvButton.classList.add('d-none');
+            if (standingCsvStatus) standingCsvStatus.textContent = 'Modelo inserido. Substitua pelos dados completos antes de salvar.';
+        });
+    }
+
+    if (previewStandingsCsvButton && standingCsvInput) {
+        previewStandingsCsvButton.addEventListener('click', () => {
+            try {
+                parsedStandingsCsvRows = parseStandingsCsv(standingCsvInput.value);
+                renderStandingsCsvPreview(parsedStandingsCsvRows);
+                if (saveStandingsCsvButton) saveStandingsCsvButton.classList.remove('d-none');
+                if (standingCsvStatus) {
+                    standingCsvStatus.textContent = `${parsedStandingsCsvRows.length} linhas validadas. Confira a prévia antes de salvar.`;
+                    standingCsvStatus.className = 'small text-muted';
+                }
+            } catch (error) {
+                parsedStandingsCsvRows = [];
+                if (standingCsvPreviewWrapper) standingCsvPreviewWrapper.classList.add('d-none');
+                if (saveStandingsCsvButton) saveStandingsCsvButton.classList.add('d-none');
+                if (standingCsvStatus) {
+                    standingCsvStatus.textContent = error.message;
+                    standingCsvStatus.className = 'small text-danger';
+                }
+            }
+        });
+    }
+
+    if (saveStandingsCsvButton) {
+        saveStandingsCsvButton.addEventListener('click', async () => {
+            if (!parsedStandingsCsvRows.length) {
+                alert('Pré-visualize um CSV válido antes de salvar.');
+                return;
+            }
+
+            if (parsedStandingsCsvRows.length < 20 && !confirm(`O CSV possui ${parsedStandingsCsvRows.length} times. Deseja salvar mesmo assim?`)) {
+                return;
+            }
+
+            if (!confirm('Salvar esta classificação em lote? Times que não estiverem no CSV serão removidos da classificação atual.')) {
+                return;
+            }
+
+            const data = await Storage.getData({ forceRefresh: true });
+            const existingStandings = Array.isArray(data.standings) ? data.standings : [];
+            const existingByTeam = new Map(existingStandings.map(item => [normalizeStandingTeamName(item.team), item]));
+            const csvTeams = new Set(parsedStandingsCsvRows.map(item => normalizeStandingTeamName(item.team)));
+
+            let success = true;
+
+            for (const row of parsedStandingsCsvRows) {
+                const existing = existingByTeam.get(normalizeStandingTeamName(row.team));
+                const payload = {
+                    id: existing ? existing.id : Utils.generateId(),
+                    ...row
+                };
+                const saved = existing
+                    ? await Storage.updateStanding(payload)
+                    : await Storage.addStanding(payload);
+                success = success && saved;
+            }
+
+            for (const standing of existingStandings) {
+                if (!csvTeams.has(normalizeStandingTeamName(standing.team))) {
+                    const deleted = await Storage.deleteStanding(standing.id);
+                    success = success && deleted;
+                }
+            }
+
+            if (!success) {
+                alert('A classificação foi parcialmente atualizada. Recarregue e confira os dados.');
+                loadStandings();
+                return;
+            }
+
+            resetStandingForm();
+            loadStandings();
+            if (standingCsvStatus) {
+                standingCsvStatus.textContent = `Classificação atualizada com ${parsedStandingsCsvRows.length} times.`;
+                standingCsvStatus.className = 'small text-success';
+            }
+            Utils.showAlert('Classificação atualizada em lote com sucesso!');
+        });
+    }
 
     filterRound.addEventListener('change', loadMatches);
 
