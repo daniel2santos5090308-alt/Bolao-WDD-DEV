@@ -220,7 +220,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!standingCsvPreviewWrapper || !standingCsvPreviewBody) return;
 
         standingCsvPreviewBody.innerHTML = rows.map(row => `
-            <tr>
+            <tr class="${getStandingZone(row.position)}">
                 <td>${row.position}</td>
                 <td>${Utils.escapeHtml(row.team)}</td>
                 <td class="text-center">${row.points}</td>
@@ -648,6 +648,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (saveStandingsCsvButton) {
         saveStandingsCsvButton.addEventListener('click', async () => {
+            const originalButtonContent = saveStandingsCsvButton.innerHTML;
+            const setSavingState = (isSaving) => {
+                saveStandingsCsvButton.disabled = isSaving;
+                if (previewStandingsCsvButton) previewStandingsCsvButton.disabled = isSaving;
+                if (standingCsvSampleButton) standingCsvSampleButton.disabled = isSaving;
+                saveStandingsCsvButton.innerHTML = isSaving
+                    ? '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Salvando...'
+                    : originalButtonContent;
+            };
+
             if (!parsedStandingsCsvRows.length) {
                 alert('Pré-visualize um CSV válido antes de salvar.');
                 return;
@@ -661,6 +671,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
+            setSavingState(true);
+            if (standingCsvStatus) {
+                standingCsvStatus.textContent = 'Salvando classificação em lote...';
+                standingCsvStatus.className = 'small text-muted';
+            }
+
+            try {
             const data = await Storage.getData({ forceRefresh: true });
             const existingStandings = Array.isArray(data.standings) ? data.standings : [];
             const existingByTeam = new Map(existingStandings.map(item => [normalizeStandingTeamName(item.team), item]));
@@ -700,6 +717,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 standingCsvStatus.className = 'small text-success';
             }
             Utils.showAlert('Classificação atualizada em lote com sucesso!');
+            } catch (error) {
+                console.error('Erro ao salvar classificação via CSV:', error);
+                if (standingCsvStatus) {
+                    standingCsvStatus.textContent = 'Não foi possível salvar a classificação. Tente novamente.';
+                    standingCsvStatus.className = 'small text-danger';
+                }
+                alert('Não foi possível salvar a classificação. Tente novamente.');
+            } finally {
+                setSavingState(false);
+            }
         });
     }
 
