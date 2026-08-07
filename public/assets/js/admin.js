@@ -49,7 +49,6 @@ document.addEventListener('DOMContentLoaded', () => {
     loadMatches();
     loadStandings();
     loadScoringSettings();
-    loadAdminRankings();
 
     function getRoundNumber(round) {
         if (round && typeof round.number === 'number' && Number.isFinite(round.number)) return round.number;
@@ -440,19 +439,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         loadMatches();
-        loadAdminRankings(data);
-    }
-
-    async function loadAdminRankings(providedData = null) {
-        if (typeof Ranking === 'undefined') return;
-
-        try {
-            const data = providedData || await Storage.getData();
-            await Ranking.render('adminRankingTableBody', data);
-            await Ranking.renderRound('adminRankingRoundTableBody', filterRound.value, data);
-        } catch (error) {
-            console.error('Erro ao carregar ranking no admin:', error);
-        }
     }
 
     window.deleteRound = async (id) => {
@@ -469,7 +455,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
         loadRounds();
         loadMatches();
-        loadAdminRankings();
     };
 
     matchForm.addEventListener('submit', async (e) => {
@@ -493,7 +478,6 @@ document.addEventListener('DOMContentLoaded', () => {
             alert('O jogo que estava em edição não foi encontrado.');
             resetMatchForm({ keepSelectedRound: false });
             loadMatches();
-            loadAdminRankings();
             return;
         }
 
@@ -525,7 +509,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 roundSelect.value = roundId;
             }
             loadMatches();
-            loadAdminRankings();
             Utils.showAlert(editingMatchId ? 'Jogo atualizado com sucesso!' : 'Jogo cadastrado!');
         } else {
             alert(editingMatchId ? 'Erro ao atualizar jogo.' : 'Erro ao cadastrar jogo.');
@@ -574,7 +557,6 @@ document.addEventListener('DOMContentLoaded', () => {
             if (success) {
                 Utils.showAlert('Pontuação atualizada com sucesso!');
                 loadMatches();
-                loadAdminRankings();
             } else {
                 alert('Erro ao salvar a pontuação.');
             }
@@ -748,10 +730,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    filterRound.addEventListener('change', () => {
-        loadMatches();
-        loadAdminRankings();
-    });
+    filterRound.addEventListener('change', loadMatches);
 
     if (randomBonusButton) {
         randomBonusButton.addEventListener('click', async () => {
@@ -785,7 +764,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             loadMatches();
-            loadAdminRankings();
             const roundName = selectedRound ? selectedRound.name : 'Rodada';
             Utils.showAlert(`Jogo bonus sorteado para ${roundName}: ${selectedMatch.homeTeam} x ${selectedMatch.awayTeam}.`);
         });
@@ -945,7 +923,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         loadMatches();
-        loadAdminRankings();
     };
 
     window.editStanding = async (id) => {
@@ -988,7 +965,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         loadMatches();
-        loadAdminRankings();
         Utils.showAlert(shouldEnable ? 'Jogo bônus definido para a rodada!' : 'Bônus removido da rodada.');
     };
 
@@ -1020,7 +996,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const success = await Storage.updateMatch(match);
         if (success) {
             loadMatches();
-            loadAdminRankings();
             Utils.showAlert('Placar salvo com sucesso!');
         } else {
             alert('Erro ao salvar o placar.');
@@ -1037,7 +1012,6 @@ document.addEventListener('DOMContentLoaded', () => {
             match.score = null;
             await Storage.updateMatch(match);
             loadMatches();
-            loadAdminRankings();
         }
     };
 
