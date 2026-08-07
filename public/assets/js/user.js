@@ -161,6 +161,48 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    function renderHomeRoundRanking(data, roundId) {
+        if (typeof Ranking === 'undefined') return;
+
+        const container = document.getElementById('homeRankingRoundTableBody');
+        if (!container) return;
+
+        const titleEl = document.getElementById('homeRoundRankingTitle');
+        const summaryEl = document.getElementById('homeRoundRankingSummary');
+
+        if (!roundId || roundId === 'all') {
+            if (titleEl) titleEl.textContent = 'Selecione uma rodada';
+            if (summaryEl) summaryEl.innerHTML = '';
+            container.innerHTML = '<tr><td colspan="7" class="text-center text-muted">Selecione uma rodada para ver o ranking.</td></tr>';
+            return;
+        }
+
+        const rounds = Array.isArray(data.rounds) ? data.rounds : [];
+        const round = rounds.find(item => item && item.id === roundId);
+        if (titleEl) titleEl.textContent = round && round.name ? round.name : 'Rodada';
+
+        const rankingData = Ranking.calculateByRound(data, roundId);
+        container.innerHTML = '';
+
+        if (rankingData.length === 0) {
+            if (summaryEl) summaryEl.innerHTML = '';
+            container.innerHTML = '<tr><td colspan="7" class="text-center">Sem dados.</td></tr>';
+            return;
+        }
+
+        const best = rankingData[0];
+        if (summaryEl) {
+            summaryEl.innerHTML = `<span class="fw-bold">Melhor da rodada:</span> ${Utils.escapeHtml(best.name)} (${Ranking.formatPoints(best.points)} pts)`;
+        }
+
+        rankingData.forEach((item, index) => {
+            const tr = document.createElement('tr');
+            if (index === 0) tr.classList.add('table-warning', 'fw-bold');
+            tr.innerHTML = Ranking.getRankingRowHtml(item, index, `Ranking.showRoundDetails('${item.id}')`, `Ver extrato da rodada de ${item.name}`);
+            container.appendChild(tr);
+        });
+    }
+
     function getTopBy(list, field) {
         const safeList = Array.isArray(list) ? list : [];
         return safeList.reduce((best, item) => {
@@ -481,6 +523,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (typeof Ranking !== 'undefined') {
                 try {
                     await Ranking.render('homeRankingTableBody', data);
+                    renderHomeRoundRanking(data, selectedRoundId);
                     await Ranking.render('rankingTableBody', data);
                     await Ranking.renderRound('rankingRoundTableBody', selectedRoundId, data);
                     renderDashboard(data, selectedRoundId);
