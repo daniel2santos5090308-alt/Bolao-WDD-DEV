@@ -1,6 +1,6 @@
 [build]
-  command = "npm run write-env"
-  publish = "public"
+  command = "npm run build:react"
+  publish = "dist"
 
 [[headers]]
   for = "/*"
