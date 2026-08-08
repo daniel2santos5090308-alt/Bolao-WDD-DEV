@@ -37,7 +37,7 @@ body {
 }
 
 .app-navbar--user {
-    background: var(--wdd-blue);
+    background: #0b5c3b;
 }
 
 .app-navbar--admin {
@@ -519,6 +519,233 @@ body {
     background: #fff8df;
 }
 
+.user-shell {
+    background:
+        linear-gradient(90deg, rgba(22, 138, 83, 0.035) 1px, transparent 1px),
+        linear-gradient(0deg, rgba(23, 105, 232, 0.025) 1px, transparent 1px),
+        #eef4f1;
+    background-size: 44px 44px;
+}
+
+.user-shell .app-navbar {
+    background:
+        linear-gradient(135deg, #064e3b 0%, #0b5c3b 46%, #1769e8 100%);
+    box-shadow: 0 10px 26px rgba(6, 78, 59, 0.24);
+}
+
+.user-shell .navbar-brand {
+    font-size: 1.08rem;
+}
+
+.control-card {
+    border: 0;
+    box-shadow: 0 14px 34px rgba(15, 61, 122, 0.10);
+}
+
+.control-card .card-header {
+    min-height: 68px;
+    border-bottom: 0;
+}
+
+.filter-cluster .form-select {
+    min-height: 38px;
+    font-weight: 650;
+}
+
+.games-panel,
+.ranking-panel--round,
+.ranking-panel--general,
+.insight-card,
+.standings-card {
+    border: 1px solid rgba(15, 61, 122, 0.10);
+    box-shadow: 0 16px 32px rgba(15, 61, 122, 0.09);
+}
+
+.games-panel > .card-header {
+    min-height: 54px;
+    color: #0f2f24;
+}
+
+.games-panel > .card-body {
+    background: #f7faf8 !important;
+}
+
+.ranking-panel--round > .card-header {
+    background: #0e7490 !important;
+}
+
+.ranking-panel--general > .card-header {
+    background: #137a4b !important;
+}
+
+.ranking-panel tbody tr:first-child > * {
+    background-color: #fff3c4 !important;
+}
+
+.ranking-panel .table th {
+    font-size: 0.72rem;
+}
+
+.ranking-panel .table td {
+    font-size: 0.82rem;
+}
+
+.match-card {
+    border: 1px solid rgba(15, 61, 122, 0.14) !important;
+    box-shadow: 0 14px 28px rgba(15, 61, 122, 0.08);
+    transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease;
+}
+
+.match-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 18px 34px rgba(15, 61, 122, 0.13);
+}
+
+.match-card.border-primary {
+    border-color: rgba(22, 138, 83, 0.42) !important;
+}
+
+.match-card.border-warning {
+    border-color: rgba(244, 179, 33, 0.72) !important;
+}
+
+.match-card.border-secondary {
+    border-color: rgba(102, 112, 133, 0.35) !important;
+}
+
+.match-card__header {
+    min-height: 50px;
+    background: #ffffff;
+}
+
+.match-card__meta {
+    color: #475467;
+    font-weight: 700;
+}
+
+.match-card__badges {
+    justify-content: flex-end;
+}
+
+.match-teams--scoreboard {
+    position: relative;
+    min-height: 116px;
+    padding: 0.85rem;
+    border: 1px solid #dfe8ef;
+    border-radius: 8px;
+    background:
+        linear-gradient(90deg, rgba(22, 138, 83, 0.08), rgba(23, 105, 232, 0.05)),
+        #f8fbfa;
+}
+
+.match-teams--scoreboard .team-badge {
+    flex: 1 1 0;
+    min-width: 0;
+}
+
+.match-teams--scoreboard .team-badge__name {
+    font-size: 0.94rem;
+}
+
+.match-teams--scoreboard .match-center-info {
+    flex: 0 0 auto;
+}
+
+.match-score-display {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 64px;
+    min-height: 42px;
+    padding: 0.4rem 0.62rem;
+    border-radius: 8px;
+    background: #111827;
+    color: #ffffff;
+    box-shadow: inset 0 -2px 0 rgba(255, 255, 255, 0.08);
+}
+
+.match-bet-panel {
+    margin-top: 1rem;
+    padding: 0.85rem;
+    border: 1px solid #e1e8f0;
+    border-radius: 8px;
+    background: #ffffff;
+}
+
+.match-bet-title {
+    margin-bottom: 0.65rem;
+    color: #344054;
+    font-size: 0.86rem;
+    font-weight: 800;
+}
+
+.match-bet-panel .form-control {
+    min-height: 42px;
+    font-size: 1rem;
+    font-weight: 800;
+}
+
+.match-bet-versus {
+    color: #0f3d7a;
+}
+
+.match-card--bonus {
+    border-color: #f4b321 !important;
+    box-shadow: 0 0 0 3px rgba(244, 179, 33, 0.20), 0 18px 34px rgba(82, 63, 8, 0.12);
+}
+
+.match-card--bonus .match-teams--scoreboard {
+    border-color: rgba(244, 179, 33, 0.55);
+    background:
+        linear-gradient(90deg, rgba(244, 179, 33, 0.16), rgba(22, 138, 83, 0.07)),
+        #fffdf4;
+}
+
+.match-card--bonus > .card-header {
+    background: #fff8df;
+}
+
+.standings-card > .card-header {
+    background: #f4b321 !important;
+}
+
+@media (max-width: 1199.98px) {
+    .ranking-panel .table {
+        min-width: 520px;
+    }
+}
+
+@media (max-width: 767.98px) {
+    .control-card .card-header {
+        align-items: stretch !important;
+    }
+
+    .app-tabs,
+    .filter-cluster {
+        width: 100%;
+    }
+
+    .filter-cluster .form-select {
+        flex: 1 1 140px;
+    }
+
+    .match-teams--scoreboard {
+        gap: 0.55rem;
+        padding: 0.75rem 0.55rem;
+    }
+
+    .match-teams--scoreboard .team-badge__name {
+        max-width: 96px;
+        font-size: 0.82rem;
+    }
+
+    .match-score-display {
+        min-width: 52px;
+        min-height: 38px;
+        font-size: 1.05rem;
+    }
+}
+
 .team-badge--stacked .team-badge__name {
     max-width: 120px;
 }
@@ -902,4 +1129,68 @@ body {
 .theme-dark .match-card--bonus {
     border-color: #f4b321 !important;
     box-shadow: 0 0 0 3px rgba(244, 179, 33, 0.22), 0 12px 24px rgba(0, 0, 0, 0.34);
+}
+
+.theme-dark.user-shell {
+    background:
+        linear-gradient(90deg, rgba(96, 165, 250, 0.045) 1px, transparent 1px),
+        linear-gradient(0deg, rgba(34, 197, 94, 0.035) 1px, transparent 1px),
+        #0b1120;
+    background-size: 44px 44px;
+}
+
+.theme-dark .control-card,
+.theme-dark .games-panel,
+.theme-dark .ranking-panel--round,
+.theme-dark .ranking-panel--general,
+.theme-dark .insight-card,
+.theme-dark .standings-card {
+    border-color: #243244;
+    box-shadow: 0 16px 34px rgba(0, 0, 0, 0.28);
+}
+
+.theme-dark .games-panel > .card-header {
+    color: var(--wdd-ink);
+}
+
+.theme-dark .games-panel > .card-body {
+    background: #0f172a !important;
+}
+
+.theme-dark .ranking-panel tbody tr:first-child > * {
+    background-color: #302711 !important;
+    color: #fde68a;
+}
+
+.theme-dark .match-card__header {
+    background: #101a2b !important;
+}
+
+.theme-dark .match-card__meta,
+.theme-dark .match-bet-title {
+    color: var(--wdd-muted);
+}
+
+.theme-dark .match-teams--scoreboard {
+    border-color: #253348;
+    background:
+        linear-gradient(90deg, rgba(34, 197, 94, 0.10), rgba(96, 165, 250, 0.08)),
+        #0f172a;
+}
+
+.theme-dark .match-score-display {
+    background: #020617;
+    color: #f8fafc;
+}
+
+.theme-dark .match-bet-panel {
+    background: #111c2d;
+    border-color: #253348;
+}
+
+.theme-dark .match-card--bonus .match-teams--scoreboard {
+    border-color: rgba(244, 179, 33, 0.48);
+    background:
+        linear-gradient(90deg, rgba(244, 179, 33, 0.13), rgba(34, 197, 94, 0.08)),
+        #111827;
 }
