@@ -219,7 +219,10 @@ function App() {
   const [detailsUser, setDetailsUser] = useState(null);
 
   useEffect(() => {
-    if (!currentUser) window.location.href = 'index.html';
+    if (!currentUser) {
+      localStorage.setItem('bolao_wdd_return_to', 'react.html');
+      window.location.href = 'index.html';
+    }
   }, [currentUser]);
 
   useEffect(() => {
