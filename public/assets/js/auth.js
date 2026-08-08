@@ -2,6 +2,8 @@
  * Autenticação e controle de acesso.
  */
 const Auth = {
+    RETURN_TO_KEY: 'bolao_wdd_return_to',
+
     checkLogin: () => {
         const user = Storage.getCurrentUser();
         if (!user) {
@@ -17,6 +19,13 @@ const Auth = {
     },
 
     redirectUser: (user) => {
+        const returnTo = localStorage.getItem(Auth.RETURN_TO_KEY);
+        if (returnTo) {
+            localStorage.removeItem(Auth.RETURN_TO_KEY);
+            window.location.href = returnTo;
+            return;
+        }
+
         if (user.role === 'admin') {
             window.location.href = 'admin.html';
             return;
