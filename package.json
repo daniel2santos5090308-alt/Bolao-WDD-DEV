@@ -6,6 +6,9 @@
   "scripts": {
     "write-env": "node scripts/write-runtime-config.js",
     "start": "npm run write-env && python -m http.server 4173 -d public",
+    "dev:react": "npm run write-env && vite --host 127.0.0.1 --port 5173",
+    "build:react": "npm run write-env && vite build",
+    "preview:react": "vite preview --host 127.0.0.1 --port 5174",
     "test": "node --test \"tests/*.test.js\"",
     "test:e2e": "playwright test",
     "test:e2e:headed": "playwright test --headed",
@@ -13,6 +16,12 @@
     "validate": "npm test && npm audit"
   },
   "devDependencies": {
-    "@playwright/test": "^1.61.1"
+    "@playwright/test": "^1.61.1",
+    "@vitejs/plugin-react": "^6.0.5",
+    "vite": "^8.2.1"
+  },
+  "dependencies": {
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8"
   }
 }
