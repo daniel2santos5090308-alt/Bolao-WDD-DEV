@@ -30,6 +30,7 @@ lib-cov
 coverage
 playwright-report/
 test-results/
+dist/
 
 # nyc test coverage
 .nyc_output
