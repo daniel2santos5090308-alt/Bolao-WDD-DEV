@@ -6,12 +6,12 @@
     <title>Bolão WDD - Minhas Apostas</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
-    <link href="assets/css/styles.css?v=4.6" rel="stylesheet">
+    <link href="assets/css/styles.css?v=4.5" rel="stylesheet">
 </head>
 <body class="app-shell user-shell">
     <nav class="navbar navbar-expand-lg navbar-dark app-navbar app-navbar--user">
         <div class="container">
-            <a class="navbar-brand" href="#"><span class="brand-mark">WDD</span> Bolão WDD</a>
+            <a class="navbar-brand" href="#">Bolão WDD</a>
             <div class="d-flex align-items-center text-white gap-2">
                 <button id="btnThemeToggle" class="btn btn-outline-light btn-sm" type="button" title="Alternar modo claro/escuro">
                     <i class="bi bi-moon-stars"></i>
@@ -23,7 +23,7 @@
     </nav>
 
     <div class="container app-container mt-4">
-        <div class="card section-card control-card shadow-sm mb-4">
+        <div class="card section-card shadow-sm mb-4">
             <div class="card-header bg-white d-flex justify-content-between align-items-center flex-wrap gap-2">
                 <ul class="nav nav-pills app-tabs" id="userTabs" role="tablist">
                     <li class="nav-item" role="presentation">
@@ -36,7 +36,7 @@
                         <button class="nav-link" type="button" data-tab-target="tabStandings">Classificação</button>
                     </li>
                 </ul>
-                <div class="d-flex align-items-center gap-2 flex-wrap justify-content-end filter-cluster">
+                <div class="d-flex align-items-center gap-2 flex-wrap justify-content-end">
                     <button id="btnRefresh" class="btn btn-sm btn-outline-primary" title="Atualizar Jogos">
                         <i class="bi bi-arrow-clockwise"></i>
                     </button>
@@ -49,9 +49,9 @@
         <section id="tabGames" class="tab-panel active">
             <div class="row g-4">
                 <div class="col-xl-8">
-                    <div class="card dashboard-panel section-card games-panel shadow-sm mb-4">
-                        <div class="card-header bg-white d-flex align-items-center justify-content-between">
-                            <h5 class="mb-0"><i class="bi bi-shield-check me-2"></i>Jogos e Apostas</h5>
+                    <div class="card dashboard-panel section-card shadow-sm mb-4">
+                        <div class="card-header bg-white">
+                            <h5 class="mb-0">Jogos e Apostas</h5>
                         </div>
                         <div class="card-body bg-light">
                             <div id="matchesContainer" class="row"></div>
@@ -62,9 +62,9 @@
                     </div>
                 </div>
                 <div class="col-xl-4">
-                    <div class="card ranking-panel ranking-panel--round section-card shadow-sm mb-4">
+                    <div class="card ranking-panel section-card shadow-sm mb-4">
                         <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
-                            <h5 class="mb-0"><i class="bi bi-stars me-2"></i>Ranking da Rodada</h5>
+                            <h5 class="mb-0">Ranking da Rodada</h5>
                             <span class="small" id="homeRoundRankingTitle"></span>
                         </div>
                         <div class="p-2 small text-center" id="homeRoundRankingSummary"></div>
@@ -85,9 +85,9 @@
                             </table>
                         </div>
                     </div>
-                    <div class="card ranking-panel ranking-panel--general section-card shadow-sm mb-4">
+                    <div class="card ranking-panel section-card shadow-sm mb-4">
                         <div class="card-header bg-success text-white">
-                            <h5 class="mb-0"><i class="bi bi-trophy me-2"></i>Ranking Geral</h5>
+                            <h5 class="mb-0">Ranking Geral</h5>
                         </div>
                         <div class="table-responsive">
                             <table class="table table-sm mb-0 align-middle">
@@ -114,7 +114,7 @@
             <div class="row g-3" id="dashboardHighlights"></div>
             <div class="row g-4 mt-1">
                 <div class="col-lg-6">
-                    <div class="card section-card insight-card shadow-sm h-100">
+                    <div class="card section-card shadow-sm h-100">
                         <div class="card-header bg-white">
                             <h5 class="mb-0">Destaques da Rodada</h5>
                         </div>
@@ -122,7 +122,7 @@
                     </div>
                 </div>
                 <div class="col-lg-6">
-                    <div class="card section-card insight-card shadow-sm h-100">
+                    <div class="card section-card shadow-sm h-100">
                         <div class="card-header bg-white">
                             <h5 class="mb-0">Indicadores Gerais</h5>
                         </div>
@@ -133,7 +133,7 @@
         </section>
 
         <section id="tabStandings" class="tab-panel">
-            <div class="card section-card standings-card shadow-sm">
+            <div class="card section-card shadow-sm">
                 <div class="card-header bg-warning text-dark">
                     <h5 class="mb-0">Classificação Brasileirão 2026</h5>
                 </div>
@@ -246,7 +246,7 @@
     <script src="assets/js/auth.js?v=3.6"></script>
     <script src="assets/js/ranking.js?v=4.4"></script>
     <script src="assets/js/teams.js?v=3.1"></script>
-    <script src="assets/js/user.js?v=5.2"></script>
+    <script src="assets/js/user.js?v=5.1"></script>
 
     <div class="container mt-5 pt-5 text-center text-muted small">
         <hr>

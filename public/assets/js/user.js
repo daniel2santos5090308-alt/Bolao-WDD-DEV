@@ -690,15 +690,15 @@ document.addEventListener('DOMContentLoaded', () => {
                     card.className = `col-md-6 mb-4`;
                     card.innerHTML = `
                         <div class="card h-100 match-card ${match.isBonus ? 'match-card--bonus' : ''} ${cardClass}">
-                            <div class="card-header match-card__header d-flex justify-content-between align-items-center">
-                                <small class="match-card__meta">${safeRoundName} | ${safeDateTime}</small>
-                                <div class="match-card__badges d-flex align-items-center gap-2">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <small class="text-muted">${safeRoundName} | ${safeDateTime}</small>
+                                <div class="d-flex align-items-center gap-2">
                                     ${match.isBonus ? bonusBadge : ''}
                                     ${statusBadge}
                                 </div>
                             </div>
                             <div class="card-body text-center">
-                                <div class="match-teams match-teams--scoreboard mb-4">
+                                <div class="match-teams mb-4">
                                     ${homeTeamDisplay}
                                     <div class="match-center-info">
                                         <span class="match-score-display">
@@ -711,15 +711,15 @@ document.addEventListener('DOMContentLoaded', () => {
                                 </div>
                                 
                                 ${!isLocked ? `
-                                    <div class="match-bet-panel">
-                                        <p class="match-bet-title">Seu Palpite</p>
-                                        <div class="row g-2 align-items-end justify-content-center">
-                                        <div class="col-5">
+                                    <hr>
+                                    <p class="mb-2">Seu Palpite:</p>
+                                    <div class="row g-2 align-items-end justify-content-center">
+                                        <div class="col-4">
                                             <label class="form-label small mb-1">${Utils.escapeHtml(match.homeTeam)}</label>
                                             <input type="number" min="0" step="1" class="form-control text-center" id="bet_score_home_${match.id}" value="${betScoreHome}">
                                         </div>
-                                        <div class="col-auto pb-2 fw-bold match-bet-versus">X</div>
-                                        <div class="col-5">
+                                        <div class="col-auto pb-2 fw-bold">X</div>
+                                        <div class="col-4">
                                             <label class="form-label small mb-1">${Utils.escapeHtml(match.awayTeam)}</label>
                                             <input type="number" min="0" step="1" class="form-control text-center" id="bet_score_away_${match.id}" value="${betScoreAway}">
                                         </div>
@@ -727,10 +727,9 @@ document.addEventListener('DOMContentLoaded', () => {
                                             <button type="button" class="btn btn-primary w-100" onclick="placeScoreBet('${match.id}')">Salvar Palpite</button>
                                             <div class="bet-feedback alert alert-success d-none mt-2 mb-0 py-2" id="bet_feedback_${match.id}" role="status"></div>
                                         </div>
-                                        </div>
                                     </div>
                                 ` : `
-                                    <div class="match-bet-panel">
+                                    <hr>
                                     ${userBetText ? `
                                         <div class="alert alert-primary mb-0">
                                             Seu palpite: <strong>${userBetText}</strong>
@@ -740,7 +739,6 @@ document.addEventListener('DOMContentLoaded', () => {
                                             Você não apostou neste jogo.
                                         </div>
                                     `}
-                                    </div>
                                 `}
 
                                 ${resultDisplay}
