@@ -1,8 +1,7 @@
-name: Supabase keepalive DEV
+name: Supabase keepalive
 
 on:
   schedule:
-    # Mantem o projeto DEV ativo no plano gratuito do Supabase com uma leitura minima.
     - cron: "0 12 * * 1,4"
   workflow_dispatch:
 
@@ -11,7 +10,7 @@ permissions:
 
 jobs:
   ping:
-    name: Ping Supabase DEV database
+    name: Ping Supabase DEV
     runs-on: ubuntu-latest
     timeout-minutes: 3
 
