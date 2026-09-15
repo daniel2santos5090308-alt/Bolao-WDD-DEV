@@ -2,15 +2,16 @@ const { test, expect } = require('@playwright/test');
 
 const adminUser = process.env.E2E_ADMIN_USER || 'admin';
 const adminPassword = process.env.E2E_ADMIN_PASSWORD;
-const bettorUser = process.env.E2E_BETTOR_USER || 'daniel';
+const bettorUser = process.env.E2E_BETTOR_USER || 'daniel.teste@bolao.local';
 const bettorPassword = process.env.E2E_BETTOR_PASSWORD;
 const hasCredentials = Boolean(adminPassword && bettorPassword);
 
 const suffix = `E2E ${Date.now()}`;
-const roundName = `${suffix} Rodada`;
-const homeTeam = `${suffix} Casa`;
-const awayTeam = `${suffix} Fora`;
-const editedAwayTeam = `${suffix} Fora Editado`;
+const roundNumber = (Date.now() % 38) + 1;
+const roundName = `Rodada ${roundNumber} - ${suffix}`;
+const homeTeam = 'Palmeiras';
+const awayTeam = 'Flamengo';
+const editedAwayTeam = 'Cruzeiro';
 
 async function login(page, username, password, expectedPage) {
   await page.goto('/index.html', { waitUntil: 'domcontentloaded' }).catch(() => {});
