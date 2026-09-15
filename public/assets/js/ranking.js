@@ -129,6 +129,7 @@ const Ranking = {
                 if (scoreResult.isHit) hits++;
 
                 history.push({
+                    matchId: match.id,
                     match: `${match.homeTeam} x ${match.awayTeam}`,
                     date: match.date,
                     time: match.time,
@@ -324,7 +325,11 @@ const Ranking = {
                     let icon = '';
                     let pointsText = '';
 
-                    if (!h.isFinished) {
+                    if (h.isNoBet) {
+                        itemClass = 'list-group-item-light';
+                        icon = '<span class="badge bg-secondary">Sem palpite</span>';
+                        pointsText = '-';
+                    } else if (!h.isFinished) {
                         itemClass = 'list-group-item-light';
                         icon = '<span class="badge bg-secondary">Aberto</span>';
                         pointsText = '-';
@@ -340,7 +345,9 @@ const Ranking = {
 
                     const isLocked = h.time ? Utils.isMatchLocked(h.date, h.time) : h.isFinished;
                     const canRevealPick = isSelf || isLocked;
-                    const pickText = canRevealPick && h.betScore
+                    const pickText = h.isNoBet
+                        ? '<em>Sem palpite</em>'
+                        : canRevealPick && h.betScore
                         ? `<strong>${Number(h.betScore.home)} x ${Number(h.betScore.away)}</strong>`
                         : '<em>Oculta até o início do jogo</em>';
                     const finalScoreText = h.finalScore

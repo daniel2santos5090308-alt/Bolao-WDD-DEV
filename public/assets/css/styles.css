@@ -297,6 +297,70 @@ body {
     display: block;
 }
 
+.ranking-tabs {
+    justify-content: flex-end;
+}
+
+.ranking-tab-panel {
+    display: none;
+}
+
+.ranking-tab-panel.active {
+    display: block;
+}
+
+.ranking-panel--featured,
+#rankingRoundPanel,
+#rankingGeneralPanel {
+    width: 100%;
+}
+
+.participant-bets {
+    border: 1px solid #dbe7f3;
+    border-radius: 8px;
+    background: #f8fbff;
+    padding: 0.75rem;
+    text-align: left;
+}
+
+.participant-bets--locked {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.45rem;
+    color: #475569;
+    font-size: 0.9rem;
+    text-align: center;
+}
+
+.participant-bets__title {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin-bottom: 0.55rem;
+    color: #0f172a;
+    font-weight: 800;
+}
+
+.participant-bets__row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.4rem 0;
+    border-top: 1px solid #e8edf3;
+    font-size: 0.9rem;
+}
+
+.participant-bets__row span {
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+.participant-bets__row strong {
+    white-space: nowrap;
+}
+
 .metric-card {
     display: flex;
     align-items: center;
@@ -897,6 +961,28 @@ body {
     background: #1f2937;
     border-color: #475569;
     color: #d1d5db;
+}
+
+.theme-dark .ranking-tab-panel {
+    background: var(--wdd-surface);
+}
+
+.theme-dark .participant-bets {
+    background: #101a2b;
+    border-color: #334155;
+    color: var(--wdd-ink);
+}
+
+.theme-dark .participant-bets--locked {
+    color: var(--wdd-muted);
+}
+
+.theme-dark .participant-bets__title {
+    color: var(--wdd-ink);
+}
+
+.theme-dark .participant-bets__row {
+    border-top-color: var(--wdd-line);
 }
 
 .theme-dark .match-card--bonus {

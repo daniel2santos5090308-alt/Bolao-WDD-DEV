@@ -32,6 +32,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let cachedData = null;
 
     setupTabs();
+    setupRankingTabs();
     setupTheme();
     setupWelcomeModal();
 
@@ -51,6 +52,19 @@ document.addEventListener('DOMContentLoaded', () => {
                 const targetId = button.getAttribute('data-tab-target');
                 document.querySelectorAll('[data-tab-target]').forEach(item => item.classList.remove('active'));
                 document.querySelectorAll('.tab-panel').forEach(panel => panel.classList.remove('active'));
+                button.classList.add('active');
+                const target = document.getElementById(targetId);
+                if (target) target.classList.add('active');
+            });
+        });
+    }
+
+    function setupRankingTabs() {
+        document.querySelectorAll('[data-ranking-tab-target]').forEach((button) => {
+            button.addEventListener('click', () => {
+                const targetId = button.getAttribute('data-ranking-tab-target');
+                document.querySelectorAll('[data-ranking-tab-target]').forEach(item => item.classList.remove('active'));
+                document.querySelectorAll('.ranking-tab-panel').forEach(panel => panel.classList.remove('active'));
                 button.classList.add('active');
                 const target = document.getElementById(targetId);
                 if (target) target.classList.add('active');
@@ -174,6 +188,8 @@ document.addEventListener('DOMContentLoaded', () => {
             if (titleEl) titleEl.textContent = 'Selecione uma rodada';
             if (summaryEl) summaryEl.innerHTML = '';
             container.innerHTML = '<tr><td colspan="7" class="text-center text-muted">Selecione uma rodada para ver o ranking.</td></tr>';
+            window.currentRoundRankingData = [];
+            window.currentRoundRankingId = null;
             return;
         }
 
@@ -182,6 +198,9 @@ document.addEventListener('DOMContentLoaded', () => {
         if (titleEl) titleEl.textContent = round && round.name ? round.name : 'Rodada';
 
         const rankingData = Ranking.calculateByRound(data, roundId);
+        const rankingDetailsData = addMissingRoundBetsToRanking(data, roundId, rankingData);
+        window.currentRoundRankingData = rankingDetailsData;
+        window.currentRoundRankingId = roundId;
         container.innerHTML = '';
 
         if (rankingData.length === 0) {
@@ -200,6 +219,45 @@ document.addEventListener('DOMContentLoaded', () => {
             if (index === 0) tr.classList.add('table-warning', 'fw-bold');
             tr.innerHTML = Ranking.getRankingRowHtml(item, index, `Ranking.showRoundDetails('${item.id}')`, `Ver extrato da rodada de ${item.name}`);
             container.appendChild(tr);
+        });
+    }
+
+    function addMissingRoundBetsToRanking(data, roundId, rankingData) {
+        const matches = Array.isArray(data.matches)
+            ? data.matches.filter(match => match && match.roundId === roundId)
+            : [];
+
+        if (!Array.isArray(rankingData) || matches.length === 0) return rankingData;
+
+        return rankingData.map((item) => {
+            const history = Array.isArray(item.history) ? [...item.history] : [];
+            const existingMatchIds = new Set(history.map(entry => entry.matchId).filter(Boolean));
+
+            matches.forEach((match) => {
+                if (existingMatchIds.has(match.id)) return;
+                history.push({
+                    matchId: match.id,
+                    match: `${match.homeTeam} x ${match.awayTeam}`,
+                    date: match.date,
+                    time: match.time,
+                    betScore: null,
+                    finalScore: match.score || null,
+                    result: match.result,
+                    points: 0,
+                    basePoints: 0,
+                    multiplier: 1,
+                    isHit: false,
+                    isExact: false,
+                    isNearMiss: false,
+                    isCorrectResult: false,
+                    label: 'Sem palpite',
+                    isBonus: Boolean(match.isBonus),
+                    isFinished: !!match.result,
+                    isNoBet: true
+                });
+            });
+
+            return { ...item, history };
         });
     }
 
@@ -445,6 +503,59 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    function getVisibleParticipants(data) {
+        return (Array.isArray(data.users) ? data.users : [])
+            .filter(user => user && user.role !== 'admin')
+            .sort((a, b) => String(a.name || '').localeCompare(String(b.name || ''), 'pt-BR'));
+    }
+
+    function getBetDisplayText(bet) {
+        if (!bet) return 'Sem palpite';
+        const home = bet.scoreHome ?? bet.score_home;
+        const away = bet.scoreAway ?? bet.score_away;
+        if (home === null || home === undefined || away === null || away === undefined) return 'Sem palpite';
+        const homeNumber = Number(home);
+        const awayNumber = Number(away);
+        if (!Number.isFinite(homeNumber) || !Number.isFinite(awayNumber)) return 'Sem palpite';
+        return `${homeNumber} x ${awayNumber}`;
+    }
+
+    function renderParticipantBets(data, match, isLocked) {
+        if (!isLocked) {
+            return `
+                <div class="participant-bets participant-bets--locked mt-3">
+                    <i class="bi bi-lock-fill"></i>
+                    Palpites dos participantes serÃ£o liberados apÃ³s o fechamento das apostas.
+                </div>
+            `;
+        }
+
+        const participants = getVisibleParticipants(data);
+        if (participants.length === 0) return '';
+
+        const rows = participants.map((user) => {
+            const bet = data.bets && data.bets[user.id] ? data.bets[user.id][match.id] : null;
+            const betText = getBetDisplayText(bet);
+            const isEmpty = betText === 'Sem palpite';
+            return `
+                <div class="participant-bets__row">
+                    <span>${Utils.escapeHtml(user.name)}</span>
+                    <strong class="${isEmpty ? 'text-muted fw-normal' : ''}">${Utils.escapeHtml(betText)}</strong>
+                </div>
+            `;
+        }).join('');
+
+        return `
+            <div class="participant-bets mt-3">
+                <div class="participant-bets__title">
+                    <i class="bi bi-people-fill"></i>
+                    Palpites da galera
+                </div>
+                ${rows}
+            </div>
+        `;
+    }
+
     // Carregar rodadas no filtro
     async function loadRoundsAndMatches(options = {}) {
         console.log("User.js v2.1 - Carregando dados...");
@@ -686,6 +797,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     const userBetText = betScoreHome !== '' && betScoreAway !== '' ? `${betScoreHome} x ${betScoreAway}` : '';
                     const bonusBadge = match.isBonus ? '<span class="badge bg-warning text-dark">Bônus 2x</span>' : '';
 
+                    const participantBetsHtml = renderParticipantBets(data, match, isLocked);
+
                     const card = document.createElement('div');
                     card.className = `col-md-6 mb-4`;
                     card.innerHTML = `
@@ -741,6 +854,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                     `}
                                 `}
 
+                                ${participantBetsHtml}
                                 ${resultDisplay}
                             </div>
                         </div>
