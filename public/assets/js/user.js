@@ -525,7 +525,7 @@ document.addEventListener('DOMContentLoaded', () => {
             return `
                 <div class="participant-bets participant-bets--locked mt-3">
                     <i class="bi bi-lock-fill"></i>
-                    Palpites dos participantes serÃ£o liberados apÃ³s o fechamento das apostas.
+                    Palpites dos participantes ser&atilde;o liberados ap&oacute;s o fechamento das apostas.
                 </div>
             `;
         }
