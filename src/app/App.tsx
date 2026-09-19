@@ -8,6 +8,10 @@ import { PlaceholderPage } from '../pages/PlaceholderPage';
 import { useCoinWallet } from '../hooks/useCoinWallet';
 import { getCurrentUser, getLegacy, hasSupabaseAuthSession } from '../services/legacyBolao';
 
+function getReturnToPath() {
+  return window.location.pathname.endsWith('/react.html') ? 'react.html' : '/';
+}
+
 export function App() {
   const currentUser = useMemo(() => getCurrentUser(), []);
   const isAdmin = currentUser?.role === 'admin';
@@ -16,17 +20,17 @@ export function App() {
 
   useEffect(() => {
     if (!currentUser) {
-      localStorage.setItem('bolao_wdd_return_to', 'react.html');
-      window.location.href = 'index.html';
+      localStorage.setItem('bolao_wdd_return_to', getReturnToPath());
+      window.location.href = 'login.html';
       return;
     }
 
     void hasSupabaseAuthSession().then(async (hasSession) => {
       if (hasSession) return;
 
-      localStorage.setItem('bolao_wdd_return_to', 'react.html');
+      localStorage.setItem('bolao_wdd_return_to', getReturnToPath());
       await getLegacy().Storage.logout();
-      window.location.href = 'index.html';
+      window.location.href = 'login.html';
     });
   }, [currentUser]);
 

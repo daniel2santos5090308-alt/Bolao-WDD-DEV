@@ -7,13 +7,13 @@ const Auth = {
     checkLogin: () => {
         const user = Storage.getCurrentUser();
         if (!user) {
-            if (!window.location.pathname.endsWith('index.html') && !window.location.pathname.endsWith('/')) {
-                window.location.href = 'index.html';
+            if (!window.location.pathname.endsWith('login.html')) {
+                window.location.href = 'login.html';
             }
             return;
         }
 
-        if (window.location.pathname.endsWith('index.html') || window.location.pathname.endsWith('/')) {
+        if (window.location.pathname.endsWith('login.html')) {
             Auth.redirectUser(user);
         }
     },
@@ -44,14 +44,14 @@ const Auth = {
 
     logout: () => {
         Storage.logout();
-        window.location.href = 'index.html';
+        window.location.href = 'login.html';
     },
 
     requireAdmin: () => {
         const user = Storage.getCurrentUser();
         if (!user || user.role !== 'admin') {
             alert('Acesso negado. Apenas administradores.');
-            window.location.href = 'index.html';
+            window.location.href = 'login.html';
         }
     }
 };

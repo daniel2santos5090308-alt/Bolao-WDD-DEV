@@ -6,6 +6,7 @@ module.exports = defineConfig({
   build: {
     rollupOptions: {
       input: {
+        index: 'index.html',
         react: 'react.html'
       }
     }

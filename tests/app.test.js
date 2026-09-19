@@ -331,7 +331,7 @@ test('Storage.getData caches concurrent Supabase reads and returns cloned data',
 });
 
 test('HTML pages only reference existing local assets', () => {
-  const pages = ['index.html', 'admin.html', 'user.html', '404.html'];
+  const pages = ['login.html', 'admin.html', 'user.html', '404.html'];
 
   for (const page of pages) {
     const html = fs.readFileSync(path.join(rootDir, 'public', page), 'utf8');
@@ -350,7 +350,7 @@ test('HTML pages only reference existing local assets', () => {
 });
 
 test('Public HTML does not expose Firebase or public signup flow', () => {
-  const pages = ['index.html', 'admin.html', 'user.html'];
+  const pages = ['login.html', 'admin.html', 'user.html'];
 
   for (const page of pages) {
     const html = fs.readFileSync(path.join(rootDir, 'public', page), 'utf8').toLowerCase();

@@ -7,7 +7,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Auth.checkLogin() já foi chamado no HTML provavelmente ou podemos chamar aqui
     const currentUser = Storage.getCurrentUser();
     if (!currentUser) {
-        window.location.href = 'index.html';
+        window.location.href = 'login.html';
         return;
     }
     

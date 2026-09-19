@@ -17,7 +17,7 @@ export function AppShell({ children, currentUser, activeRoute, coinBalance, coin
 
   async function handleLogout() {
     await getLegacy().Storage.logout();
-    window.location.href = 'index.html';
+    window.location.href = 'login.html';
   }
 
   return (
