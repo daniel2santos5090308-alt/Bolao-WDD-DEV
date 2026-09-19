@@ -1,0 +1,40 @@
+:root {
+  color: #102033;
+  background: #eef4f1;
+  font-family: Inter, "Segoe UI", system-ui, -apple-system, sans-serif;
+  font-synthesis: none;
+  letter-spacing: 0;
+
+  --color-ink: #102033;
+  --color-muted: #667085;
+  --color-surface: #ffffff;
+  --color-field: #f8fbfa;
+  --color-line: #dfe8ef;
+  --color-primary: #1769e8;
+  --color-green: #137a4b;
+  --color-teal: #0e7490;
+  --color-gold: #f4b321;
+  --radius-card: 8px;
+  --shadow-card: 0 16px 34px rgba(15, 61, 122, 0.09);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  background:
+    linear-gradient(90deg, rgba(12, 96, 60, 0.055) 1px, transparent 1px),
+    linear-gradient(0deg, rgba(23, 105, 232, 0.035) 1px, transparent 1px),
+    #eef4f1;
+  background-size: 46px 46px;
+}
+
+button,
+select,
+input {
+  font: inherit;
+}

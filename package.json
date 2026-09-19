@@ -7,17 +7,21 @@
     "write-env": "node scripts/write-runtime-config.js",
     "start": "npm run write-env && python -m http.server 4173 -d public",
     "dev:react": "npm run write-env && vite --host 127.0.0.1 --port 5173",
-    "build:react": "npm run write-env && vite build",
+    "build:react": "npm run write-env && npm run typecheck && vite build",
     "preview:react": "vite preview --host 127.0.0.1 --port 5174",
+    "typecheck": "tsc --noEmit",
     "test": "node --test \"tests/*.test.js\"",
     "test:e2e": "playwright test",
     "test:e2e:headed": "playwright test --headed",
     "audit": "npm audit",
-    "validate": "npm test && npm audit"
+    "validate": "npm run typecheck && npm test && npm audit"
   },
   "devDependencies": {
     "@playwright/test": "^1.61.1",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
     "@vitejs/plugin-react": "^6.0.5",
+    "typescript": "^7.0.2",
     "vite": "^8.2.1"
   },
   "dependencies": {
