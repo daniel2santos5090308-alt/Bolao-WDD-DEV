@@ -11,6 +11,11 @@ const pageContent: Record<AppRoute, { eyebrow: string; title: string; body: stri
     title: 'Rankings consolidados',
     body: 'Esta area vai concentrar ranking geral, ranking da rodada, cravadas e historico sem precisar rolar toda a lista de jogos.'
   },
+  classificacao: {
+    eyebrow: 'Classificacao',
+    title: 'Tabela do campeonato',
+    body: 'Tabela do Brasileirao atualizada pelo admin sem API automatica.'
+  },
   coins: {
     eyebrow: 'WDD Coins',
     title: 'Carteira e recompensas',

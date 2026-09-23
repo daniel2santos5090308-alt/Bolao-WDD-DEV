@@ -4,7 +4,9 @@ import { parseRouteFromHash, type AppRoute } from './routes';
 import { AdminPage } from '../pages/AdminPage';
 import { CoinsPage } from '../pages/CoinsPage';
 import { DashboardPage } from '../pages/DashboardPage';
-import { PlaceholderPage } from '../pages/PlaceholderPage';
+import { ProfilePage } from '../pages/ProfilePage';
+import { RankingPage } from '../pages/RankingPage';
+import { StandingsPage } from '../pages/StandingsPage';
 import { useCoinWallet } from '../hooks/useCoinWallet';
 import { getCurrentUser, getLegacy, hasSupabaseAuthSession } from '../services/legacyBolao';
 
@@ -61,6 +63,10 @@ export function App() {
     >
       {activeRoute === 'jogos' ? (
         <DashboardPage currentUser={currentUser} />
+      ) : activeRoute === 'ranking' ? (
+        <RankingPage />
+      ) : activeRoute === 'classificacao' ? (
+        <StandingsPage />
       ) : activeRoute === 'coins' ? (
         <CoinsPage
           currentUser={currentUser}
@@ -70,10 +76,12 @@ export function App() {
           walletError={coinWallet.error}
           onNavigate={handleNavigate}
         />
+      ) : activeRoute === 'perfil' ? (
+        <ProfilePage currentUser={currentUser} />
       ) : activeRoute === 'admin' ? (
         <AdminPage />
       ) : (
-        <PlaceholderPage route={activeRoute} />
+        <DashboardPage currentUser={currentUser} />
       )}
     </AppShell>
   );

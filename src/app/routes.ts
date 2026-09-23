@@ -1,4 +1,4 @@
-export type AppRoute = 'jogos' | 'ranking' | 'coins' | 'perfil' | 'admin';
+export type AppRoute = 'jogos' | 'ranking' | 'classificacao' | 'coins' | 'perfil' | 'admin';
 
 export interface RouteItem {
   id: AppRoute;
@@ -10,6 +10,7 @@ export interface RouteItem {
 export const appRoutes: RouteItem[] = [
   { id: 'jogos', label: 'Jogos', icon: 'bi-controller' },
   { id: 'ranking', label: 'Ranking', icon: 'bi-trophy' },
+  { id: 'classificacao', label: 'Classificacao', icon: 'bi-table' },
   { id: 'coins', label: 'Coins', icon: 'bi-coin' },
   { id: 'perfil', label: 'Perfil', icon: 'bi-person-circle' },
   { id: 'admin', label: 'Admin', icon: 'bi-sliders', adminOnly: true }

@@ -15,6 +15,8 @@ export function DashboardPage({ currentUser }: DashboardPageProps) {
   const [selectedRoundId, setSelectedRoundId] = useState('all');
   const [selectedTeam, setSelectedTeam] = useState('all');
   const [detailsUser, setDetailsUser] = useState<RankingItem | null>(null);
+  const [page, setPage] = useState(1);
+  const pageSize = 5;
 
   useEffect(() => {
     if (data?.rounds?.length && selectedRoundId === 'all') {
@@ -42,10 +44,20 @@ export function DashboardPage({ currentUser }: DashboardPageProps) {
       .filter((match) => selectedTeam === 'all' || match.homeTeam === selectedTeam || match.awayTeam === selectedTeam)
       .sort((a, b) => new Date(`${a.date}T${a.time}`).getTime() - new Date(`${b.date}T${b.time}`).getTime());
   }, [data?.matches, selectedRoundId, selectedTeam]);
+  const totalPages = Math.max(1, Math.ceil(filteredMatches.length / pageSize));
+  const visibleMatches = filteredMatches.slice((page - 1) * pageSize, page * pageSize);
 
   const generalRanking = useMemo(() => data ? getLegacy().Ranking.calculate(data) : [], [data]);
   const roundRanking = useMemo(() => data ? getLegacy().Ranking.calculateByRound(data, selectedRoundId) : [], [data, selectedRoundId]);
   const selectedRound = rounds.find((round) => round.id === selectedRoundId);
+
+  useEffect(() => {
+    setPage(1);
+  }, [selectedRoundId, selectedTeam]);
+
+  useEffect(() => {
+    if (page > totalPages) setPage(totalPages);
+  }, [page, totalPages]);
 
   return (
     <>
@@ -78,7 +90,7 @@ export function DashboardPage({ currentUser }: DashboardPageProps) {
         <section className="matches-area">
           {loading && !data ? <EmptyState>Carregando jogos...</EmptyState> : null}
           {!loading && filteredMatches.length === 0 ? <EmptyState>Nenhum jogo encontrado para o filtro.</EmptyState> : null}
-          {data ? filteredMatches.map((match) => {
+          {data ? visibleMatches.map((match) => {
             const round = rounds.find((item) => item.id === match.roundId);
             return (
               <MatchCard
@@ -91,6 +103,17 @@ export function DashboardPage({ currentUser }: DashboardPageProps) {
               />
             );
           }) : null}
+          {filteredMatches.length > pageSize ? (
+            <div className="pagination-bar">
+              <button type="button" onClick={() => setPage((value) => Math.max(1, value - 1))} disabled={page === 1}>
+                Anterior
+              </button>
+              <span>Pagina {page} de {totalPages}</span>
+              <button type="button" onClick={() => setPage((value) => Math.min(totalPages, value + 1))} disabled={page === totalPages}>
+                Proxima
+              </button>
+            </div>
+          ) : null}
         </section>
 
         <aside className="side-stack">

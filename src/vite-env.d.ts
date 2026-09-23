@@ -33,12 +33,36 @@ interface BolaoBet {
   createdAt?: string;
 }
 
+interface BolaoStanding {
+  id: string;
+  position: number;
+  team: string;
+  points: number;
+  played: number;
+  wins: number;
+  draws: number;
+  losses: number;
+  goalsFor: number;
+  goalsAgainst: number;
+  goalDiff: number;
+}
+
+interface BolaoScoringSettings {
+  id?: string;
+  exactScorePoints: number;
+  nearMissPoints: number;
+  wrongPoints: number;
+  bonusMultiplier: number;
+  bonusEnabled: boolean;
+}
+
 interface BolaoData {
   users: BolaoUser[];
   rounds: BolaoRound[];
   matches: BolaoMatch[];
   bets: Record<string, Record<string, BolaoBet>>;
-  scoringSettings?: Record<string, unknown>;
+  standings?: BolaoStanding[];
+  scoringSettings?: BolaoScoringSettings;
 }
 
 interface RankingItem {
@@ -68,6 +92,16 @@ interface BolaoLegacyApi {
     getData(options?: { forceRefresh?: boolean }): Promise<BolaoData>;
     cloneData(data: BolaoData): BolaoData;
     saveBet(userId: string, matchId: string, bet: BolaoBet): Promise<boolean>;
+    addRound(round: BolaoRound): Promise<boolean>;
+    deleteRound(roundId: string): Promise<boolean>;
+    addMatch(match: BolaoMatch): Promise<boolean>;
+    updateMatch(match: BolaoMatch): Promise<boolean>;
+    deleteMatch(matchId: string): Promise<boolean>;
+    addStanding(standing: BolaoStanding): Promise<boolean>;
+    updateStanding(standing: BolaoStanding): Promise<boolean>;
+    deleteStanding(standingId: string): Promise<boolean>;
+    updateScoringSettings(settings: BolaoScoringSettings): Promise<boolean>;
+    updateUserPasswordWithCurrent(currentPassword: string, newPassword: string): Promise<boolean>;
     logout(): Promise<void>;
   };
   Ranking: {
@@ -82,6 +116,7 @@ interface BolaoLegacyApi {
   };
   Utils: {
     isMatchLocked(date: string, time: string): boolean;
+    generateId(): string;
   };
 }
 
