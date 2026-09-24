@@ -41,6 +41,17 @@ function getGoalDiff(goalsFor: number, goalsAgainst: number) {
   return goalsFor - goalsAgainst;
 }
 
+function getErrorMessage(err: unknown, fallback: string) {
+  if (err instanceof Error && err.message) return err.message;
+  if (err && typeof err === 'object') {
+    const error = err as { message?: unknown; details?: unknown; hint?: unknown; code?: unknown };
+    const parts = [error.message, error.details, error.hint, error.code]
+      .filter((value): value is string => typeof value === 'string' && value.trim().length > 0);
+    if (parts.length) return parts.join(' | ');
+  }
+  return fallback;
+}
+
 function parseInteger(value: string, label: string, line: number) {
   const parsed = Number(String(value || '').trim());
   if (!Number.isInteger(parsed) || parsed < 0) {
@@ -314,7 +325,7 @@ export function AdminPage() {
       notify(`Rodada processada: ${(rewards || []).length} lancamentos e ${total} WDD Coins creditadas.`);
       await refresh();
     } catch (err) {
-      fail(err instanceof Error ? err.message : 'Nao foi possivel processar a rodada.');
+      fail(getErrorMessage(err, 'Nao foi possivel processar a rodada.'));
     } finally {
       setProcessing(false);
     }
