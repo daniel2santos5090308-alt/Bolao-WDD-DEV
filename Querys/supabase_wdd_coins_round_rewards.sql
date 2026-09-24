@@ -65,8 +65,8 @@ begin
 
     select *
     into v_settings
-    from public.coin_settings
-    where season_key = p_season_key;
+    from public.coin_settings cs
+    where cs.season_key = p_season_key;
 
     if not found then
         raise exception 'Configuracao de WDD Coins nao encontrada para temporada %', p_season_key;
@@ -106,9 +106,9 @@ begin
 
     if exists (
         select 1
-        from public.coin_round_processes
-        where season_key = p_season_key
-          and round_id = p_round_id
+        from public.coin_round_processes crp
+        where crp.season_key = p_season_key
+          and crp.round_id = p_round_id
     ) then
         raise exception 'As recompensas desta rodada ja foram processadas';
     end if;
@@ -328,9 +328,9 @@ begin
 
         select *
         into v_wallet
-        from public.coin_wallets
-        where season_key = p_season_key
-          and user_id = v_reward.user_id
+        from public.coin_wallets cw
+        where cw.season_key = p_season_key
+          and cw.user_id = v_reward.user_id
         for update;
 
         update public.coin_wallets
