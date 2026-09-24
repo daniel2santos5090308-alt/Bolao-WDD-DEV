@@ -333,11 +333,11 @@ begin
           and cw.user_id = v_reward.user_id
         for update;
 
-        update public.coin_wallets
+        update public.coin_wallets cw
         set
-            available_balance = available_balance + v_reward.amount,
+            available_balance = cw.available_balance + v_reward.amount,
             updated_at = now()
-        where id = v_wallet.id
+        where cw.id = v_wallet.id
         returning *
         into v_wallet;
 

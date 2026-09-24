@@ -35,8 +35,8 @@ begin
 
     select *
     into v_settings
-    from public.coin_settings
-    where coin_settings.season_key = p_season_key;
+    from public.coin_settings cs
+    where cs.season_key = p_season_key;
 
     if not found then
         raise exception 'Configuracao de WDD Coins nao encontrada para temporada %', p_season_key;
@@ -46,13 +46,13 @@ begin
 
     insert into public.coin_wallets (season_key, user_id, available_balance, locked_balance)
     values (p_season_key, p_user_id, 0, 0)
-    on conflict (season_key, user_id) do nothing;
+    on conflict on constraint coin_wallets_unique_user_season do nothing;
 
     select *
     into v_wallet
-    from public.coin_wallets
-    where coin_wallets.season_key = p_season_key
-      and coin_wallets.user_id = p_user_id
+    from public.coin_wallets cw
+    where cw.season_key = p_season_key
+      and cw.user_id = p_user_id
     for update;
 
     if not found then
@@ -61,16 +61,16 @@ begin
 
     if v_initial_balance > 0 and not exists (
         select 1
-        from public.coin_transactions
-        where coin_transactions.season_key = p_season_key
-          and coin_transactions.user_id = p_user_id
-          and coin_transactions.transaction_type = 'initial_balance'
+        from public.coin_transactions ct
+        where ct.season_key = p_season_key
+          and ct.user_id = p_user_id
+          and ct.transaction_type = 'initial_balance'
     ) then
-        update public.coin_wallets
+        update public.coin_wallets cw
         set
-            available_balance = available_balance + v_initial_balance,
+            available_balance = cw.available_balance + v_initial_balance,
             updated_at = now()
-        where id = v_wallet.id
+        where cw.id = v_wallet.id
         returning *
         into v_wallet;
 
@@ -142,10 +142,10 @@ begin
     end if;
 
     for v_profile in
-        select id, name, role
-        from public.profiles
-        where p_include_admins or coalesce(role, 'user') <> 'admin'
-        order by name
+        select p.id, p.name, p.role
+        from public.profiles p
+        where p_include_admins or coalesce(p.role, 'user') <> 'admin'
+        order by p.name
     loop
         select *
         into v_wallet
