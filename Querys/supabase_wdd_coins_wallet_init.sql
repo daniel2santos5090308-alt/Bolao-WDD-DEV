@@ -1,16 +1,19 @@
 -- Bolao WDD 2027 - inicializacao segura de carteiras WDD Coins
 -- Execute no ambiente DEV depois do supabase_wdd_coins_schema.sql.
 
+drop function if exists public.initialize_coin_wallets_for_season(text, boolean);
+drop function if exists public.initialize_coin_wallet(text, uuid);
+
 create or replace function public.initialize_coin_wallet(
     p_season_key text default '2027',
     p_user_id uuid default auth.uid()
 )
 returns table (
     wallet_id uuid,
-    season_key text,
-    user_id uuid,
-    available_balance integer,
-    locked_balance integer
+    wallet_season_key text,
+    wallet_user_id uuid,
+    wallet_available_balance integer,
+    wallet_locked_balance integer
 )
 language plpgsql
 security definer
@@ -125,9 +128,9 @@ create or replace function public.initialize_coin_wallets_for_season(
 returns table (
     target_user_id uuid,
     target_user_name text,
-    wallet_id uuid,
-    available_balance integer,
-    locked_balance integer
+    target_wallet_id uuid,
+    target_available_balance integer,
+    target_locked_balance integer
 )
 language plpgsql
 security definer
@@ -153,9 +156,9 @@ begin
 
         target_user_id := v_profile.id;
         target_user_name := v_profile.name;
-        wallet_id := v_wallet.wallet_id;
-        available_balance := v_wallet.available_balance;
-        locked_balance := v_wallet.locked_balance;
+        target_wallet_id := v_wallet.wallet_id;
+        target_available_balance := v_wallet.wallet_available_balance;
+        target_locked_balance := v_wallet.wallet_locked_balance;
         return next;
     end loop;
 end;
