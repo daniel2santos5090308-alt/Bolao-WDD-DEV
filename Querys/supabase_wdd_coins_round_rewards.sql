@@ -49,6 +49,7 @@ language plpgsql
 security definer
 set search_path = public
 as $$
+#variable_conflict use_column
 declare
     v_settings public.coin_settings%rowtype;
     v_round public.rounds%rowtype;

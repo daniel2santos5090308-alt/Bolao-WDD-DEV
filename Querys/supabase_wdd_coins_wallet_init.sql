@@ -19,6 +19,7 @@ language plpgsql
 security definer
 set search_path = public
 as $$
+#variable_conflict use_column
 declare
     v_wallet public.coin_wallets%rowtype;
     v_settings public.coin_settings%rowtype;
@@ -136,6 +137,7 @@ language plpgsql
 security definer
 set search_path = public
 as $$
+#variable_conflict use_column
 declare
     v_profile record;
     v_wallet record;
