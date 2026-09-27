@@ -708,6 +708,55 @@
   display: grid;
 }
 
+.coin-ledger-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  padding: 14px 18px;
+  border-bottom: 1px solid #edf1f5;
+  background: #f8fbfa;
+}
+
+.coin-ledger-summary span {
+  display: grid;
+  gap: 4px;
+  padding: 12px;
+  border: 1px solid #edf1f5;
+  border-radius: var(--radius-card);
+  color: var(--color-muted);
+  background: #fff;
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.coin-ledger-summary strong {
+  color: var(--color-ink);
+  font-size: 1.2rem;
+}
+
+.coin-filter-tabs {
+  display: flex;
+  gap: 8px;
+  padding: 14px 18px;
+  border-bottom: 1px solid #edf1f5;
+}
+
+.coin-filter-tabs button {
+  min-height: 36px;
+  border: 0;
+  border-radius: var(--radius-card);
+  padding: 0 12px;
+  color: var(--color-muted);
+  background: #eef2f7;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.coin-filter-tabs button.is-active {
+  color: #fff;
+  background: #0b5c3b;
+}
+
 .coin-transaction {
   display: flex;
   align-items: center;
@@ -1280,6 +1329,10 @@
   }
 
   .coin-summary-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .coin-ledger-summary {
     grid-template-columns: 1fr;
   }
 

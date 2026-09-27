@@ -1,3 +1,4 @@
+import { useMemo, useState } from 'react';
 import type { CoinTransaction } from '../hooks/useCoinTransactions';
 import { useCoinTransactions } from '../hooks/useCoinTransactions';
 import type { AppRoute } from '../app/routes';
@@ -30,6 +31,23 @@ function formatAmount(value: number): string {
   return `${sign}${value.toLocaleString('pt-BR')}`;
 }
 
+function getTransactionTypeLabel(type: string): string {
+  const labels: Record<string, string> = {
+    initial_balance: 'Saldo inicial',
+    round_reward: 'Recompensa da rodada',
+    bonus_reward: 'Bonus',
+    full_round_reward: 'Participacao completa',
+    admin_adjustment: 'Ajuste admin',
+    purchase: 'Compra',
+    challenge_lock: 'Desafio bloqueado',
+    challenge_release: 'Desafio liberado',
+    challenge_reward: 'Desafio ganho',
+    reversal: 'Estorno'
+  };
+
+  return labels[type] || type || 'Movimentacao';
+}
+
 function TransactionRow({ transaction }: { transaction: CoinTransaction }) {
   const isCredit = transaction.amount > 0;
 
@@ -37,7 +55,7 @@ function TransactionRow({ transaction }: { transaction: CoinTransaction }) {
     <div className="coin-transaction">
       <div>
         <strong>{transaction.description}</strong>
-        <span>{transaction.transactionType} | {formatDate(transaction.createdAt)}</span>
+        <span>{getTransactionTypeLabel(transaction.transactionType)} | {formatDate(transaction.createdAt)}</span>
       </div>
       <div className={isCredit ? 'coin-amount coin-amount--credit' : 'coin-amount coin-amount--debit'}>
         {formatAmount(transaction.amount)}
@@ -55,7 +73,16 @@ export function CoinsPage({
   onNavigate
 }: CoinsPageProps) {
   const transactions = useCoinTransactions(currentUser.id, '2027');
+  const [transactionFilter, setTransactionFilter] = useState<'all' | 'credit' | 'debit'>('all');
   const totalBalance = availableBalance + lockedBalance;
+  const loadedTransactions = transactions.transactions;
+  const creditTotal = useMemo(() => loadedTransactions.filter((transaction) => transaction.amount > 0).reduce((sum, transaction) => sum + transaction.amount, 0), [loadedTransactions]);
+  const debitTotal = useMemo(() => loadedTransactions.filter((transaction) => transaction.amount < 0).reduce((sum, transaction) => sum + Math.abs(transaction.amount), 0), [loadedTransactions]);
+  const filteredTransactions = useMemo(() => {
+    if (transactionFilter === 'credit') return loadedTransactions.filter((transaction) => transaction.amount > 0);
+    if (transactionFilter === 'debit') return loadedTransactions.filter((transaction) => transaction.amount < 0);
+    return loadedTransactions;
+  }, [loadedTransactions, transactionFilter]);
 
   return (
     <section className="coins-page">
@@ -99,14 +126,30 @@ export function CoinsPage({
         {transactions.error ? <div className="error-banner">{transactions.error}</div> : null}
         {!transactions.hasLoaded ? (
           <div className="empty-state">Clique em carregar para consultar as movimentacoes.</div>
-        ) : transactions.transactions.length === 0 ? (
+        ) : loadedTransactions.length === 0 ? (
           <div className="empty-state">Nenhuma movimentacao registrada ainda.</div>
         ) : (
-          <div className="coin-transaction-list">
-            {transactions.transactions.map((transaction) => (
-              <TransactionRow key={transaction.id} transaction={transaction} />
-            ))}
-          </div>
+          <>
+            <div className="coin-ledger-summary">
+              <span><strong>{loadedTransactions.length}</strong> movimentacoes</span>
+              <span><strong>{creditTotal.toLocaleString('pt-BR')}</strong> coins recebidas</span>
+              <span><strong>{debitTotal.toLocaleString('pt-BR')}</strong> coins utilizadas</span>
+            </div>
+            <div className="coin-filter-tabs">
+              <button type="button" className={transactionFilter === 'all' ? 'is-active' : ''} onClick={() => setTransactionFilter('all')}>Todos</button>
+              <button type="button" className={transactionFilter === 'credit' ? 'is-active' : ''} onClick={() => setTransactionFilter('credit')}>Creditos</button>
+              <button type="button" className={transactionFilter === 'debit' ? 'is-active' : ''} onClick={() => setTransactionFilter('debit')}>Debitos</button>
+            </div>
+            {filteredTransactions.length === 0 ? (
+              <div className="empty-state">Nenhuma movimentacao neste filtro.</div>
+            ) : (
+              <div className="coin-transaction-list">
+                {filteredTransactions.map((transaction) => (
+                  <TransactionRow key={transaction.id} transaction={transaction} />
+                ))}
+              </div>
+            )}
+          </>
         )}
       </section>
     </section>
