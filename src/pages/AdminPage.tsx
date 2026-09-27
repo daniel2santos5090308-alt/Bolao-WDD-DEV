@@ -160,6 +160,7 @@ export function AdminPage() {
   const [coinTransactions, setCoinTransactions] = useState<AdminCoinTransaction[]>([]);
   const [coinAdminLoading, setCoinAdminLoading] = useState(false);
   const [coinAdminLoaded, setCoinAdminLoaded] = useState(false);
+  const [walletInitializing, setWalletInitializing] = useState(false);
 
   const rounds = useMemo(() => [...(data?.rounds || [])].sort((a, b) => getRoundNumber(a) - getRoundNumber(b)), [data?.rounds]);
   const matches = data?.matches || [];
@@ -394,6 +395,24 @@ export function AdminPage() {
     }
   }
 
+  async function initializeCoinWallets() {
+    const confirmed = window.confirm('Inicializar carteiras WDD Coins para todos os participantes? Se o saldo inicial estiver configurado acima de zero, ele sera creditado uma unica vez por usuario.');
+    if (!confirmed) return;
+
+    setWalletInitializing(true);
+    try {
+      if (typeof supabaseClient === 'undefined') throw new Error('Supabase nao inicializado.');
+      const { data: wallets, error: rpcError } = await supabaseClient.rpc('initialize_coin_wallets_for_season', { p_season_key: coins.seasonKey, p_include_admins: false });
+      if (rpcError) throw rpcError;
+      notify(`Carteiras verificadas: ${(wallets || []).length} participantes preparados para a temporada ${coins.seasonKey}.`);
+      await loadCoinAdminData();
+    } catch (err) {
+      fail(getErrorMessage(err, 'Nao foi possivel inicializar as carteiras WDD Coins.'));
+    } finally {
+      setWalletInitializing(false);
+    }
+  }
+
   async function processRoundRewards() {
     if (!selectedRewardRoundId) return fail('Selecione uma rodada finalizada.');
     setProcessing(true);
@@ -471,7 +490,7 @@ export function AdminPage() {
 
       {activeTab === 'pontuacao' ? <ScoringAdmin scoring={scoring} onChange={setScoringDraft} onSave={saveScoring} /> : null}
       {activeTab === 'classificacao' ? <StandingsAdmin standingForm={standingForm} setStandingForm={setStandingForm} onSave={handleSaveStanding} csvText={csvText} setCsvText={setCsvText} csvPreview={csvPreview} previewCsv={previewCsv} saveCsv={saveCsv} standings={standings} deleteStanding={deleteStanding} /> : null}
-      {activeTab === 'coins' ? <CoinsAdmin coins={coins} setCoinDraft={setCoinDraft} saveCoinSettings={saveCoinSettings} saving={coinSettings.saving} finishedRounds={finishedRounds} selectedRewardRoundId={selectedRewardRoundId} setSelectedRewardRoundId={setSelectedRewardRoundId} processRoundRewards={processRoundRewards} processing={processing} coinProcesses={coinProcesses} coinTransactions={coinTransactions} users={data?.users || []} rounds={rounds} loadCoinAdminData={loadCoinAdminData} coinAdminLoading={coinAdminLoading} coinAdminLoaded={coinAdminLoaded} /> : null}
+      {activeTab === 'coins' ? <CoinsAdmin coins={coins} setCoinDraft={setCoinDraft} saveCoinSettings={saveCoinSettings} saving={coinSettings.saving} finishedRounds={finishedRounds} selectedRewardRoundId={selectedRewardRoundId} setSelectedRewardRoundId={setSelectedRewardRoundId} processRoundRewards={processRoundRewards} processing={processing} coinProcesses={coinProcesses} coinTransactions={coinTransactions} users={data?.users || []} rounds={rounds} loadCoinAdminData={loadCoinAdminData} coinAdminLoading={coinAdminLoading} coinAdminLoaded={coinAdminLoaded} initializeCoinWallets={initializeCoinWallets} walletInitializing={walletInitializing} /> : null}
     </section>
   );
 }
@@ -494,7 +513,7 @@ function StandingsAdmin({ standingForm, setStandingForm, onSave, csvText, setCsv
   return <div className="page-stack"><section className="admin-panel"><header><div><h2>{standingForm.id ? 'Editar classificacao' : 'Nova linha da classificacao'}</h2><p>Atualizacao individual da tabela.</p></div></header><form className="admin-fields-grid" onSubmit={onSave}><NumberField label="Posicao" value={standingForm.position} onChange={(value) => setStandingForm({ ...standingForm, position: value })} min={1} /><label className="admin-field"><span>Time</span><input value={standingForm.team} onChange={(event) => setStandingForm({ ...standingForm, team: event.target.value })} required /></label><NumberField label="Pontos" value={standingForm.points} onChange={(value) => setStandingForm({ ...standingForm, points: value })} /><NumberField label="Jogos" value={standingForm.played} onChange={(value) => setStandingForm({ ...standingForm, played: value })} /><NumberField label="Vitorias" value={standingForm.wins} onChange={(value) => setStandingForm({ ...standingForm, wins: value })} /><NumberField label="Empates" value={standingForm.draws} onChange={(value) => setStandingForm({ ...standingForm, draws: value })} /><NumberField label="Derrotas" value={standingForm.losses} onChange={(value) => setStandingForm({ ...standingForm, losses: value })} /><NumberField label="GP" value={standingForm.goalsFor} onChange={(value) => setStandingForm({ ...standingForm, goalsFor: value, goalDiff: getGoalDiff(value, standingForm.goalsAgainst) })} /><NumberField label="GC" value={standingForm.goalsAgainst} onChange={(value) => setStandingForm({ ...standingForm, goalsAgainst: value, goalDiff: getGoalDiff(standingForm.goalsFor, value) })} /><label className="admin-field"><span>SG</span><input value={getGoalDiff(standingForm.goalsFor, standingForm.goalsAgainst)} readOnly /></label><div className="admin-panel__actions"><button type="submit">Salvar classificacao</button>{standingForm.id ? <button type="button" onClick={() => setStandingForm(emptyStandingForm())}>Cancelar</button> : null}</div></form></section><section className="admin-panel"><header><div><h2>Atualizacao via CSV</h2><p>Cole a classificacao completa e salve em lote.</p></div><div className="admin-panel__actions"><button type="button" onClick={() => setCsvText(csvSample)}>Usar modelo</button></div></header><div className="csv-editor"><textarea value={csvText} onChange={(event) => setCsvText(event.target.value)} placeholder="position;team;points;played;wins;draws;losses;goals_for;goals_against;goal_diff" /><div className="admin-panel__actions"><button type="button" onClick={previewCsv}>Pre-visualizar CSV</button><button type="button" onClick={saveCsv} disabled={!csvPreview.length}>Salvar classificacao em lote</button></div></div>{csvPreview.length ? <StandingsTable standings={csvPreview.map((row) => ({ id: row.team, ...row }))} emptyText="Sem previa." /> : null}</section><section className="table-card"><header><h2>Classificacao atual</h2></header><StandingsLegend /><StandingsTable standings={standings} /><div className="admin-list">{[...standings].sort((a, b) => a.position - b.position).map((standing) => <div key={standing.id} className="admin-list-row"><strong>{standing.position}. {standing.team}</strong><span>{standing.points} pts</span><button type="button" onClick={() => setStandingForm(standing)}>Editar</button><button type="button" onClick={() => deleteStanding(standing.id)}>Excluir</button></div>)}</div></section></div>;
 }
 
-function CoinsAdmin({ coins, setCoinDraft, saveCoinSettings, saving, finishedRounds, selectedRewardRoundId, setSelectedRewardRoundId, processRoundRewards, processing, coinProcesses, coinTransactions, users, rounds, loadCoinAdminData, coinAdminLoading, coinAdminLoaded }: { coins: CoinSettings; setCoinDraft(value: CoinSettings): void; saveCoinSettings(): void; saving: boolean; finishedRounds: BolaoRound[]; selectedRewardRoundId: string; setSelectedRewardRoundId(value: string): void; processRoundRewards(): void; processing: boolean; coinProcesses: CoinRoundProcess[]; coinTransactions: AdminCoinTransaction[]; users: BolaoUser[]; rounds: BolaoRound[]; loadCoinAdminData(): void; coinAdminLoading: boolean; coinAdminLoaded: boolean }) {
+function CoinsAdmin({ coins, setCoinDraft, saveCoinSettings, saving, finishedRounds, selectedRewardRoundId, setSelectedRewardRoundId, processRoundRewards, processing, coinProcesses, coinTransactions, users, rounds, loadCoinAdminData, coinAdminLoading, coinAdminLoaded, initializeCoinWallets, walletInitializing }: { coins: CoinSettings; setCoinDraft(value: CoinSettings): void; saveCoinSettings(): void; saving: boolean; finishedRounds: BolaoRound[]; selectedRewardRoundId: string; setSelectedRewardRoundId(value: string): void; processRoundRewards(): void; processing: boolean; coinProcesses: CoinRoundProcess[]; coinTransactions: AdminCoinTransaction[]; users: BolaoUser[]; rounds: BolaoRound[]; loadCoinAdminData(): void; coinAdminLoading: boolean; coinAdminLoaded: boolean; initializeCoinWallets(): void; walletInitializing: boolean }) {
   const roundNameById = new Map(rounds.map((round) => [round.id, round.name]));
   const userNameById = new Map(users.map((user) => [user.id, user.name]));
 
@@ -503,7 +522,7 @@ function CoinsAdmin({ coins, setCoinDraft, saveCoinSettings, saving, finishedRou
       <section className="admin-panel">
         <header>
           <div><h2>Temporada {coins.seasonKey}</h2><p>Valores em WDD Coins para processamentos futuros.</p></div>
-          <div className="admin-panel__actions"><button type="button" onClick={saveCoinSettings} disabled={saving}>{saving ? 'Salvando...' : 'Salvar'}</button></div>
+          <div className="admin-panel__actions"><button type="button" onClick={initializeCoinWallets} disabled={walletInitializing}>{walletInitializing ? 'Inicializando...' : 'Inicializar carteiras'}</button><button type="button" onClick={saveCoinSettings} disabled={saving}>{saving ? 'Salvando...' : 'Salvar'}</button></div>
         </header>
         <div className="admin-fields-grid">{coinFields.map((field) => <NumberField key={field.key} label={field.label} value={coins[field.key]} onChange={(value) => setCoinDraft({ ...coins, [field.key]: value })} help={field.help} />)}</div>
       </section>
