@@ -499,6 +499,36 @@
   line-height: 1;
 }
 
+.admin-filter-row {
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) minmax(180px, 260px);
+  gap: 12px;
+  padding: 0 18px 18px;
+}
+
+.admin-filter-row label {
+  display: grid;
+  gap: 8px;
+}
+
+.admin-filter-row span {
+  color: var(--color-muted);
+  font-size: 0.82rem;
+  font-weight: 850;
+}
+
+.admin-filter-row input,
+.admin-filter-row select {
+  min-height: 42px;
+  border: 1px solid #ccd8e2;
+  border-radius: var(--radius-card);
+  padding: 0 12px;
+  color: var(--color-ink);
+  background: #fff;
+  font-size: 1rem;
+  font-weight: 850;
+}
+
 .admin-match-list {
   display: grid;
   gap: 12px;
@@ -1382,6 +1412,7 @@
 
   .admin-two-col,
   .admin-history-grid,
+  .admin-filter-row,
   .admin-metric-grid,
   .profile-grid {
     grid-template-columns: 1fr;

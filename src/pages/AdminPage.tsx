@@ -577,6 +577,8 @@ function StandingsAdmin({ standingForm, setStandingForm, onSave, csvText, setCsv
 }
 
 function CoinsAdmin({ coins, setCoinDraft, saveCoinSettings, saving, finishedRounds, selectedRewardRoundId, setSelectedRewardRoundId, processRoundRewards, processing, coinProcesses, coinTransactions, coinWallets, users, rounds, loadCoinAdminData, coinAdminLoading, coinAdminLoaded, initializeCoinWallets, walletInitializing, adjustmentUserId, setAdjustmentUserId, adjustmentAmount, setAdjustmentAmount, adjustmentDescription, setAdjustmentDescription, adjustCoinWallet, adjustingWallet }: { coins: CoinSettings; setCoinDraft(value: CoinSettings): void; saveCoinSettings(): void; saving: boolean; finishedRounds: BolaoRound[]; selectedRewardRoundId: string; setSelectedRewardRoundId(value: string): void; processRoundRewards(): void; processing: boolean; coinProcesses: CoinRoundProcess[]; coinTransactions: AdminCoinTransaction[]; coinWallets: AdminCoinWallet[]; users: BolaoUser[]; rounds: BolaoRound[]; loadCoinAdminData(): void; coinAdminLoading: boolean; coinAdminLoaded: boolean; initializeCoinWallets(): void; walletInitializing: boolean; adjustmentUserId: string; setAdjustmentUserId(value: string): void; adjustmentAmount: string; setAdjustmentAmount(value: string): void; adjustmentDescription: string; setAdjustmentDescription(value: string): void; adjustCoinWallet(event: FormEvent): void; adjustingWallet: boolean }) {
+  const [walletSearch, setWalletSearch] = useState('');
+  const [transactionFilter, setTransactionFilter] = useState<'all' | 'credit' | 'debit'>('all');
   const roundNameById = new Map(rounds.map((round) => [round.id, round.name]));
   const userNameById = new Map(users.map((user) => [user.id, user.name]));
   const participantUsers = users.filter((user) => user.role !== 'admin').sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'));
@@ -584,6 +586,15 @@ function CoinsAdmin({ coins, setCoinDraft, saveCoinSettings, saving, finishedRou
   const totalLockedBalance = coinWallets.reduce((sum, wallet) => sum + wallet.lockedBalance, 0);
   const totalProcessedAmount = coinProcesses.reduce((sum, process) => sum + process.totalAmount, 0);
   const totalRecentCredits = coinTransactions.filter((transaction) => transaction.amount > 0).reduce((sum, transaction) => sum + transaction.amount, 0);
+  const normalizedWalletSearch = walletSearch.trim().toLocaleLowerCase('pt-BR');
+  const filteredWallets = normalizedWalletSearch
+    ? coinWallets.filter((wallet) => (wallet.userName || userNameById.get(wallet.userId) || '').toLocaleLowerCase('pt-BR').includes(normalizedWalletSearch))
+    : coinWallets;
+  const filteredTransactions = transactionFilter === 'credit'
+    ? coinTransactions.filter((transaction) => transaction.amount > 0)
+    : transactionFilter === 'debit'
+      ? coinTransactions.filter((transaction) => transaction.amount < 0)
+      : coinTransactions;
 
   return (
     <div className="page-stack">
@@ -642,6 +653,20 @@ function CoinsAdmin({ coins, setCoinDraft, saveCoinSettings, saving, finishedRou
               <article><span>Saldo bloqueado</span><strong>{totalLockedBalance.toLocaleString('pt-BR')}</strong></article>
               <article><span>Total processado</span><strong>{totalProcessedAmount.toLocaleString('pt-BR')}</strong><small>{totalRecentCredits.toLocaleString('pt-BR')} nos ultimos lancamentos</small></article>
             </div>
+            <div className="admin-filter-row">
+              <label>
+                <span>Buscar carteira</span>
+                <input value={walletSearch} onChange={(event) => setWalletSearch(event.target.value)} placeholder="Nome do participante" />
+              </label>
+              <label>
+                <span>Filtrar lancamentos</span>
+                <select value={transactionFilter} onChange={(event) => setTransactionFilter(event.target.value as 'all' | 'credit' | 'debit')}>
+                  <option value="all">Todos</option>
+                  <option value="credit">Creditos</option>
+                  <option value="debit">Debitos</option>
+                </select>
+              </label>
+            </div>
             <div className="admin-history-grid">
               <div>
                 <h3>Rodadas processadas</h3>
@@ -657,7 +682,7 @@ function CoinsAdmin({ coins, setCoinDraft, saveCoinSettings, saving, finishedRou
               <div>
                 <h3>Saldos das carteiras</h3>
                 <div className="admin-list">
-                  {coinWallets.length === 0 ? <div className="empty-row">Nenhuma carteira encontrada.</div> : coinWallets.map((wallet) => (
+                  {filteredWallets.length === 0 ? <div className="empty-row">Nenhuma carteira encontrada.</div> : filteredWallets.map((wallet) => (
                     <div key={wallet.id} className="admin-list-row">
                       <strong>{wallet.userName || userNameById.get(wallet.userId) || 'Usuario'}</strong>
                       <span>{wallet.availableBalance.toLocaleString('pt-BR')} disp. | {wallet.lockedBalance.toLocaleString('pt-BR')} bloq. | {wallet.totalBalance.toLocaleString('pt-BR')} total</span>
@@ -668,7 +693,7 @@ function CoinsAdmin({ coins, setCoinDraft, saveCoinSettings, saving, finishedRou
               <div>
                 <h3>Ultimos lancamentos</h3>
                 <div className="admin-list">
-                  {coinTransactions.length === 0 ? <div className="empty-row">Nenhum lancamento encontrado.</div> : coinTransactions.map((transaction) => (
+                  {filteredTransactions.length === 0 ? <div className="empty-row">Nenhum lancamento encontrado.</div> : filteredTransactions.map((transaction) => (
                     <div key={transaction.id} className="admin-list-row">
                       <strong>{userNameById.get(transaction.userId) || 'Usuario'}</strong>
                       <span>{transaction.amount.toLocaleString('pt-BR')} coins | {transaction.description}</span>
