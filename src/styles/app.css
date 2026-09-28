@@ -877,6 +877,18 @@
   font-weight: 950;
 }
 
+.store-item-card__preview--image {
+  overflow: hidden;
+  background: #071411;
+  box-shadow: none;
+}
+
+.store-item-card__preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
 .store-item-card__body {
   display: flex;
   min-width: 0;

@@ -90,7 +90,7 @@ insert into public.coin_store_items (
     ('2027', 'frame_gold_goal', 'Moldura Gol de Ouro', 'Destaque dourado para o perfil do participante.', 'profile_frame', 250, 'raro', '#f5b315', 10),
     ('2027', 'frame_green_field', 'Moldura Campo WDD', 'Moldura verde inspirada no gramado para perfil.', 'profile_frame', 150, 'comum', '#0f7a4f', 20),
     ('2027', 'card_bonus_glow', 'Card Bonus Iluminado', 'Visual especial para destacar seus cards de jogos bonus.', 'match_card_skin', 350, 'epico', '#f59e0b', 30),
-    ('2027', 'badge_cravador', 'Selo Cravador', 'Selo para exibir no perfil quando quiser mostrar confiança.', 'profile_badge', 200, 'raro', 'CRV', 40)
+    ('2027', 'badge_cravador', 'Selo Cravador', 'Selo para exibir no perfil quando quiser mostrar confiança.', 'profile_badge', 200, 'raro', '/assets/store/cravador_de_placar_512.png', 40)
 on conflict (season_key, code) do update
 set
     name = excluded.name,

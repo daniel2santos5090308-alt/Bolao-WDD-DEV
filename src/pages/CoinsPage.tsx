@@ -78,13 +78,18 @@ function getItemTypeLabel(type: string): string {
   return labels[type] || type || 'Item';
 }
 
+function isImagePreview(value: string): boolean {
+  return /\.(png|jpe?g|webp|gif|avif|svg)$/i.test(value) || value.startsWith('/assets/');
+}
+
 function StoreItemCard({ item, owned, availableBalance, purchasing, onPurchase }: { item: CoinStoreItem; owned: boolean; availableBalance: number; purchasing: boolean; onPurchase(item: CoinStoreItem): void }) {
   const canBuy = !owned && availableBalance >= item.price && !purchasing;
+  const hasImagePreview = isImagePreview(item.previewValue);
 
   return (
     <article className="store-item-card">
-      <div className="store-item-card__preview" style={item.previewValue ? { '--item-color': item.previewValue } as CSSProperties : undefined}>
-        <span>{item.name.slice(0, 2).toUpperCase()}</span>
+      <div className={hasImagePreview ? 'store-item-card__preview store-item-card__preview--image' : 'store-item-card__preview'} style={!hasImagePreview && item.previewValue ? { '--item-color': item.previewValue } as CSSProperties : undefined}>
+        {hasImagePreview ? <img src={item.previewValue} alt="" loading="lazy" /> : <span>{item.name.slice(0, 2).toUpperCase()}</span>}
       </div>
       <div className="store-item-card__body">
         <div>
