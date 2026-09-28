@@ -34,6 +34,22 @@ interface AdminCoinWallet {
   totalBalance: number;
 }
 
+interface AdminStoreItem {
+  id: string;
+  name: string;
+  itemType: string;
+  price: number;
+  rarity: string;
+  isActive: boolean;
+}
+
+interface AdminUserStoreItem {
+  id: string;
+  userId: string;
+  itemId: string;
+  purchasedAt: string;
+}
+
 const coinFields: Array<{ key: keyof Omit<CoinSettings, 'seasonKey'>; label: string; help: string }> = [
   { key: 'initialBalance', label: 'Saldo inicial', help: 'Credito unico ao criar a carteira.' },
   { key: 'firstPlaceReward', label: '1o lugar da rodada', help: 'Premio por melhor pontuacao da rodada.' },
@@ -168,6 +184,8 @@ export function AdminPage() {
   const [coinProcesses, setCoinProcesses] = useState<CoinRoundProcess[]>([]);
   const [coinTransactions, setCoinTransactions] = useState<AdminCoinTransaction[]>([]);
   const [coinWallets, setCoinWallets] = useState<AdminCoinWallet[]>([]);
+  const [coinStoreItems, setCoinStoreItems] = useState<AdminStoreItem[]>([]);
+  const [coinUserItems, setCoinUserItems] = useState<AdminUserStoreItem[]>([]);
   const [coinAdminLoading, setCoinAdminLoading] = useState(false);
   const [coinAdminLoaded, setCoinAdminLoaded] = useState(false);
   const [walletInitializing, setWalletInitializing] = useState(false);
@@ -391,6 +409,24 @@ export function AdminPage() {
 
       if (walletError) throw walletError;
 
+      const client = supabaseClient as any;
+      const { data: storeRows, error: storeError } = await client
+        .from('coin_store_items')
+        .select('id, name, item_type, price, rarity, is_active')
+        .eq('season_key', coins.seasonKey)
+        .order('sort_order', { ascending: true });
+
+      if (storeError) throw storeError;
+
+      const { data: userItemRows, error: userItemError } = await client
+        .from('coin_user_items')
+        .select('id, user_id, item_id, purchased_at')
+        .eq('season_key', coins.seasonKey)
+        .order('purchased_at', { ascending: false })
+        .range(0, 19);
+
+      if (userItemError) throw userItemError;
+
       setCoinProcesses((processRows || []).map((row) => {
         const summary = row.summary && typeof row.summary === 'object' ? row.summary as Record<string, unknown> : {};
         return {
@@ -416,6 +452,20 @@ export function AdminPage() {
         availableBalance: readNumber(row.available_balance),
         lockedBalance: readNumber(row.locked_balance),
         totalBalance: readNumber(row.total_balance)
+      })));
+      setCoinStoreItems((storeRows || []).map((row: Record<string, unknown>) => ({
+        id: readString(row.id),
+        name: readString(row.name),
+        itemType: readString(row.item_type),
+        price: readNumber(row.price),
+        rarity: readString(row.rarity),
+        isActive: Boolean(row.is_active)
+      })));
+      setCoinUserItems((userItemRows || []).map((row: Record<string, unknown>) => ({
+        id: readString(row.id),
+        userId: readString(row.user_id),
+        itemId: readString(row.item_id),
+        purchasedAt: readString(row.purchased_at)
       })));
       setCoinAdminLoaded(true);
       notify('Historico WDD Coins carregado.');
@@ -553,7 +603,7 @@ export function AdminPage() {
 
       {activeTab === 'pontuacao' ? <ScoringAdmin scoring={scoring} onChange={setScoringDraft} onSave={saveScoring} /> : null}
       {activeTab === 'classificacao' ? <StandingsAdmin standingForm={standingForm} setStandingForm={setStandingForm} onSave={handleSaveStanding} csvText={csvText} setCsvText={setCsvText} csvPreview={csvPreview} previewCsv={previewCsv} saveCsv={saveCsv} standings={standings} deleteStanding={deleteStanding} /> : null}
-      {activeTab === 'coins' ? <CoinsAdmin coins={coins} setCoinDraft={setCoinDraft} saveCoinSettings={saveCoinSettings} saving={coinSettings.saving} finishedRounds={finishedRounds} selectedRewardRoundId={selectedRewardRoundId} setSelectedRewardRoundId={setSelectedRewardRoundId} processRoundRewards={processRoundRewards} processing={processing} coinProcesses={coinProcesses} coinTransactions={coinTransactions} coinWallets={coinWallets} users={data?.users || []} rounds={rounds} loadCoinAdminData={loadCoinAdminData} coinAdminLoading={coinAdminLoading} coinAdminLoaded={coinAdminLoaded} initializeCoinWallets={initializeCoinWallets} walletInitializing={walletInitializing} adjustmentUserId={adjustmentUserId} setAdjustmentUserId={setAdjustmentUserId} adjustmentAmount={adjustmentAmount} setAdjustmentAmount={setAdjustmentAmount} adjustmentDescription={adjustmentDescription} setAdjustmentDescription={setAdjustmentDescription} adjustCoinWallet={adjustCoinWallet} adjustingWallet={adjustingWallet} /> : null}
+      {activeTab === 'coins' ? <CoinsAdmin coins={coins} setCoinDraft={setCoinDraft} saveCoinSettings={saveCoinSettings} saving={coinSettings.saving} finishedRounds={finishedRounds} selectedRewardRoundId={selectedRewardRoundId} setSelectedRewardRoundId={setSelectedRewardRoundId} processRoundRewards={processRoundRewards} processing={processing} coinProcesses={coinProcesses} coinTransactions={coinTransactions} coinWallets={coinWallets} coinStoreItems={coinStoreItems} coinUserItems={coinUserItems} users={data?.users || []} rounds={rounds} loadCoinAdminData={loadCoinAdminData} coinAdminLoading={coinAdminLoading} coinAdminLoaded={coinAdminLoaded} initializeCoinWallets={initializeCoinWallets} walletInitializing={walletInitializing} adjustmentUserId={adjustmentUserId} setAdjustmentUserId={setAdjustmentUserId} adjustmentAmount={adjustmentAmount} setAdjustmentAmount={setAdjustmentAmount} adjustmentDescription={adjustmentDescription} setAdjustmentDescription={setAdjustmentDescription} adjustCoinWallet={adjustCoinWallet} adjustingWallet={adjustingWallet} /> : null}
     </section>
   );
 }
@@ -576,7 +626,7 @@ function StandingsAdmin({ standingForm, setStandingForm, onSave, csvText, setCsv
   return <div className="page-stack"><section className="admin-panel"><header><div><h2>{standingForm.id ? 'Editar classificacao' : 'Nova linha da classificacao'}</h2><p>Atualizacao individual da tabela.</p></div></header><form className="admin-fields-grid" onSubmit={onSave}><NumberField label="Posicao" value={standingForm.position} onChange={(value) => setStandingForm({ ...standingForm, position: value })} min={1} /><label className="admin-field"><span>Time</span><input value={standingForm.team} onChange={(event) => setStandingForm({ ...standingForm, team: event.target.value })} required /></label><NumberField label="Pontos" value={standingForm.points} onChange={(value) => setStandingForm({ ...standingForm, points: value })} /><NumberField label="Jogos" value={standingForm.played} onChange={(value) => setStandingForm({ ...standingForm, played: value })} /><NumberField label="Vitorias" value={standingForm.wins} onChange={(value) => setStandingForm({ ...standingForm, wins: value })} /><NumberField label="Empates" value={standingForm.draws} onChange={(value) => setStandingForm({ ...standingForm, draws: value })} /><NumberField label="Derrotas" value={standingForm.losses} onChange={(value) => setStandingForm({ ...standingForm, losses: value })} /><NumberField label="GP" value={standingForm.goalsFor} onChange={(value) => setStandingForm({ ...standingForm, goalsFor: value, goalDiff: getGoalDiff(value, standingForm.goalsAgainst) })} /><NumberField label="GC" value={standingForm.goalsAgainst} onChange={(value) => setStandingForm({ ...standingForm, goalsAgainst: value, goalDiff: getGoalDiff(standingForm.goalsFor, value) })} /><label className="admin-field"><span>SG</span><input value={getGoalDiff(standingForm.goalsFor, standingForm.goalsAgainst)} readOnly /></label><div className="admin-panel__actions"><button type="submit">Salvar classificacao</button>{standingForm.id ? <button type="button" onClick={() => setStandingForm(emptyStandingForm())}>Cancelar</button> : null}</div></form></section><section className="admin-panel"><header><div><h2>Atualizacao via CSV</h2><p>Cole a classificacao completa e salve em lote.</p></div><div className="admin-panel__actions"><button type="button" onClick={() => setCsvText(csvSample)}>Usar modelo</button></div></header><div className="csv-editor"><textarea value={csvText} onChange={(event) => setCsvText(event.target.value)} placeholder="position;team;points;played;wins;draws;losses;goals_for;goals_against;goal_diff" /><div className="admin-panel__actions"><button type="button" onClick={previewCsv}>Pre-visualizar CSV</button><button type="button" onClick={saveCsv} disabled={!csvPreview.length}>Salvar classificacao em lote</button></div></div>{csvPreview.length ? <StandingsTable standings={csvPreview.map((row) => ({ id: row.team, ...row }))} emptyText="Sem previa." /> : null}</section><section className="table-card"><header><h2>Classificacao atual</h2></header><StandingsLegend /><StandingsTable standings={standings} /><div className="admin-list">{[...standings].sort((a, b) => a.position - b.position).map((standing) => <div key={standing.id} className="admin-list-row"><strong>{standing.position}. {standing.team}</strong><span>{standing.points} pts</span><button type="button" onClick={() => setStandingForm(standing)}>Editar</button><button type="button" onClick={() => deleteStanding(standing.id)}>Excluir</button></div>)}</div></section></div>;
 }
 
-function CoinsAdmin({ coins, setCoinDraft, saveCoinSettings, saving, finishedRounds, selectedRewardRoundId, setSelectedRewardRoundId, processRoundRewards, processing, coinProcesses, coinTransactions, coinWallets, users, rounds, loadCoinAdminData, coinAdminLoading, coinAdminLoaded, initializeCoinWallets, walletInitializing, adjustmentUserId, setAdjustmentUserId, adjustmentAmount, setAdjustmentAmount, adjustmentDescription, setAdjustmentDescription, adjustCoinWallet, adjustingWallet }: { coins: CoinSettings; setCoinDraft(value: CoinSettings): void; saveCoinSettings(): void; saving: boolean; finishedRounds: BolaoRound[]; selectedRewardRoundId: string; setSelectedRewardRoundId(value: string): void; processRoundRewards(): void; processing: boolean; coinProcesses: CoinRoundProcess[]; coinTransactions: AdminCoinTransaction[]; coinWallets: AdminCoinWallet[]; users: BolaoUser[]; rounds: BolaoRound[]; loadCoinAdminData(): void; coinAdminLoading: boolean; coinAdminLoaded: boolean; initializeCoinWallets(): void; walletInitializing: boolean; adjustmentUserId: string; setAdjustmentUserId(value: string): void; adjustmentAmount: string; setAdjustmentAmount(value: string): void; adjustmentDescription: string; setAdjustmentDescription(value: string): void; adjustCoinWallet(event: FormEvent): void; adjustingWallet: boolean }) {
+function CoinsAdmin({ coins, setCoinDraft, saveCoinSettings, saving, finishedRounds, selectedRewardRoundId, setSelectedRewardRoundId, processRoundRewards, processing, coinProcesses, coinTransactions, coinWallets, coinStoreItems, coinUserItems, users, rounds, loadCoinAdminData, coinAdminLoading, coinAdminLoaded, initializeCoinWallets, walletInitializing, adjustmentUserId, setAdjustmentUserId, adjustmentAmount, setAdjustmentAmount, adjustmentDescription, setAdjustmentDescription, adjustCoinWallet, adjustingWallet }: { coins: CoinSettings; setCoinDraft(value: CoinSettings): void; saveCoinSettings(): void; saving: boolean; finishedRounds: BolaoRound[]; selectedRewardRoundId: string; setSelectedRewardRoundId(value: string): void; processRoundRewards(): void; processing: boolean; coinProcesses: CoinRoundProcess[]; coinTransactions: AdminCoinTransaction[]; coinWallets: AdminCoinWallet[]; coinStoreItems: AdminStoreItem[]; coinUserItems: AdminUserStoreItem[]; users: BolaoUser[]; rounds: BolaoRound[]; loadCoinAdminData(): void; coinAdminLoading: boolean; coinAdminLoaded: boolean; initializeCoinWallets(): void; walletInitializing: boolean; adjustmentUserId: string; setAdjustmentUserId(value: string): void; adjustmentAmount: string; setAdjustmentAmount(value: string): void; adjustmentDescription: string; setAdjustmentDescription(value: string): void; adjustCoinWallet(event: FormEvent): void; adjustingWallet: boolean }) {
   const [walletSearch, setWalletSearch] = useState('');
   const [transactionFilter, setTransactionFilter] = useState<'all' | 'credit' | 'debit'>('all');
   const roundNameById = new Map(rounds.map((round) => [round.id, round.name]));
@@ -586,6 +636,7 @@ function CoinsAdmin({ coins, setCoinDraft, saveCoinSettings, saving, finishedRou
   const totalLockedBalance = coinWallets.reduce((sum, wallet) => sum + wallet.lockedBalance, 0);
   const totalProcessedAmount = coinProcesses.reduce((sum, process) => sum + process.totalAmount, 0);
   const totalRecentCredits = coinTransactions.filter((transaction) => transaction.amount > 0).reduce((sum, transaction) => sum + transaction.amount, 0);
+  const itemNameById = new Map(coinStoreItems.map((item) => [item.id, item.name]));
   const normalizedWalletSearch = walletSearch.trim().toLocaleLowerCase('pt-BR');
   const filteredWallets = normalizedWalletSearch
     ? coinWallets.filter((wallet) => (wallet.userName || userNameById.get(wallet.userId) || '').toLocaleLowerCase('pt-BR').includes(normalizedWalletSearch))
@@ -652,6 +703,7 @@ function CoinsAdmin({ coins, setCoinDraft, saveCoinSettings, saving, finishedRou
               <article><span>Saldo disponivel</span><strong>{totalAvailableBalance.toLocaleString('pt-BR')}</strong></article>
               <article><span>Saldo bloqueado</span><strong>{totalLockedBalance.toLocaleString('pt-BR')}</strong></article>
               <article><span>Total processado</span><strong>{totalProcessedAmount.toLocaleString('pt-BR')}</strong><small>{totalRecentCredits.toLocaleString('pt-BR')} nos ultimos lancamentos</small></article>
+              <article><span>Itens da loja</span><strong>{coinStoreItems.length.toLocaleString('pt-BR')}</strong><small>{coinUserItems.length.toLocaleString('pt-BR')} compras registradas</small></article>
             </div>
             <div className="admin-filter-row">
               <label>
@@ -697,6 +749,26 @@ function CoinsAdmin({ coins, setCoinDraft, saveCoinSettings, saving, finishedRou
                     <div key={transaction.id} className="admin-list-row">
                       <strong>{userNameById.get(transaction.userId) || 'Usuario'}</strong>
                       <span>{transaction.amount.toLocaleString('pt-BR')} coins | {transaction.description}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <h3>Loja e inventario</h3>
+                <div className="admin-list">
+                  {coinStoreItems.length === 0 ? <div className="empty-row">Nenhum item cadastrado.</div> : coinStoreItems.map((item) => (
+                    <div key={item.id} className="admin-list-row">
+                      <strong>{item.name}</strong>
+                      <span>{item.price.toLocaleString('pt-BR')} coins | {item.rarity} | {item.isActive ? 'ativo' : 'inativo'}</span>
+                    </div>
+                  ))}
+                </div>
+                <h3>Compras recentes</h3>
+                <div className="admin-list">
+                  {coinUserItems.length === 0 ? <div className="empty-row">Nenhuma compra registrada.</div> : coinUserItems.map((item) => (
+                    <div key={item.id} className="admin-list-row">
+                      <strong>{userNameById.get(item.userId) || 'Usuario'}</strong>
+                      <span>{itemNameById.get(item.itemId) || 'Item'} | {item.purchasedAt ? new Date(item.purchasedAt).toLocaleString('pt-BR') : '-'}</span>
                     </div>
                   ))}
                 </div>

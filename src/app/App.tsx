@@ -75,6 +75,7 @@ export function App() {
           walletLoading={coinWallet.loading}
           walletError={coinWallet.error}
           onNavigate={handleNavigate}
+          onWalletRefresh={coinWallet.refresh}
         />
       ) : activeRoute === 'perfil' ? (
         <ProfilePage currentUser={currentUser} />

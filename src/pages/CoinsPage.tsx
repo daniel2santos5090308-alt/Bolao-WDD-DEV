@@ -1,6 +1,9 @@
 import { useMemo, useState } from 'react';
+import type { CSSProperties } from 'react';
 import type { CoinTransaction } from '../hooks/useCoinTransactions';
 import { useCoinTransactions } from '../hooks/useCoinTransactions';
+import type { CoinStoreItem } from '../hooks/useCoinStore';
+import { useCoinStore } from '../hooks/useCoinStore';
 import type { AppRoute } from '../app/routes';
 
 interface CoinsPageProps {
@@ -10,6 +13,7 @@ interface CoinsPageProps {
   walletLoading: boolean;
   walletError: string;
   onNavigate(route: AppRoute): void;
+  onWalletRefresh(): Promise<void>;
 }
 
 function formatDate(value: string): string {
@@ -64,18 +68,60 @@ function TransactionRow({ transaction }: { transaction: CoinTransaction }) {
   );
 }
 
+function getItemTypeLabel(type: string): string {
+  const labels: Record<string, string> = {
+    profile_frame: 'Moldura de perfil',
+    match_card_skin: 'Skin de card',
+    profile_badge: 'Selo de perfil'
+  };
+
+  return labels[type] || type || 'Item';
+}
+
+function StoreItemCard({ item, owned, availableBalance, purchasing, onPurchase }: { item: CoinStoreItem; owned: boolean; availableBalance: number; purchasing: boolean; onPurchase(item: CoinStoreItem): void }) {
+  const canBuy = !owned && availableBalance >= item.price && !purchasing;
+
+  return (
+    <article className="store-item-card">
+      <div className="store-item-card__preview" style={item.previewValue ? { '--item-color': item.previewValue } as CSSProperties : undefined}>
+        <span>{item.name.slice(0, 2).toUpperCase()}</span>
+      </div>
+      <div className="store-item-card__body">
+        <div>
+          <span className="store-item-card__meta">{getItemTypeLabel(item.itemType)} | {item.rarity}</span>
+          <h3>{item.name}</h3>
+          <p>{item.description}</p>
+        </div>
+        <div className="store-item-card__footer">
+          <strong>{item.price.toLocaleString('pt-BR')} coins</strong>
+          {owned ? (
+            <span className="store-owned-badge">Adquirido</span>
+          ) : (
+            <button type="button" onClick={() => onPurchase(item)} disabled={!canBuy}>
+              {purchasing ? 'Comprando...' : availableBalance >= item.price ? 'Comprar' : 'Saldo insuficiente'}
+            </button>
+          )}
+        </div>
+      </div>
+    </article>
+  );
+}
+
 export function CoinsPage({
   currentUser,
   availableBalance,
   lockedBalance,
   walletLoading,
   walletError,
-  onNavigate
+  onNavigate,
+  onWalletRefresh
 }: CoinsPageProps) {
   const transactions = useCoinTransactions(currentUser.id, '2027');
+  const store = useCoinStore(currentUser.id, '2027');
   const [transactionFilter, setTransactionFilter] = useState<'all' | 'credit' | 'debit'>('all');
   const totalBalance = availableBalance + lockedBalance;
   const loadedTransactions = transactions.transactions;
+  const ownedItemIds = useMemo(() => new Set(store.inventory.map((item) => item.itemId)), [store.inventory]);
   const creditTotal = useMemo(() => loadedTransactions.filter((transaction) => transaction.amount > 0).reduce((sum, transaction) => sum + transaction.amount, 0), [loadedTransactions]);
   const debitTotal = useMemo(() => loadedTransactions.filter((transaction) => transaction.amount < 0).reduce((sum, transaction) => sum + Math.abs(transaction.amount), 0), [loadedTransactions]);
   const filteredTransactions = useMemo(() => {
@@ -83,6 +129,14 @@ export function CoinsPage({
     if (transactionFilter === 'debit') return loadedTransactions.filter((transaction) => transaction.amount < 0);
     return loadedTransactions;
   }, [loadedTransactions, transactionFilter]);
+
+  async function handlePurchase(item: CoinStoreItem) {
+    const success = await store.purchase(item);
+    if (!success) return;
+
+    await onWalletRefresh();
+    if (transactions.hasLoaded) await transactions.load();
+  }
 
   return (
     <section className="coins-page">
@@ -111,6 +165,68 @@ export function CoinsPage({
       </div>
 
       {walletError ? <div className="error-banner">{walletError}</div> : null}
+
+      <section className="coin-ledger">
+        <header>
+          <div>
+            <h2>Loja WDD</h2>
+            <p>Itens visuais comprados com WDD Coins. Carregamento manual para evitar leituras desnecessarias.</p>
+          </div>
+          <button type="button" onClick={store.load} disabled={store.loading}>
+            {store.loading ? 'Carregando...' : store.hasLoaded ? 'Atualizar loja' : 'Carregar loja'}
+          </button>
+        </header>
+
+        {store.error ? <div className="error-banner">{store.error}</div> : null}
+        {store.message ? <div className="inline-feedback">{store.message}</div> : null}
+
+        {!store.hasLoaded ? (
+          <div className="empty-state">Clique em carregar loja para consultar itens e inventario.</div>
+        ) : (
+          <div className="store-layout">
+            <div>
+              <div className="store-section-title">
+                <h3>Itens disponiveis</h3>
+                <span>{store.items.length.toLocaleString('pt-BR')} itens</span>
+              </div>
+              {store.items.length === 0 ? (
+                <div className="empty-state">Nenhum item ativo na loja.</div>
+              ) : (
+                <div className="store-grid">
+                  {store.items.map((item) => (
+                    <StoreItemCard
+                      key={item.id}
+                      item={item}
+                      owned={ownedItemIds.has(item.id)}
+                      availableBalance={availableBalance}
+                      purchasing={store.purchasingItemId === item.id}
+                      onPurchase={handlePurchase}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+            <aside className="inventory-panel">
+              <h3>Meu inventario</h3>
+              {store.inventory.length === 0 ? (
+                <p>Nenhum item adquirido ainda.</p>
+              ) : (
+                <div className="inventory-list">
+                  {store.inventory.map((inventoryItem) => {
+                    const item = store.items.find((storeItem) => storeItem.id === inventoryItem.itemId);
+                    return (
+                      <div key={inventoryItem.id} className="inventory-row">
+                        <strong>{item?.name || 'Item adquirido'}</strong>
+                        <span>{item ? getItemTypeLabel(item.itemType) : 'Inventario'}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </aside>
+          </div>
+        )}
+      </section>
 
       <section className="coin-ledger">
         <header>
