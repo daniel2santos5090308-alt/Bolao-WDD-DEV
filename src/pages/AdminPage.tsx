@@ -580,6 +580,10 @@ function CoinsAdmin({ coins, setCoinDraft, saveCoinSettings, saving, finishedRou
   const roundNameById = new Map(rounds.map((round) => [round.id, round.name]));
   const userNameById = new Map(users.map((user) => [user.id, user.name]));
   const participantUsers = users.filter((user) => user.role !== 'admin').sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'));
+  const totalAvailableBalance = coinWallets.reduce((sum, wallet) => sum + wallet.availableBalance, 0);
+  const totalLockedBalance = coinWallets.reduce((sum, wallet) => sum + wallet.lockedBalance, 0);
+  const totalProcessedAmount = coinProcesses.reduce((sum, process) => sum + process.totalAmount, 0);
+  const totalRecentCredits = coinTransactions.filter((transaction) => transaction.amount > 0).reduce((sum, transaction) => sum + transaction.amount, 0);
 
   return (
     <div className="page-stack">
@@ -631,41 +635,49 @@ function CoinsAdmin({ coins, setCoinDraft, saveCoinSettings, saving, finishedRou
         </header>
         {!coinAdminLoaded ? <div className="empty-row">Clique em carregar historico para consultar os dados.</div> : null}
         {coinAdminLoaded ? (
-          <div className="admin-history-grid">
-            <div>
-              <h3>Rodadas processadas</h3>
-              <div className="admin-list">
-                {coinProcesses.length === 0 ? <div className="empty-row">Nenhuma rodada processada.</div> : coinProcesses.map((process) => (
-                  <div key={process.id} className="admin-list-row">
-                    <strong>{roundNameById.get(process.roundId) || process.roundId}</strong>
-                    <span>{process.transactionsCount} lancamentos | {process.totalAmount.toLocaleString('pt-BR')} coins</span>
-                  </div>
-                ))}
+          <>
+            <div className="admin-metric-grid">
+              <article><span>Carteiras</span><strong>{coinWallets.length.toLocaleString('pt-BR')}</strong></article>
+              <article><span>Saldo disponivel</span><strong>{totalAvailableBalance.toLocaleString('pt-BR')}</strong></article>
+              <article><span>Saldo bloqueado</span><strong>{totalLockedBalance.toLocaleString('pt-BR')}</strong></article>
+              <article><span>Total processado</span><strong>{totalProcessedAmount.toLocaleString('pt-BR')}</strong><small>{totalRecentCredits.toLocaleString('pt-BR')} nos ultimos lancamentos</small></article>
+            </div>
+            <div className="admin-history-grid">
+              <div>
+                <h3>Rodadas processadas</h3>
+                <div className="admin-list">
+                  {coinProcesses.length === 0 ? <div className="empty-row">Nenhuma rodada processada.</div> : coinProcesses.map((process) => (
+                    <div key={process.id} className="admin-list-row">
+                      <strong>{roundNameById.get(process.roundId) || process.roundId}</strong>
+                      <span>{process.transactionsCount} lancamentos | {process.totalAmount.toLocaleString('pt-BR')} coins</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <h3>Saldos das carteiras</h3>
+                <div className="admin-list">
+                  {coinWallets.length === 0 ? <div className="empty-row">Nenhuma carteira encontrada.</div> : coinWallets.map((wallet) => (
+                    <div key={wallet.id} className="admin-list-row">
+                      <strong>{wallet.userName || userNameById.get(wallet.userId) || 'Usuario'}</strong>
+                      <span>{wallet.availableBalance.toLocaleString('pt-BR')} disp. | {wallet.lockedBalance.toLocaleString('pt-BR')} bloq. | {wallet.totalBalance.toLocaleString('pt-BR')} total</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <h3>Ultimos lancamentos</h3>
+                <div className="admin-list">
+                  {coinTransactions.length === 0 ? <div className="empty-row">Nenhum lancamento encontrado.</div> : coinTransactions.map((transaction) => (
+                    <div key={transaction.id} className="admin-list-row">
+                      <strong>{userNameById.get(transaction.userId) || 'Usuario'}</strong>
+                      <span>{transaction.amount.toLocaleString('pt-BR')} coins | {transaction.description}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
-            <div>
-              <h3>Saldos das carteiras</h3>
-              <div className="admin-list">
-                {coinWallets.length === 0 ? <div className="empty-row">Nenhuma carteira encontrada.</div> : coinWallets.map((wallet) => (
-                  <div key={wallet.id} className="admin-list-row">
-                    <strong>{wallet.userName || userNameById.get(wallet.userId) || 'Usuario'}</strong>
-                    <span>{wallet.availableBalance.toLocaleString('pt-BR')} disp. | {wallet.lockedBalance.toLocaleString('pt-BR')} bloq. | {wallet.totalBalance.toLocaleString('pt-BR')} total</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-            <div>
-              <h3>Ultimos lancamentos</h3>
-              <div className="admin-list">
-                {coinTransactions.length === 0 ? <div className="empty-row">Nenhum lancamento encontrado.</div> : coinTransactions.map((transaction) => (
-                  <div key={transaction.id} className="admin-list-row">
-                    <strong>{userNameById.get(transaction.userId) || 'Usuario'}</strong>
-                    <span>{transaction.amount.toLocaleString('pt-BR')} coins | {transaction.description}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
+          </>
         ) : null}
       </section>
     </div>
