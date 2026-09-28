@@ -161,6 +161,10 @@ export function AdminPage() {
   const [coinAdminLoading, setCoinAdminLoading] = useState(false);
   const [coinAdminLoaded, setCoinAdminLoaded] = useState(false);
   const [walletInitializing, setWalletInitializing] = useState(false);
+  const [adjustingWallet, setAdjustingWallet] = useState(false);
+  const [adjustmentUserId, setAdjustmentUserId] = useState('');
+  const [adjustmentAmount, setAdjustmentAmount] = useState('');
+  const [adjustmentDescription, setAdjustmentDescription] = useState('');
 
   const rounds = useMemo(() => [...(data?.rounds || [])].sort((a, b) => getRoundNumber(a) - getRoundNumber(b)), [data?.rounds]);
   const matches = data?.matches || [];
@@ -413,6 +417,38 @@ export function AdminPage() {
     }
   }
 
+  async function adjustCoinWallet(event: FormEvent) {
+    event.preventDefault();
+    const amount = Number(adjustmentAmount);
+    if (!adjustmentUserId) return fail('Selecione o participante para ajustar.');
+    if (!Number.isInteger(amount) || amount === 0) return fail('Informe um valor inteiro diferente de zero.');
+    if (!adjustmentDescription.trim()) return fail('Informe o motivo do ajuste.');
+
+    const selectedUser = data?.users.find((user) => user.id === adjustmentUserId);
+    const confirmed = window.confirm(`Confirmar ajuste de ${amount.toLocaleString('pt-BR')} WDD Coins para ${selectedUser?.name || 'participante'}?`);
+    if (!confirmed) return;
+
+    setAdjustingWallet(true);
+    try {
+      if (typeof supabaseClient === 'undefined') throw new Error('Supabase nao inicializado.');
+      const { error: rpcError } = await supabaseClient.rpc('adjust_coin_wallet_by_admin', {
+        p_season_key: coins.seasonKey,
+        p_user_id: adjustmentUserId,
+        p_amount: amount,
+        p_description: adjustmentDescription.trim()
+      });
+      if (rpcError) throw rpcError;
+      setAdjustmentAmount('');
+      setAdjustmentDescription('');
+      notify('Ajuste WDD Coins registrado com sucesso.');
+      await loadCoinAdminData();
+    } catch (err) {
+      fail(getErrorMessage(err, 'Nao foi possivel ajustar a carteira WDD Coins.'));
+    } finally {
+      setAdjustingWallet(false);
+    }
+  }
+
   async function processRoundRewards() {
     if (!selectedRewardRoundId) return fail('Selecione uma rodada finalizada.');
     setProcessing(true);
@@ -490,7 +526,7 @@ export function AdminPage() {
 
       {activeTab === 'pontuacao' ? <ScoringAdmin scoring={scoring} onChange={setScoringDraft} onSave={saveScoring} /> : null}
       {activeTab === 'classificacao' ? <StandingsAdmin standingForm={standingForm} setStandingForm={setStandingForm} onSave={handleSaveStanding} csvText={csvText} setCsvText={setCsvText} csvPreview={csvPreview} previewCsv={previewCsv} saveCsv={saveCsv} standings={standings} deleteStanding={deleteStanding} /> : null}
-      {activeTab === 'coins' ? <CoinsAdmin coins={coins} setCoinDraft={setCoinDraft} saveCoinSettings={saveCoinSettings} saving={coinSettings.saving} finishedRounds={finishedRounds} selectedRewardRoundId={selectedRewardRoundId} setSelectedRewardRoundId={setSelectedRewardRoundId} processRoundRewards={processRoundRewards} processing={processing} coinProcesses={coinProcesses} coinTransactions={coinTransactions} users={data?.users || []} rounds={rounds} loadCoinAdminData={loadCoinAdminData} coinAdminLoading={coinAdminLoading} coinAdminLoaded={coinAdminLoaded} initializeCoinWallets={initializeCoinWallets} walletInitializing={walletInitializing} /> : null}
+      {activeTab === 'coins' ? <CoinsAdmin coins={coins} setCoinDraft={setCoinDraft} saveCoinSettings={saveCoinSettings} saving={coinSettings.saving} finishedRounds={finishedRounds} selectedRewardRoundId={selectedRewardRoundId} setSelectedRewardRoundId={setSelectedRewardRoundId} processRoundRewards={processRoundRewards} processing={processing} coinProcesses={coinProcesses} coinTransactions={coinTransactions} users={data?.users || []} rounds={rounds} loadCoinAdminData={loadCoinAdminData} coinAdminLoading={coinAdminLoading} coinAdminLoaded={coinAdminLoaded} initializeCoinWallets={initializeCoinWallets} walletInitializing={walletInitializing} adjustmentUserId={adjustmentUserId} setAdjustmentUserId={setAdjustmentUserId} adjustmentAmount={adjustmentAmount} setAdjustmentAmount={setAdjustmentAmount} adjustmentDescription={adjustmentDescription} setAdjustmentDescription={setAdjustmentDescription} adjustCoinWallet={adjustCoinWallet} adjustingWallet={adjustingWallet} /> : null}
     </section>
   );
 }
@@ -513,9 +549,10 @@ function StandingsAdmin({ standingForm, setStandingForm, onSave, csvText, setCsv
   return <div className="page-stack"><section className="admin-panel"><header><div><h2>{standingForm.id ? 'Editar classificacao' : 'Nova linha da classificacao'}</h2><p>Atualizacao individual da tabela.</p></div></header><form className="admin-fields-grid" onSubmit={onSave}><NumberField label="Posicao" value={standingForm.position} onChange={(value) => setStandingForm({ ...standingForm, position: value })} min={1} /><label className="admin-field"><span>Time</span><input value={standingForm.team} onChange={(event) => setStandingForm({ ...standingForm, team: event.target.value })} required /></label><NumberField label="Pontos" value={standingForm.points} onChange={(value) => setStandingForm({ ...standingForm, points: value })} /><NumberField label="Jogos" value={standingForm.played} onChange={(value) => setStandingForm({ ...standingForm, played: value })} /><NumberField label="Vitorias" value={standingForm.wins} onChange={(value) => setStandingForm({ ...standingForm, wins: value })} /><NumberField label="Empates" value={standingForm.draws} onChange={(value) => setStandingForm({ ...standingForm, draws: value })} /><NumberField label="Derrotas" value={standingForm.losses} onChange={(value) => setStandingForm({ ...standingForm, losses: value })} /><NumberField label="GP" value={standingForm.goalsFor} onChange={(value) => setStandingForm({ ...standingForm, goalsFor: value, goalDiff: getGoalDiff(value, standingForm.goalsAgainst) })} /><NumberField label="GC" value={standingForm.goalsAgainst} onChange={(value) => setStandingForm({ ...standingForm, goalsAgainst: value, goalDiff: getGoalDiff(standingForm.goalsFor, value) })} /><label className="admin-field"><span>SG</span><input value={getGoalDiff(standingForm.goalsFor, standingForm.goalsAgainst)} readOnly /></label><div className="admin-panel__actions"><button type="submit">Salvar classificacao</button>{standingForm.id ? <button type="button" onClick={() => setStandingForm(emptyStandingForm())}>Cancelar</button> : null}</div></form></section><section className="admin-panel"><header><div><h2>Atualizacao via CSV</h2><p>Cole a classificacao completa e salve em lote.</p></div><div className="admin-panel__actions"><button type="button" onClick={() => setCsvText(csvSample)}>Usar modelo</button></div></header><div className="csv-editor"><textarea value={csvText} onChange={(event) => setCsvText(event.target.value)} placeholder="position;team;points;played;wins;draws;losses;goals_for;goals_against;goal_diff" /><div className="admin-panel__actions"><button type="button" onClick={previewCsv}>Pre-visualizar CSV</button><button type="button" onClick={saveCsv} disabled={!csvPreview.length}>Salvar classificacao em lote</button></div></div>{csvPreview.length ? <StandingsTable standings={csvPreview.map((row) => ({ id: row.team, ...row }))} emptyText="Sem previa." /> : null}</section><section className="table-card"><header><h2>Classificacao atual</h2></header><StandingsLegend /><StandingsTable standings={standings} /><div className="admin-list">{[...standings].sort((a, b) => a.position - b.position).map((standing) => <div key={standing.id} className="admin-list-row"><strong>{standing.position}. {standing.team}</strong><span>{standing.points} pts</span><button type="button" onClick={() => setStandingForm(standing)}>Editar</button><button type="button" onClick={() => deleteStanding(standing.id)}>Excluir</button></div>)}</div></section></div>;
 }
 
-function CoinsAdmin({ coins, setCoinDraft, saveCoinSettings, saving, finishedRounds, selectedRewardRoundId, setSelectedRewardRoundId, processRoundRewards, processing, coinProcesses, coinTransactions, users, rounds, loadCoinAdminData, coinAdminLoading, coinAdminLoaded, initializeCoinWallets, walletInitializing }: { coins: CoinSettings; setCoinDraft(value: CoinSettings): void; saveCoinSettings(): void; saving: boolean; finishedRounds: BolaoRound[]; selectedRewardRoundId: string; setSelectedRewardRoundId(value: string): void; processRoundRewards(): void; processing: boolean; coinProcesses: CoinRoundProcess[]; coinTransactions: AdminCoinTransaction[]; users: BolaoUser[]; rounds: BolaoRound[]; loadCoinAdminData(): void; coinAdminLoading: boolean; coinAdminLoaded: boolean; initializeCoinWallets(): void; walletInitializing: boolean }) {
+function CoinsAdmin({ coins, setCoinDraft, saveCoinSettings, saving, finishedRounds, selectedRewardRoundId, setSelectedRewardRoundId, processRoundRewards, processing, coinProcesses, coinTransactions, users, rounds, loadCoinAdminData, coinAdminLoading, coinAdminLoaded, initializeCoinWallets, walletInitializing, adjustmentUserId, setAdjustmentUserId, adjustmentAmount, setAdjustmentAmount, adjustmentDescription, setAdjustmentDescription, adjustCoinWallet, adjustingWallet }: { coins: CoinSettings; setCoinDraft(value: CoinSettings): void; saveCoinSettings(): void; saving: boolean; finishedRounds: BolaoRound[]; selectedRewardRoundId: string; setSelectedRewardRoundId(value: string): void; processRoundRewards(): void; processing: boolean; coinProcesses: CoinRoundProcess[]; coinTransactions: AdminCoinTransaction[]; users: BolaoUser[]; rounds: BolaoRound[]; loadCoinAdminData(): void; coinAdminLoading: boolean; coinAdminLoaded: boolean; initializeCoinWallets(): void; walletInitializing: boolean; adjustmentUserId: string; setAdjustmentUserId(value: string): void; adjustmentAmount: string; setAdjustmentAmount(value: string): void; adjustmentDescription: string; setAdjustmentDescription(value: string): void; adjustCoinWallet(event: FormEvent): void; adjustingWallet: boolean }) {
   const roundNameById = new Map(rounds.map((round) => [round.id, round.name]));
   const userNameById = new Map(users.map((user) => [user.id, user.name]));
+  const participantUsers = users.filter((user) => user.role !== 'admin').sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'));
 
   return (
     <div className="page-stack">
@@ -525,6 +562,31 @@ function CoinsAdmin({ coins, setCoinDraft, saveCoinSettings, saving, finishedRou
           <div className="admin-panel__actions"><button type="button" onClick={initializeCoinWallets} disabled={walletInitializing}>{walletInitializing ? 'Inicializando...' : 'Inicializar carteiras'}</button><button type="button" onClick={saveCoinSettings} disabled={saving}>{saving ? 'Salvando...' : 'Salvar'}</button></div>
         </header>
         <div className="admin-fields-grid">{coinFields.map((field) => <NumberField key={field.key} label={field.label} value={coins[field.key]} onChange={(value) => setCoinDraft({ ...coins, [field.key]: value })} help={field.help} />)}</div>
+      </section>
+
+      <section className="admin-panel">
+        <header>
+          <div><h2>Ajuste manual</h2><p>Registra credito ou estorno com motivo no extrato do participante.</p></div>
+          <div className="admin-panel__actions"><button type="submit" form="coin-adjustment-form" disabled={adjustingWallet}>{adjustingWallet ? 'Ajustando...' : 'Registrar ajuste'}</button></div>
+        </header>
+        <form id="coin-adjustment-form" className="admin-fields-grid" onSubmit={adjustCoinWallet}>
+          <label className="admin-field">
+            <span>Participante</span>
+            <select value={adjustmentUserId} onChange={(event) => setAdjustmentUserId(event.target.value)} required>
+              <option value="">Selecione</option>
+              {participantUsers.map((user) => <option key={user.id} value={user.id}>{user.name}</option>)}
+            </select>
+          </label>
+          <label className="admin-field">
+            <span>Valor</span>
+            <input type="number" step="1" value={adjustmentAmount} onChange={(event) => setAdjustmentAmount(event.target.value)} placeholder="Ex: 50 ou -20" required />
+            <small>Use valor positivo para credito e negativo para estorno.</small>
+          </label>
+          <label className="admin-field admin-field--wide">
+            <span>Motivo</span>
+            <input value={adjustmentDescription} onChange={(event) => setAdjustmentDescription(event.target.value)} placeholder="Ex: Correcao de premiacao" required />
+          </label>
+        </form>
       </section>
 
       <section className="admin-panel">
