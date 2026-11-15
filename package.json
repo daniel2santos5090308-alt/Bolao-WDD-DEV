@@ -22,9 +22,10 @@
     "@types/react-dom": "^19.3.0",
     "@vitejs/plugin-react": "^6.0.5",
     "typescript": "^7.0.2",
-    "vite": "^8.2.1"
+    "vite": "^8.2.4"
   },
   "dependencies": {
+    "@supabase/supabase-js": "2.118.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8"
   }
