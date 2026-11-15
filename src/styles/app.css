@@ -1975,3 +1975,65 @@ textarea {
     grid-template-columns: 1fr;
   }
 }
+
+/* ---------- Login ---------- */
+.login-page {
+  display: grid;
+  place-items: center;
+  min-height: 100vh;
+  min-height: 100dvh;
+  padding: 24px var(--gutter);
+  background:
+    radial-gradient(ellipse at top, var(--pitch-soft), transparent 60%),
+    var(--bg);
+}
+
+.login-card {
+  display: grid;
+  gap: 16px;
+  width: 100%;
+  max-width: 380px;
+  padding: 28px 24px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+
+.login-card__brand {
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+  margin-bottom: 4px;
+  text-align: center;
+}
+
+.login-card__brand .brand__mark {
+  width: 56px;
+  height: 56px;
+  font-size: 1.3rem;
+}
+
+.login-card__brand h1 {
+  margin: 6px 0 0;
+  font-family: var(--font-display);
+  font-size: 2rem;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.login-card__brand p {
+  margin: 0;
+  color: var(--text-2);
+}
+
+.login-card input {
+  width: 100%;
+  min-height: 44px;
+  font-size: 1rem;
+}
+
+.login-card .primary-button {
+  min-height: 46px;
+  font-size: 1rem;
+}

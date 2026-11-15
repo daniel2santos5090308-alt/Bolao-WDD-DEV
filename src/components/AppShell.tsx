@@ -1,6 +1,5 @@
 import type { ReactNode } from 'react';
 import { appRoutes, type AppRoute } from '../app/routes';
-import { getLegacy } from '../services/legacyBolao';
 
 interface AppShellProps {
   children: ReactNode;
@@ -9,16 +8,12 @@ interface AppShellProps {
   coinBalance: number;
   coinLoading?: boolean;
   onNavigate(route: AppRoute): void;
+  onLogout(): void | Promise<void>;
 }
 
-export function AppShell({ children, currentUser, activeRoute, coinBalance, coinLoading = false, onNavigate }: AppShellProps) {
+export function AppShell({ children, currentUser, activeRoute, coinBalance, coinLoading = false, onNavigate, onLogout }: AppShellProps) {
   const isAdmin = currentUser.role === 'admin';
   const visibleRoutes = appRoutes.filter((route) => !route.adminOnly || isAdmin);
-
-  async function handleLogout() {
-    await getLegacy().Storage.logout();
-    window.location.href = 'login.html';
-  }
 
   return (
     <div className="app-shell">
@@ -52,7 +47,7 @@ export function AppShell({ children, currentUser, activeRoute, coinBalance, coin
             <strong>{coinLoading ? '…' : coinBalance.toLocaleString('pt-BR')}</strong>
           </button>
           <span className="topbar__user">{currentUser.name}</span>
-          <button type="button" className="ghost-button" onClick={handleLogout}>
+          <button type="button" className="ghost-button" onClick={onLogout}>
             <i className="bi bi-box-arrow-right" aria-hidden="true" />
             <span>Sair</span>
           </button>

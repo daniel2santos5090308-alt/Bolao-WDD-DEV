@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { getLegacy } from '../services/legacyBolao';
+import * as storage from '../services/storage';
 
 /**
  * Ranking calculado no banco (get_ranking), com cache por versao dos dados.
@@ -18,7 +18,7 @@ export function useRanking(roundId: string | null, dataVersion: number | null | 
     setLoading(true);
     setError('');
 
-    getLegacy().Storage.getRanking(roundId)
+    storage.getRanking(roundId)
       .then((rows) => {
         if (!cancelled) setRanking(rows);
       })

@@ -1,5 +1,38 @@
 # Release Notes
 
+## v3.2.0-dev - 2026-11-15
+
+Fase 3: fim do JavaScript legado. O app inteiro agora é React + TypeScript, sem scripts globais. Somente DEV; produção recebe na janela de 23–24/01/2027.
+
+### Código
+
+- Camada de dados, login, pontuação, times e utilitários portados para módulos TypeScript tipados em `src/services/` (antes: `storage-supabase.js`, `auth.js`, `ranking.js`, `teams.js`, `utils.js`, `supabase-init.js`).
+- Removidos ~3.500 linhas de JS legado, incluindo `admin.js` e `user.js`, que já não eram carregados por nenhuma página.
+- SDK do Supabase via npm com versão fixa (2.118.0), em vez do CDN sem versão fixa (`@2`).
+- Escudos dos times renderizados por componente React (sem `dangerouslySetInnerHTML`).
+- O ranking (somas e desempate) existe só no banco (`get_ranking`); o front calcula apenas os pontos de cada palpite para exibição.
+
+### Telas
+
+- Login novo em React, no visual "noite de jogo". `login.html`, `admin.html` e `user.html` só redirecionam endereços antigos.
+- Sessão expirada volta para o login sem recarregar a página.
+- Página 404 própria em português (antes: página padrão do Firebase, em inglês).
+
+### Correções
+
+- Bloqueio de palpite no front usa o horário de Brasília (-03:00), igual ao banco. Antes usava o fuso do aparelho.
+
+### Build e segurança
+
+- Vite 8.2.4 e `source-map-js` 1.2.2 (corrigem falhas de severidade alta do `npm audit`).
+- Bibliotecas em chunk separado (`vendor`), que fica no cache do navegador entre deploys.
+
+### Validações
+
+- `tsc`, 14 testes unitários (agora em TypeScript), build Vite e `npm audit` (0 vulnerabilidades) verdes.
+- Login testado no navegador contra o DEV (celular e desktop): erro de senha em português, sem erros no console.
+- Pendente: teste E2E (`tests/e2e/`) ainda usa as telas antigas e precisa ser refeito.
+
 ## v3.1.0-dev - 2026-11-16
 
 Base da temporada 2027: correções de segurança dos palpites, temporadas, ranking calculado no banco, controle de consumo do Supabase Free e visual novo. Somente DEV; produção recebe na janela de 23–24/01/2027.

@@ -1,4 +1,5 @@
 import { useCallback, useState } from 'react';
+import { requireSupabase } from '../services/supabase';
 
 export interface CoinTransaction {
   id: string;
@@ -52,9 +53,7 @@ export function useCoinTransactions(userId: string, seasonKey = '2027', pageSize
     setError('');
 
     try {
-      if (typeof supabaseClient === 'undefined') {
-        throw new Error('Supabase nao inicializado.');
-      }
+      const supabaseClient = requireSupabase();
 
       const { data, error: queryError } = await supabaseClient
         .from('coin_transactions')

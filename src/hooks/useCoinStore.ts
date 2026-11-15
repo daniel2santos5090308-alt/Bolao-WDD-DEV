@@ -1,4 +1,5 @@
 import { useCallback, useState } from 'react';
+import { requireSupabase } from '../services/supabase';
 
 export interface CoinStoreItem {
   id: string;
@@ -71,19 +72,16 @@ export function useCoinStore(userId: string, seasonKey = '2027') {
     setMessage('');
 
     try {
-      if (typeof supabaseClient === 'undefined') {
-        throw new Error('Supabase nao inicializado.');
-      }
+      const supabaseClient = requireSupabase();
 
-      const client = supabaseClient as any;
       const [itemsResult, inventoryResult] = await Promise.all([
-        client
+        supabaseClient
           .from('coin_store_items')
           .select('id, code, name, description, item_type, price, rarity, preview_value, is_active, sort_order')
           .eq('season_key', seasonKey)
           .eq('is_active', true)
           .order('sort_order', { ascending: true }),
-        client
+        supabaseClient
           .from('coin_user_items')
           .select('id, item_id, purchased_at, is_equipped')
           .eq('season_key', seasonKey)
@@ -111,9 +109,7 @@ export function useCoinStore(userId: string, seasonKey = '2027') {
     setMessage('');
 
     try {
-      if (typeof supabaseClient === 'undefined') {
-        throw new Error('Supabase nao inicializado.');
-      }
+      const supabaseClient = requireSupabase();
 
       const { error: purchaseError } = await supabaseClient.rpc('purchase_coin_store_item', {
         p_season_key: seasonKey,

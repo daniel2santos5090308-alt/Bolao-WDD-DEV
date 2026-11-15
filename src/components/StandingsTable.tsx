@@ -1,4 +1,5 @@
-import { getLegacy } from '../services/legacyBolao';
+import { TeamMark } from './TeamBadge';
+
 
 interface StandingsTableProps {
   standings: BolaoStanding[];
@@ -60,12 +61,7 @@ export function StandingsTable({ standings, emptyText = 'Classificação ainda n
             return (
               <tr key={standing.id} className={zone ? `zone zone--${zone}` : ''} title={zone ? zoneLabels[zone] : undefined}>
                 <td className="num"><span className="pos-number">{standing.position}</span></td>
-                <td
-                  className="sticky-col team-cell"
-                  dangerouslySetInnerHTML={{
-                    __html: getLegacy().Teams.getTeamMarkup(standing.team, { size: 'sm', layout: 'row' })
-                  }}
-                />
+                <td className="sticky-col team-cell"><TeamMark name={standing.team} size="sm" /></td>
                 <td className="num strong">{standing.points}</td>
                 <td className="num">{standing.played}</td>
                 <td className="num">{standing.wins}</td>

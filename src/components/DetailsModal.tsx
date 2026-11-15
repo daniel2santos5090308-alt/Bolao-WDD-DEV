@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
-import { formatMatchDateTime, getLegacy, getMatchScore, isMatchFinished } from '../services/legacyBolao';
+import { formatMatchDateTime, getMatchScore, isMatchFinished } from '../services/matches';
+import { calculateMatchPoints, formatPoints, getScoringSettings } from '../services/scoring';
+import * as storage from '../services/storage';
 
 interface DetailsModalProps {
   user: RankingItem | null;
@@ -32,12 +34,10 @@ export function DetailsModal({ user, data, roundId, onClose }: DetailsModalProps
     setLoading(true);
     setError('');
     setRows([]);
-
-    const legacy = getLegacy();
     const matchesById = new Map(data.matches.map((match) => [match.id, match]));
-    const settings = legacy.Ranking.getSettings(data);
+    const settings = getScoringSettings(data);
 
-    legacy.Storage.getVisibleBets({ userId: user.id, roundId })
+    storage.getVisibleBets({ userId: user.id, roundId })
       .then((bets) => {
         if (cancelled) return;
         const history = bets
@@ -47,7 +47,7 @@ export function DetailsModal({ user, data, roundId, onClose }: DetailsModalProps
             return {
               match,
               bet,
-              result: isMatchFinished(match) ? legacy.Ranking.calculateMatchPoints(match, bet, settings) : null
+              result: isMatchFinished(match) ? calculateMatchPoints(match, bet, settings) : null
             };
           })
           .filter((row): row is HistoryRow => row !== null)
@@ -78,7 +78,6 @@ export function DetailsModal({ user, data, roundId, onClose }: DetailsModalProps
 
   if (!user) return null;
 
-  const formatPoints = getLegacy().Ranking.formatPoints;
 
   return (
     <div className="modal-layer" role="dialog" aria-modal="true" aria-label={`Extrato de ${user.name}`} onClick={onClose}>

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { getLegacy } from '../services/legacyBolao';
+import { formatPoints } from '../services/scoring';
 
 /**
  * "Corrida pelo titulo": pontos acumulados por rodada, uma linha por participante.
@@ -36,7 +36,6 @@ export function RaceChart({ history }: RaceChartProps) {
   const [plotNode, setPlotNode] = useState<HTMLDivElement | null>(null);
   const [width, setWidth] = useState(640);
   const [hoverIndex, setHoverIndex] = useState<number | null>(null);
-  const formatPoints = getLegacy().Ranking.formatPoints;
 
   useEffect(() => {
     if (!plotNode) return;

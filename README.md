@@ -4,11 +4,12 @@ Sistema de bolão migrado para Supabase no ambiente `BolaoWDDDEV`.
 
 ## Estrutura
 
-- `public/index.html`: login.
-- `public/admin.html`: painel administrativo.
-- `public/user.html`: painel do usuário.
-- `public/assets/js/supabase-init.js`: configuração pública do Supabase.
-- `public/assets/js/storage-supabase.js`: camada de dados Supabase.
+- `index.html` + `src/`: app React + TypeScript (Vite). Login, jogos, ranking, tabela, Coins, perfil e admin.
+  - `src/services/`: cliente Supabase (`supabase.ts`), dados e cache (`storage.ts`), login (`auth.ts`), pontuação de um palpite (`scoring.ts`), times e escudos (`teams.ts`).
+  - `src/pages/`, `src/components/`, `src/hooks/`: telas e componentes.
+- `public/assets/js/runtime-config.js`: URL e chave anon do Supabase, gerado por `npm run write-env` a partir de `SUPABASE_URL` / `SUPABASE_ANON_KEY` (nunca commitar com valores).
+- `public/login.html`, `public/admin.html`, `public/user.html`: só redirecionam endereços antigos para o app.
+- `supabase/migrations/`: banco versionado (status por ambiente em `supabase/README.md`).
 - `supabase_import_data.sql`: script histórico usado na migração inicial do backup.
 - `supabase_rls_hardening.sql`: policies RLS para reforçar permissões no Supabase Free.
 - `HOMOLOGATION_CHECKLIST.md`: checklist de validação antes de publicação.
@@ -24,6 +25,8 @@ Sistema de bolão migrado para Supabase no ambiente `BolaoWDDDEV`.
 
 ## Rodar localmente
 
+Com `SUPABASE_URL` e `SUPABASE_ANON_KEY` do DEV em `.env.local` (ignorado pelo Git):
+
 ```bash
 npm start
 ```
@@ -31,7 +34,7 @@ npm start
 Depois acesse:
 
 ```text
-http://localhost:4173/index.html
+http://127.0.0.1:5173/
 ```
 
 ## Testes automatizados
@@ -40,9 +43,11 @@ http://localhost:4173/index.html
 npm test
 ```
 
-A suite cobre regras críticas de ranking, apostas mascaradas, bloqueio por horário, escape HTML e mapeamento de dados Supabase.
+Roda os módulos TypeScript direto no Node 22 (`--experimental-strip-types`). Cobre pontuação de palpite, bloqueio por horário de Brasília, nomes e escudos dos times, mapeamento das linhas do Supabase, cache por versão do snapshot e as páginas HTML. A soma do ranking e o desempate são do banco (`get_ranking`) e ficam cobertos pelos scripts em `supabase/tests/`.
 
 ## Testes E2E
+
+> Desatualizado: `tests/e2e/bolao-crud-bet.spec.js` ainda usa os seletores das telas antigas (antes do React) e precisa ser refeito.
 
 Os testes E2E abrem a aplicação no navegador e executam o fluxo real contra o Supabase DEV:
 
@@ -95,8 +100,8 @@ Esse comando executa a suite automatizada e o `npm audit`.
 
 ## Segurança
 
-- A pasta publicada deve ser somente `public/`.
+- A pasta publicada é somente `dist/` (saída do `npm run build:react`).
 - Não publicar arquivos SQL, backups, `package.json` ou documentos internos.
 - Nunca colocar chave `service_role` do Supabase no front-end.
-- Usar apenas `Project URL` e `anon public key` em `supabase-init.js`.
+- Usar apenas `Project URL` e `anon public key` (variáveis `SUPABASE_URL` e `SUPABASE_ANON_KEY` no Netlify).
 - Rodar `supabase_rls_hardening.sql` no SQL Editor para reforçar regras de leitura/escrita.
