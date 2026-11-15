@@ -6,6 +6,7 @@ interface RankingPanelProps {
   ranking: RankingItem[];
   summary?: string;
   currentUserId?: string;
+  loading?: boolean;
   onDetails(user: RankingItem): void;
   onSeeAll?(): void;
 }
@@ -20,8 +21,7 @@ export function RankingStats({ item }: { item: RankingItem }) {
   );
 }
 
-export function RankingPanel({ title, tone, ranking, summary, currentUserId, onDetails, onSeeAll }: RankingPanelProps) {
-
+export function RankingPanel({ title, tone, ranking, summary, currentUserId, loading = false, onDetails, onSeeAll }: RankingPanelProps) {
   return (
     <section className={`panel rank-panel rank-panel--${tone}`}>
       <header className="panel__header">
@@ -31,7 +31,7 @@ export function RankingPanel({ title, tone, ranking, summary, currentUserId, onD
       {summary ? <div className="rank-panel__summary"><i className="bi bi-award" aria-hidden="true" /> {summary}</div> : null}
       <ol className="rank-list">
         {ranking.length === 0 ? (
-          <li className="empty-row">Sem pontuação ainda.</li>
+          <li className="empty-row">{loading ? 'Carregando…' : 'Sem pontuação ainda.'}</li>
         ) : ranking.slice(0, 6).map((item, index) => {
           const position = item.position ?? index + 1;
           return (

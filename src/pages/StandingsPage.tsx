@@ -1,4 +1,3 @@
-import { EmptyState } from '../components/EmptyState';
 import { StandingsLegend, StandingsTable } from '../components/StandingsTable';
 import { useBolaoData } from '../hooks/useBolaoData';
 
@@ -23,10 +22,9 @@ export function StandingsPage() {
       </header>
 
       {error ? <div className="banner banner--error">{error}</div> : null}
-      {loading && !data ? <EmptyState>Carregando tabela…</EmptyState> : null}
 
       <section className="panel">
-        <StandingsTable standings={standings} />
+        <StandingsTable standings={standings} emptyText={loading && !data ? 'Carregando tabela…' : undefined} />
         <StandingsLegend />
       </section>
     </section>
