@@ -1,5 +1,9 @@
 -- Bolao WDD - modelo de pontuacao por placar
 -- Execute no Supabase SQL Editor antes de publicar esta versao.
+--
+-- ATENCAO (2026-11-14): a funcao get_visible_bets deste arquivo tem bug de fuso
+-- horario e permissao para anon. NAO reexecute este trecho; a versao correta esta em
+-- supabase/migrations/20261114120000_fix_get_visible_bets.sql
 
 alter table public.matches
     add column if not exists is_bonus boolean not null default false;
