@@ -1,5 +1,46 @@
 # Release Notes
 
+## v3.1.0-dev - 2026-11-16
+
+Base da temporada 2027: correções de segurança dos palpites, temporadas, ranking calculado no banco, controle de consumo do Supabase Free e visual novo. Somente DEV; produção recebe na janela de 23–24/01/2027.
+
+### Segurança (Fase 0)
+
+- Palpites dos outros liberados só no horário de início do jogo **em Brasília** (antes vazavam 3h antes por causa do UTC do banco).
+- `get_visible_bets` e a policy de leitura direta de `bets` corrigidas; chave anon não lê mais apostas.
+- `is_admin()` como `security definer` em todos os ambientes.
+
+### Temporadas, ranking e Coins (Fase 1)
+
+- Tabela `seasons` (2026 encerrada, 2027 ativa); `rounds` e `standings` com `season_key`.
+- `get_ranking`: ranking no banco, 1 linha por participante (resolve o limite de 1000 linhas da API).
+- Desempate oficial: pontos → cravadas → na trave → jogos apostados; persistindo, posição compartilhada (1, 1, 3).
+- Prêmios de Coins por temporada, com prêmio integral para empatados; saldo só muda pelas RPCs auditadas.
+
+### Consumo do Supabase Free (Fase 2)
+
+- `get_app_snapshot`: 1 chamada com a temporada ativa; cache local com carimbo `app_meta.version`.
+- Ranking e extrato sob demanda; admin sem recarga completa após cada ação; gravações em lote.
+- Keepalive cobre DEV e PROD (PROD opcional via secrets).
+
+### Visual novo
+
+- Identidade "noite de jogo", navegação inferior no celular.
+- Jogos: rodada inteira por dia, placar com +/−, status e contagem regressiva, "Salvar palpites" em lote.
+- Ranking: pódio, movimento ▲▼, últimas rodadas e gráfico "Corrida pelo título" (`get_ranking_history`).
+- Tabela do campeonato com zonas.
+
+### Banco de dados
+
+- Migrations versionadas em `supabase/migrations/` (ordem e status por ambiente em `supabase/README.md`).
+- Scripts de verificação em `supabase/tests/` (não gravam dados).
+
+### Validações
+
+- `tsc`, 14 testes unitários, build Vite e `npm audit` verdes.
+- Testes SQL das Fases 0, 1 e 2 verdes no Supabase DEV (6/6, 12/12, 13/13).
+- Homologação manual no DEV (desktop e celular): jogos, palpites, bônus, ranking, extrato, setas e gráfico.
+
 ## v3.0.0-dev - 2026-07-04
 
 Tempo de desenvolvimento da sessão: aproximadamente 2 horas.

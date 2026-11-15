@@ -1,40 +1,95 @@
+/*
+ * Bolão WDD - tokens do visual "noite de jogo".
+ * Identidade própria inspirada em transmissões de futebol (não usa marcas oficiais).
+ * Cores de série validadas (daltonismo + contraste) contra --surface.
+ */
 :root {
-  color: #102033;
-  background: #eef4f1;
-  font-family: Inter, "Segoe UI", system-ui, -apple-system, sans-serif;
-  font-synthesis: none;
-  letter-spacing: 0;
+  color-scheme: dark;
 
-  --color-ink: #102033;
-  --color-muted: #667085;
-  --color-surface: #ffffff;
-  --color-field: #f8fbfa;
-  --color-line: #dfe8ef;
-  --color-primary: #1769e8;
-  --color-green: #137a4b;
-  --color-teal: #0e7490;
-  --color-gold: #f4b321;
-  --radius-card: 8px;
-  --shadow-card: 0 16px 34px rgba(15, 61, 122, 0.09);
+  /* Superfícies */
+  --bg: #06110c;
+  --surface: #0f1f18;
+  --surface-2: #142a20;
+  --surface-3: #1b3529;
+  --line: rgba(255, 255, 255, 0.08);
+  --line-strong: rgba(255, 255, 255, 0.16);
+
+  /* Texto */
+  --text: #eef3ef;
+  --text-2: #b8c7bd;
+  --muted: #86998d;
+
+  /* Marca */
+  --gold: #f2c14e;
+  --gold-soft: rgba(242, 193, 78, 0.14);
+  --gold-ink: #1d1503;
+  --pitch: #1f7a4d;
+  --pitch-soft: rgba(47, 191, 113, 0.14);
+
+  /* Estados (sempre com ícone + texto) */
+  --ok: #3fcf7f;
+  --ok-soft: rgba(63, 207, 127, 0.14);
+  --warn: #fab219;
+  --warn-soft: rgba(250, 178, 25, 0.14);
+  --danger: #f07070;
+  --danger-soft: rgba(240, 112, 112, 0.14);
+
+  /* Séries do gráfico (ordem fixa, cor segue o participante) */
+  --series-1: #3987e5;
+  --series-2: #d95926;
+  --series-3: #199e70;
+  --series-4: #c98500;
+
+  /* Zonas da tabela */
+  --zone-lib: #3987e5;
+  --zone-lib-qual: #86b6ef;
+  --zone-sula: #2fbf71;
+  --zone-z4: #e5484d;
+
+  /* Tipografia */
+  --font-body: Inter, "Segoe UI", system-ui, -apple-system, sans-serif;
+  --font-display: "Barlow Condensed", "Arial Narrow", "Segoe UI", system-ui, sans-serif;
+
+  /* Forma */
+  --radius: 10px;
+  --radius-sm: 6px;
+  --shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+  --gutter: 16px;
+  --topbar-h: 60px;
+  --bottomnav-h: 64px;
 }
 
 * {
   box-sizing: border-box;
 }
 
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
 body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.45;
   background:
-    linear-gradient(90deg, rgba(12, 96, 60, 0.055) 1px, transparent 1px),
-    linear-gradient(0deg, rgba(23, 105, 232, 0.035) 1px, transparent 1px),
-    #eef4f1;
-  background-size: 46px 46px;
+    radial-gradient(ellipse 120% 60% at 50% -10%, rgba(47, 191, 113, 0.16), transparent 60%),
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.012) 0 80px, transparent 80px 160px),
+    var(--bg);
+  background-attachment: fixed;
 }
 
 button,
 select,
-input {
+input,
+textarea {
   font: inherit;
+  color: inherit;
+}
+
+img {
+  max-width: 100%;
 }

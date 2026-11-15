@@ -31,12 +31,16 @@ const Storage = {
     setCache: (data) => {
         Storage._cache = Storage.cloneData(data);
         Storage._cacheLoadedAt = new Date().toISOString();
+        Storage._lastVersionCheckAt = Date.now();
+        Storage.persistCache();
     },
 
     clearCache: () => {
         Storage._cache = null;
         Storage._cachePromise = null;
         Storage._cacheLoadedAt = null;
+        Storage._lastVersionCheckAt = 0;
+        Storage._rankingCache = {};
     },
 
     updateCachedList: (listName, item) => {
@@ -49,11 +53,13 @@ const Storage = {
         } else {
             Storage._cache[listName].push(nextItem);
         }
+        Storage.persistCache();
     },
 
     removeCachedListItem: (listName, id) => {
         if (!Storage._cache || !Array.isArray(Storage._cache[listName])) return;
         Storage._cache[listName] = Storage._cache[listName].filter((entry) => entry.id !== id);
+        Storage.persistCache();
     },
 
     getLoginEmail: (username) => {
@@ -177,72 +183,287 @@ const Storage = {
         goal_diff: standing.goalDiff
     }),
 
+    /**
+     * Controle de consumo (Fase 2):
+     * - Os dados da temporada ativa vem de UMA chamada (get_app_snapshot).
+     * - Ficam em memoria e no localStorage, junto com o "carimbo" app_meta.version.
+     * - A cada VERSION_CHECK_MS, no maximo, o app consulta so o carimbo (poucos
+     *   bytes). O snapshot so e baixado de novo quando o carimbo muda.
+     * - "Atualizar" (forceRefresh) sempre baixa de novo.
+     */
+    VERSION_CHECK_MS: 60 * 1000,
+    PERSIST_KEY: 'bolao_wdd_snapshot_v1',
+    _lastVersionCheckAt: 0,
+    _versionPromise: null,
+    _rankingCache: {},
+
+    persistCache: () => {
+        try {
+            const user = Storage.getCurrentUser();
+            if (!user || !Storage._cache) return;
+            localStorage.setItem(Storage.PERSIST_KEY, JSON.stringify({ userId: user.id, data: Storage._cache }));
+        } catch (error) {
+            // Armazenamento cheio/bloqueado: segue so com o cache em memoria
+        }
+    },
+
+    restorePersistedCache: () => {
+        try {
+            const user = Storage.getCurrentUser();
+            const raw = localStorage.getItem(Storage.PERSIST_KEY);
+            if (!user || !raw) return false;
+            const parsed = JSON.parse(raw);
+            if (!parsed || parsed.userId !== user.id || !parsed.data) return false;
+            Storage._cache = parsed.data;
+            Storage._lastVersionCheckAt = 0;
+            return true;
+        } catch (error) {
+            return false;
+        }
+    },
+
+    clearPersistedCache: () => {
+        try {
+            localStorage.removeItem(Storage.PERSIST_KEY);
+        } catch (error) {
+            // ignora
+        }
+    },
+
+    fetchVersion: async () => {
+        const { data, error } = await supabaseClient.from('app_meta').select('version').eq('id', 1).maybeSingle();
+        if (error) throw error;
+        return data ? Number(data.version) : null;
+    },
+
+    getSeasonKey: () => (Storage._cache && Storage._cache.season ? Storage._cache.season.key : null),
+
     getData: async (options = {}) => {
         const forceRefresh = Boolean(options.forceRefresh);
 
+        if (!forceRefresh && !Storage._cache) Storage.restorePersistedCache();
+
         if (!forceRefresh && Storage._cache) {
-            return Storage.cloneData(Storage._cache);
+            if (Date.now() - Storage._lastVersionCheckAt < Storage.VERSION_CHECK_MS) {
+                return Storage.cloneData(Storage._cache);
+            }
+
+            try {
+                if (!Storage._versionPromise) {
+                    Storage._versionPromise = Storage.fetchVersion()
+                        .finally(() => { Storage._versionPromise = null; });
+                }
+                const version = await Storage._versionPromise;
+                if (version !== null && version === Storage._cache.version) {
+                    Storage._lastVersionCheckAt = Date.now();
+                    return Storage.cloneData(Storage._cache);
+                }
+            } catch (error) {
+                console.warn('Nao foi possivel verificar a versao dos dados. Usando cache local.', error);
+                return Storage.cloneData(Storage._cache);
+            }
         }
 
-        if (!forceRefresh && Storage._cachePromise) {
+        if (!Storage._cachePromise) {
+            Storage._cachePromise = Storage.fetchData()
+                .finally(() => { Storage._cachePromise = null; });
+        }
+
+        try {
             return Storage.cloneData(await Storage._cachePromise);
+        } catch (error) {
+            // Sem rede: se houver cache, mostra o que temos; senao, propaga o erro para a tela
+            if (Storage._cache) return Storage.cloneData(Storage._cache);
+            throw error;
         }
-
-        Storage._cachePromise = Storage.fetchData();
-        const data = await Storage._cachePromise;
-        Storage._cachePromise = null;
-        return Storage.cloneData(data);
     },
 
     fetchData: async () => {
-        try {
-            if (!supabaseClient) throw new Error('Supabase não inicializado');
+        if (!supabaseClient) throw new Error('Supabase não inicializado');
 
-            const [profilesRes, roundsRes, matchesRes, standingsRes, settingsRes] = await Promise.all([
-                supabaseClient.from('profiles').select('*').order('username'),
-                supabaseClient.from('rounds').select('*').order('number'),
-                supabaseClient.from('matches').select('*').order('match_date').order('match_time'),
-                supabaseClient.from('standings').select('*').order('position'),
-                supabaseClient.from('scoring_settings').select('*').eq('id', 'default').maybeSingle()
-            ]);
-
-            let betsRes = await supabaseClient.rpc('get_visible_bets');
-            if (betsRes.error) {
-                console.warn('Função get_visible_bets indisponível. Usando leitura direta temporária de bets.', betsRes.error);
-                betsRes = await supabaseClient.from('bets').select('*');
-            }
-
-            const responses = [profilesRes, roundsRes, matchesRes, standingsRes, betsRes];
-            const failed = responses.find((response) => response.error);
-            if (failed) throw failed.error;
-
-            const users = profilesRes.data.map(Storage.toUser);
-            const rounds = roundsRes.data.map(Storage.toRound);
-            const matches = matchesRes.data.map(Storage.toMatch);
-            const standings = standingsRes.data.map(Storage.toStanding);
-            const scoringSettings = settingsRes && !settingsRes.error
-                ? Storage.toScoringSettings(settingsRes.data)
-                : Storage.getDefaultScoringSettings();
-            const bets = {};
-
-            betsRes.data.forEach((bet) => {
-                if (!bets[bet.user_id]) bets[bet.user_id] = {};
-                bets[bet.user_id][bet.match_id] = {
-                    pick: bet.pick,
-                    scoreHome: bet.score_home === null || bet.score_home === undefined ? null : Number(bet.score_home),
-                    scoreAway: bet.score_away === null || bet.score_away === undefined ? null : Number(bet.score_away),
-                    createdAt: bet.created_at
-                };
-            });
-
-            const data = { users, rounds, matches, bets, standings, scoringSettings };
-            Storage.setCache(data);
-            return data;
-        } catch (error) {
+        const { data: snapshot, error } = await supabaseClient.rpc('get_app_snapshot');
+        if (error) {
             console.error('Erro ao buscar dados do Supabase:', error);
-            alert('Erro crítico: falha ao conectar com o banco de dados.');
-            return { users: [], rounds: [], matches: [], bets: {}, standings: [], scoringSettings: Storage.getDefaultScoringSettings() };
+            throw error;
         }
+
+        const data = Storage.fromSnapshot(snapshot || {});
+        Storage.setCache(data);
+        return data;
+    },
+
+    fromSnapshot: (snapshot) => {
+        const bets = {};
+        (snapshot.my_bets || []).forEach((bet) => {
+            if (!bets[bet.user_id]) bets[bet.user_id] = {};
+            bets[bet.user_id][bet.match_id] = Storage.toBet(bet);
+        });
+
+        return {
+            version: snapshot.version === null || snapshot.version === undefined ? null : Number(snapshot.version),
+            season: snapshot.season || null,
+            users: (snapshot.profiles || []).map(Storage.toUser),
+            rounds: (snapshot.rounds || []).map(Storage.toRound),
+            matches: (snapshot.matches || []).map(Storage.toMatch),
+            standings: (snapshot.standings || []).map(Storage.toStanding),
+            scoringSettings: Storage.toScoringSettings(snapshot.scoring_settings),
+            bets
+        };
+    },
+
+    toBet: (bet) => ({
+        pick: bet.pick,
+        scoreHome: bet.score_home === null || bet.score_home === undefined ? null : Number(bet.score_home),
+        scoreAway: bet.score_away === null || bet.score_away === undefined ? null : Number(bet.score_away),
+        createdAt: bet.created_at
+    }),
+
+    /**
+     * Ranking calculado no banco (get_ranking). Cacheado por versao + rodada.
+     * roundId nulo/'all' = ranking da temporada.
+     */
+    getRanking: async (roundId = null) => {
+        const data = await Storage.getData();
+        const scope = roundId && roundId !== 'all' ? roundId : null;
+        const cacheKey = `${data.version}|${data.season ? data.season.key : ''}|${scope || 'season'}`;
+
+        if (Storage._rankingCache[cacheKey]) return Storage.cloneData(Storage._rankingCache[cacheKey]);
+
+        const { data: rows, error } = await supabaseClient.rpc('get_ranking', {
+            p_season_key: data.season ? data.season.key : null,
+            p_round_id: scope
+        });
+        if (error) throw error;
+
+        const ranking = (rows || []).map((row) => ({
+            id: row.user_id,
+            name: row.user_name,
+            position: Number(row.position),
+            points: Number(row.points),
+            exactHits: Number(row.exact_hits),
+            nearMisses: Number(row.near_misses),
+            bonusHits: Number(row.bonus_hits),
+            betsCount: Number(row.bets_count)
+        }));
+
+        // Mantem so os rankings da versao atual
+        const versionPrefix = `${data.version}|`;
+        Object.keys(Storage._rankingCache).forEach((key) => {
+            if (!key.startsWith(versionPrefix)) delete Storage._rankingCache[key];
+        });
+        Storage._rankingCache[cacheKey] = ranking;
+        return Storage.cloneData(ranking);
+    },
+
+    /**
+     * Historico do ranking por rodada (get_ranking_history), cacheado por versao.
+     * Retorna [] se a funcao ainda nao existir no banco (visual degrada sem quebrar).
+     */
+    getRankingHistory: async () => {
+        const data = await Storage.getData();
+        const cacheKey = `${data.version}|${data.season ? data.season.key : ''}|history`;
+        if (Storage._rankingCache[cacheKey]) return Storage.cloneData(Storage._rankingCache[cacheKey]);
+
+        const { data: rows, error } = await supabaseClient.rpc('get_ranking_history', {
+            p_season_key: data.season ? data.season.key : null
+        });
+        if (error) {
+            console.warn('Historico do ranking indisponivel:', error);
+            return [];
+        }
+
+        const history = (rows || []).map((row) => ({
+            roundId: row.round_id,
+            roundNumber: Number(row.round_number),
+            roundName: row.round_name,
+            userId: row.user_id,
+            userName: row.user_name,
+            roundPoints: Number(row.round_points),
+            roundPosition: Number(row.round_position),
+            totalPoints: Number(row.total_points),
+            position: Number(row.position)
+        }));
+        Storage._rankingCache[cacheKey] = history;
+        return Storage.cloneData(history);
+    },
+
+    /**
+     * Salva varios palpites numa unica chamada. Se o lote falhar (ex.: um jogo
+     * fechou no meio do caminho), tenta um a um para salvar os que ainda podem.
+     * Retorna { saved: [matchIds], failed: [matchIds] }.
+     */
+    saveBets: async (userId, bets) => {
+        if (!bets.length) return { saved: [], failed: [] };
+        const currentUser = Storage.getCurrentUser();
+        const now = new Date().toISOString();
+        const rows = bets.map((bet) => {
+            const scoreHome = Number(bet.scoreHome);
+            const scoreAway = Number(bet.scoreAway);
+            return {
+                user_id: userId,
+                legacy_user_id: currentUser ? (currentUser.legacyId || userId) : userId,
+                match_id: bet.matchId,
+                pick: scoreHome > scoreAway ? 'home' : (scoreHome < scoreAway ? 'away' : 'draw'),
+                score_home: scoreHome,
+                score_away: scoreAway,
+                created_at: bet.createdAt || now,
+                updated_at: now
+            };
+        });
+
+        const applyToCache = (row) => {
+            if (!Storage._cache) return;
+            if (!Storage._cache.bets[userId]) Storage._cache.bets[userId] = {};
+            Storage._cache.bets[userId][row.match_id] = Storage.toBet(row);
+        };
+
+        const { error } = await supabaseClient.from('bets').upsert(rows, { onConflict: 'user_id,match_id' });
+        if (!error) {
+            rows.forEach(applyToCache);
+            Storage.persistCache();
+            return { saved: rows.map((row) => row.match_id), failed: [] };
+        }
+
+        console.warn('Lote de palpites recusado; tentando um a um.', error);
+        const saved = [];
+        const failed = [];
+        for (const row of rows) {
+            const { error: rowError } = await supabaseClient.from('bets').upsert(row, { onConflict: 'user_id,match_id' });
+            if (rowError) {
+                failed.push(row.match_id);
+            } else {
+                saved.push(row.match_id);
+                applyToCache(row);
+            }
+        }
+        Storage.persistCache();
+        return { saved, failed };
+    },
+
+    /**
+     * Apostas visiveis (com a regra de ocultacao do banco), filtradas.
+     * Retorna lista { userId, matchId, pick, scoreHome, scoreAway, createdAt }.
+     */
+    getVisibleBets: async ({ roundId = null, userId = null } = {}) => {
+        const seasonKey = Storage.getSeasonKey();
+        const pageSize = 1000;
+        const result = [];
+
+        for (let from = 0; ; from += pageSize) {
+            const { data: rows, error } = await supabaseClient
+                .rpc('get_season_bets', {
+                    p_season_key: seasonKey,
+                    p_round_id: roundId && roundId !== 'all' ? roundId : null,
+                    p_user_id: userId || null
+                })
+                .range(from, from + pageSize - 1);
+            if (error) throw error;
+
+            (rows || []).forEach((row) => result.push({ userId: row.user_id, matchId: row.match_id, ...Storage.toBet(row) }));
+            if (!rows || rows.length < pageSize) break;
+        }
+
+        return result;
     },
 
     addRound: async (round) => {
@@ -252,11 +473,53 @@ const Storage = {
         return !error;
     },
 
+    // Uma unica chamada: o banco remove jogos e apostas da rodada (ON DELETE CASCADE).
     deleteRound: async (roundId) => {
         const { error } = await supabaseClient.from('rounds').delete().eq('id', roundId);
         if (error) console.error('Erro ao deletar rodada:', error);
-        if (!error) Storage.removeCachedListItem('rounds', roundId);
+        if (!error && Storage._cache) {
+            const removedMatchIds = new Set(Storage._cache.matches
+                .filter((match) => match.roundId === roundId)
+                .map((match) => match.id));
+            Storage._cache.matches = Storage._cache.matches.filter((match) => match.roundId !== roundId);
+            Object.keys(Storage._cache.bets || {}).forEach((userId) => {
+                removedMatchIds.forEach((matchId) => delete Storage._cache.bets[userId][matchId]);
+            });
+            Storage.removeCachedListItem('rounds', roundId);
+        }
         return !error;
+    },
+
+    // Atualiza varios jogos numa unica chamada (ex.: troca do jogo bonus).
+    updateMatches: async (matches) => {
+        if (!matches.length) return true;
+        const { error } = await supabaseClient.from('matches').upsert(matches.map(Storage.fromMatch));
+        if (error) console.error('Erro ao atualizar jogos:', error);
+        if (!error) matches.forEach((match) => Storage.updateCachedList('matches', match));
+        return !error;
+    },
+
+    // Grava a classificacao em lote: upsert das linhas + remocao das que sairam.
+    replaceStandings: async (standings, removedIds = []) => {
+        if (standings.length) {
+            const { error } = await supabaseClient.from('standings').upsert(standings.map(Storage.fromStanding));
+            if (error) {
+                console.error('Erro ao salvar classificação em lote:', error);
+                return false;
+            }
+            standings.forEach((standing) => Storage.updateCachedList('standings', standing));
+        }
+
+        if (removedIds.length) {
+            const { error } = await supabaseClient.from('standings').delete().in('id', removedIds);
+            if (error) {
+                console.error('Erro ao remover linhas da classificação:', error);
+                return false;
+            }
+            removedIds.forEach((id) => Storage.removeCachedListItem('standings', id));
+        }
+
+        return true;
     },
 
     addMatch: async (match) => {
@@ -277,10 +540,10 @@ const Storage = {
         const { error } = await supabaseClient.from('matches').delete().eq('id', matchId);
         if (error) console.error('Erro ao deletar jogo:', error);
         if (!error && Storage._cache) {
-            Storage.removeCachedListItem('matches', matchId);
             Object.keys(Storage._cache.bets || {}).forEach((userId) => {
                 delete Storage._cache.bets[userId][matchId];
             });
+            Storage.removeCachedListItem('matches', matchId);
         }
         return !error;
     },
@@ -317,9 +580,10 @@ const Storage = {
             .from('scoring_settings')
             .upsert(Storage.fromScoringSettings(nextSettings), { onConflict: 'id' });
 
-        if (error) console.error('Erro ao atualizar pontuaÃ§Ã£o:', error);
+        if (error) console.error('Erro ao atualizar pontuação:', error);
         if (!error && Storage._cache) {
             Storage._cache.scoringSettings = Storage.cloneData(nextSettings);
+            Storage.persistCache();
         }
         return !error;
     },
@@ -355,6 +619,7 @@ const Storage = {
                 scoreAway,
                 createdAt: payload.created_at
             };
+            Storage.persistCache();
         }
         return !error;
     },
@@ -424,6 +689,7 @@ const Storage = {
     logout: async () => {
         localStorage.removeItem(Storage.SESSION_KEY);
         Storage.clearCache();
+        Storage.clearPersistedCache();
         if (supabaseClient) await supabaseClient.auth.signOut();
     },
 

@@ -1,5 +1,12 @@
 name: Supabase keepalive
 
+# Evita a pausa por inatividade do Supabase Free (7 dias sem uso).
+# Faz apenas uma leitura leve (GET de 1 linha), sem alterar dados.
+#
+# ATENCAO: o GitHub desativa workflows agendados depois de 60 dias sem
+# commits no repositorio. Na entressafra, faca um commit qualquer ou rode
+# manualmente (Actions > Supabase keepalive > Run workflow) pelo menos 1x a cada 60 dias.
+
 on:
   schedule:
     - cron: "0 12 * * 1,4"
@@ -10,27 +17,33 @@ permissions:
 
 jobs:
   ping:
-    name: Ping Supabase DEV
+    name: Ping Supabase (${{ matrix.env }})
     runs-on: ubuntu-latest
     timeout-minutes: 3
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - env: DEV
+            url_secret: SUPABASE_URL
+            key_secret: SUPABASE_ANON_KEY
+          - env: PROD
+            url_secret: SUPABASE_URL_PROD
+            key_secret: SUPABASE_ANON_KEY_PROD
 
     steps:
-      - name: Check required secrets
-        env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
-        run: |
-          test -n "$SUPABASE_URL"
-          test -n "$SUPABASE_ANON_KEY"
-
       - name: Lightweight REST request
         env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          SUPABASE_URL: ${{ secrets[matrix.url_secret] }}
+          SUPABASE_ANON_KEY: ${{ secrets[matrix.key_secret] }}
         run: |
+          if [ -z "$SUPABASE_URL" ] || [ -z "$SUPABASE_ANON_KEY" ]; then
+            echo "Secrets de ${{ matrix.env }} nao configurados; pulando."
+            exit 0
+          fi
           curl --fail --silent --show-error \
             --header "apikey: $SUPABASE_ANON_KEY" \
             --header "Authorization: Bearer $SUPABASE_ANON_KEY" \
             "$SUPABASE_URL/rest/v1/rounds?select=id&limit=1" \
             > /dev/null
-
+          echo "Ping ${{ matrix.env }} OK"

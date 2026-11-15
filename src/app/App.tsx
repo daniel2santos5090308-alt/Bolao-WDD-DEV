@@ -62,9 +62,9 @@ export function App() {
       onNavigate={handleNavigate}
     >
       {activeRoute === 'jogos' ? (
-        <DashboardPage currentUser={currentUser} />
+        <DashboardPage currentUser={currentUser} onNavigate={handleNavigate} />
       ) : activeRoute === 'ranking' ? (
-        <RankingPage />
+        <RankingPage currentUser={currentUser} />
       ) : activeRoute === 'classificacao' ? (
         <StandingsPage />
       ) : activeRoute === 'coins' ? (
@@ -82,7 +82,7 @@ export function App() {
       ) : activeRoute === 'admin' ? (
         <AdminPage />
       ) : (
-        <DashboardPage currentUser={currentUser} />
+        <DashboardPage currentUser={currentUser} onNavigate={handleNavigate} />
       )}
     </AppShell>
   );
