@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { requireSupabase } from '../services/supabase';
 
 interface CoinWalletState {
   availableBalance: number;
@@ -32,9 +33,7 @@ export function useCoinWallet(userId: string, seasonKey = '2027'): CoinWalletSta
     setError('');
 
     try {
-      if (typeof supabaseClient === 'undefined') {
-        throw new Error('Supabase nao inicializado.');
-      }
+      const supabaseClient = requireSupabase();
 
       const { data, error: queryError } = await supabaseClient
         .from('coin_wallet_summary')

@@ -1,6 +1,6 @@
-import { getLegacy } from '../services/legacyBolao';
 import { formatCountdown, getKickoff, type MatchStatus } from '../services/matchTime';
 import { TeamBadge } from './TeamBadge';
+import { formatPoints } from '../services/scoring';
 
 export interface BetDraft {
   home: string;
@@ -60,7 +60,6 @@ function ScoreStepper({ value, label, onChange }: { value: string; label: string
 
 export function MatchRow({ match, status, now, savedBet, draft, dirty, bonusMultiplier, pointResult, onDraftChange }: MatchRowProps) {
   const editable = status === 'open' || status === 'closing';
-  const formatPoints = getLegacy().Ranking.formatPoints;
   const hasScore = match.score && match.score.home !== null && match.score.away !== null;
   const savedText = savedBet && savedBet.scoreHome !== null && savedBet.scoreAway !== null
     ? `${savedBet.scoreHome} x ${savedBet.scoreAway}`

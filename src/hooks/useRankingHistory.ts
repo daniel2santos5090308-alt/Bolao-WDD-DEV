@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { getLegacy } from '../services/legacyBolao';
+import * as storage from '../services/storage';
 
 /** Historico do ranking por rodada; [] se ainda nao houver (ou se a funcao nao existir no banco). */
 export function useRankingHistory(dataVersion: number | null | undefined) {
@@ -8,7 +8,7 @@ export function useRankingHistory(dataVersion: number | null | undefined) {
   useEffect(() => {
     if (dataVersion === undefined) return;
     let cancelled = false;
-    getLegacy().Storage.getRankingHistory()
+    storage.getRankingHistory()
       .then((rows) => { if (!cancelled) setHistory(rows); })
       .catch(() => { if (!cancelled) setHistory([]); });
     return () => { cancelled = true; };

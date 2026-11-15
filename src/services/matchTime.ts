@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
+import { createMatchDate } from './utils.ts';
 
-/** Brasil sem horario de verao: kickoff sempre em -03:00, igual ao banco (America/Sao_Paulo). */
+/** Inicio do jogo no horario de Brasilia (-03:00), igual ao banco. */
 export function getKickoff(match: BolaoMatch): Date {
-  const time = (match.time || '00:00').slice(0, 5);
-  return new Date(`${match.date}T${time}:00-03:00`);
+  return createMatchDate(match.date, match.time);
 }
 
 export type MatchStatus = 'open' | 'closing' | 'locked' | 'finished';

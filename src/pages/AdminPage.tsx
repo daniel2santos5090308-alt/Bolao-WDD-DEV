@@ -4,7 +4,10 @@ import type { CoinSettings } from '../hooks/useCoinSettings';
 import { StandingsLegend, StandingsTable } from '../components/StandingsTable';
 import { useBolaoData } from '../hooks/useBolaoData';
 import { useCoinSettings } from '../hooks/useCoinSettings';
-import { getLegacy, getRoundNumber } from '../services/legacyBolao';
+import { getRoundNumber } from '../services/matches';
+import * as storage from '../services/storage';
+import { requireSupabase } from '../services/supabase';
+import { generateId } from '../services/utils';
 
 type AdminTab = 'jogos' | 'pontuacao' | 'classificacao' | 'coins';
 
@@ -165,8 +168,6 @@ export function AdminPage() {
   const bolaoData = useBolaoData();
   const coinSettings = useCoinSettings('2027');
   const data = bolaoData.data;
-  const storage = getLegacy().Storage;
-  const utils = getLegacy().Utils;
 
   const [activeTab, setActiveTab] = useState<AdminTab>('jogos');
   const [message, setMessage] = useState('');
@@ -240,7 +241,7 @@ export function AdminPage() {
     const name = roundName.trim();
     if (!name) return;
     const nextNumber = rounds.length ? Math.max(...rounds.map(getRoundNumber)) + 1 : 1;
-    const success = await storage.addRound({ id: utils.generateId(), name, number: nextNumber });
+    const success = await storage.addRound({ id: generateId(), name, number: nextNumber });
     if (!success) return fail('Nao foi possivel criar a rodada.');
     setRoundName('');
     notify('Rodada criada com sucesso.');
@@ -262,7 +263,7 @@ export function AdminPage() {
     const existing = matchForm.id ? matches.find((match) => match.id === matchForm.id) : null;
     const payload: BolaoMatch = {
       ...(existing || {}),
-      id: matchForm.id || utils.generateId(),
+      id: matchForm.id || generateId(),
       roundId: matchForm.roundId,
       date: matchForm.date,
       time: matchForm.time,
@@ -333,7 +334,7 @@ export function AdminPage() {
 
   async function handleSaveStanding(event: FormEvent) {
     event.preventDefault();
-    const payload = { ...standingForm, id: standingForm.id || utils.generateId(), goalDiff: getGoalDiff(standingForm.goalsFor, standingForm.goalsAgainst) };
+    const payload = { ...standingForm, id: standingForm.id || generateId(), goalDiff: getGoalDiff(standingForm.goalsFor, standingForm.goalsAgainst) };
     const existing = standings.some((item) => item.id === payload.id);
     const success = existing ? await storage.updateStanding(payload) : await storage.addStanding(payload);
     if (!success) return fail('Nao foi possivel salvar a classificacao.');
@@ -367,7 +368,7 @@ export function AdminPage() {
     const csvTeams = new Set(csvPreview.map((item) => item.team.toLocaleLowerCase('pt-BR')));
     // Duas chamadas no total: upsert de todas as linhas + remocao das que sairam.
     const payload = csvPreview.map((row) => ({
-      id: existingByTeam.get(row.team.toLocaleLowerCase('pt-BR'))?.id || utils.generateId(),
+      id: existingByTeam.get(row.team.toLocaleLowerCase('pt-BR'))?.id || generateId(),
       ...row
     }));
     const removedIds = standings
@@ -390,7 +391,7 @@ export function AdminPage() {
   async function loadCoinAdminData() {
     setCoinAdminLoading(true);
     try {
-      if (typeof supabaseClient === 'undefined') throw new Error('Supabase nao inicializado.');
+      const supabaseClient = requireSupabase();
 
       const { data: processRows, error: processError } = await supabaseClient
         .from('coin_round_processes')
@@ -419,8 +420,7 @@ export function AdminPage() {
 
       if (walletError) throw walletError;
 
-      const client = supabaseClient as any;
-      const { data: storeRows, error: storeError } = await client
+      const { data: storeRows, error: storeError } = await supabaseClient
         .from('coin_store_items')
         .select('id, name, item_type, price, rarity, is_active')
         .eq('season_key', coins.seasonKey)
@@ -428,7 +428,7 @@ export function AdminPage() {
 
       if (storeError) throw storeError;
 
-      const { data: userItemRows, error: userItemError } = await client
+      const { data: userItemRows, error: userItemError } = await supabaseClient
         .from('coin_user_items')
         .select('id, user_id, item_id, purchased_at')
         .eq('season_key', coins.seasonKey)
@@ -492,7 +492,7 @@ export function AdminPage() {
 
     setWalletInitializing(true);
     try {
-      if (typeof supabaseClient === 'undefined') throw new Error('Supabase nao inicializado.');
+      const supabaseClient = requireSupabase();
       const { data: wallets, error: rpcError } = await supabaseClient.rpc('initialize_coin_wallets_for_season', { p_season_key: coins.seasonKey, p_include_admins: false });
       if (rpcError) throw rpcError;
       notify(`Carteiras verificadas: ${(wallets || []).length} participantes preparados para a temporada ${coins.seasonKey}.`);
@@ -517,7 +517,7 @@ export function AdminPage() {
 
     setAdjustingWallet(true);
     try {
-      if (typeof supabaseClient === 'undefined') throw new Error('Supabase nao inicializado.');
+      const supabaseClient = requireSupabase();
       const { error: rpcError } = await supabaseClient.rpc('adjust_coin_wallet_by_admin', {
         p_season_key: coins.seasonKey,
         p_user_id: adjustmentUserId,
@@ -540,10 +540,10 @@ export function AdminPage() {
     if (!selectedRewardRoundId) return fail('Selecione uma rodada finalizada.');
     setProcessing(true);
     try {
-      if (typeof supabaseClient === 'undefined') throw new Error('Supabase nao inicializado.');
+      const supabaseClient = requireSupabase();
       const { data: rewards, error: rpcError } = await supabaseClient.rpc('process_round_coin_rewards', { p_round_id: selectedRewardRoundId, p_season_key: coins.seasonKey });
       if (rpcError) throw rpcError;
-      const total = (rewards || []).reduce((sum, row) => sum + Number(row.reward_amount || 0), 0);
+      const total = ((rewards || []) as Array<{ reward_amount?: number | string }>).reduce((sum, row) => sum + Number(row.reward_amount || 0), 0);
       notify(`Rodada processada: ${(rewards || []).length} lancamentos e ${total} WDD Coins creditadas.`);
       await loadCoinAdminData();
     } catch (err) {

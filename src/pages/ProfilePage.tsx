@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { FormEvent } from 'react';
-import { getLegacy } from '../services/legacyBolao';
+import { updatePasswordWithCurrent } from '../services/auth';
 
 interface ProfilePageProps {
   currentUser: BolaoUser;
@@ -31,7 +31,7 @@ export function ProfilePage({ currentUser }: ProfilePageProps) {
 
     setSaving(true);
     try {
-      const success = await getLegacy().Storage.updateUserPasswordWithCurrent(currentPassword, newPassword);
+      const success = await updatePasswordWithCurrent(currentPassword, newPassword);
       if (!success) throw new Error('Senha atual invalida ou falha ao salvar.');
       setCurrentPassword('');
       setNewPassword('');

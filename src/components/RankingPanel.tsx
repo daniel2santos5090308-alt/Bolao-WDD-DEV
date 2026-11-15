@@ -1,4 +1,4 @@
-import { getLegacy } from '../services/legacyBolao';
+import { formatPoints } from '../services/scoring';
 
 interface RankingPanelProps {
   title: string;
@@ -21,7 +21,6 @@ export function RankingStats({ item }: { item: RankingItem }) {
 }
 
 export function RankingPanel({ title, tone, ranking, summary, currentUserId, onDetails, onSeeAll }: RankingPanelProps) {
-  const formatPoints = getLegacy().Ranking.formatPoints;
 
   return (
     <section className={`panel rank-panel rank-panel--${tone}`}>

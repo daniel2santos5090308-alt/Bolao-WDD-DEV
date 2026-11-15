@@ -6,7 +6,8 @@ import { RankingStats } from '../components/RankingPanel';
 import { useBolaoData } from '../hooks/useBolaoData';
 import { useRanking } from '../hooks/useRanking';
 import { useRankingHistory } from '../hooks/useRankingHistory';
-import { getLegacy, getRoundNumber } from '../services/legacyBolao';
+import { getRoundNumber } from '../services/matches';
+import { formatPoints } from '../services/scoring';
 
 interface RankingPageProps {
   currentUser: BolaoUser;
@@ -23,7 +24,6 @@ export function RankingPage({ currentUser }: RankingPageProps) {
   const { data, loading, error, lastLoadedAt, refresh } = useBolaoData();
   const [scope, setScope] = useState('season');
   const [detailsUser, setDetailsUser] = useState<RankingItem | null>(null);
-  const formatPoints = getLegacy().Ranking.formatPoints;
 
   const rounds = useMemo(
     () => [...(data?.rounds || [])].sort((a, b) => getRoundNumber(a) - getRoundNumber(b)),

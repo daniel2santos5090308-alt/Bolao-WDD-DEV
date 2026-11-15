@@ -1,28 +1,5 @@
-export function getLegacy(): BolaoLegacyApi {
-  if (!window.BolaoLegacy) {
-    throw new Error('Bolao legacy API was not loaded.');
-  }
-
-  return window.BolaoLegacy;
-}
-
-export function getCurrentUser(): BolaoUser | null {
-  return getLegacy().Storage.getCurrentUser();
-}
-
-export async function hasSupabaseAuthSession(): Promise<boolean> {
-  if (typeof supabaseClient === 'undefined' || !supabaseClient?.auth) {
-    return false;
-  }
-
-  const { data, error } = await supabaseClient.auth.getSession();
-  if (error) {
-    console.warn('Nao foi possivel validar a sessao Supabase.', error);
-    return false;
-  }
-
-  return Boolean(data.session);
-}
+/** Helpers de rodadas e jogos para as telas. */
+import { isMatchStarted } from './utils.ts';
 
 export function getRoundNumber(round: BolaoRound): number {
   const value = Number(round.number);
@@ -42,7 +19,7 @@ export function isMatchFinished(match: BolaoMatch): boolean {
 }
 
 export function isMatchLocked(match: BolaoMatch): boolean {
-  return getLegacy().Utils.isMatchLocked(match.date, match.time) || isMatchFinished(match);
+  return isMatchStarted(match.date, match.time) || isMatchFinished(match);
 }
 
 export function formatMatchDateTime(match: BolaoMatch): string {

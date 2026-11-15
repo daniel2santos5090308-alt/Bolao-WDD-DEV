@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { getLegacy } from '../services/legacyBolao';
+import * as storage from '../services/storage';
 
 export function useBolaoData() {
   const [data, setData] = useState<BolaoData | null>(null);
@@ -12,7 +12,7 @@ export function useBolaoData() {
     setError('');
 
     try {
-      const nextData = await getLegacy().Storage.getData({
+      const nextData = await storage.getData({
         forceRefresh: Boolean(options.forceRefresh)
       });
 

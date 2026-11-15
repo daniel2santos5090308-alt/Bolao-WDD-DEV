@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { requireSupabase } from '../services/supabase';
 
 export interface CoinSettings {
   seasonKey: string;
@@ -68,9 +69,7 @@ export function useCoinSettings(seasonKey = '2027') {
     setError('');
 
     try {
-      if (typeof supabaseClient === 'undefined') {
-        throw new Error('Supabase nao inicializado.');
-      }
+      const supabaseClient = requireSupabase();
 
       const { data, error: queryError } = await supabaseClient
         .from('coin_settings')
@@ -95,9 +94,7 @@ export function useCoinSettings(seasonKey = '2027') {
     setSavedMessage('');
 
     try {
-      if (typeof supabaseClient === 'undefined') {
-        throw new Error('Supabase nao inicializado.');
-      }
+      const supabaseClient = requireSupabase();
 
       const values = Object.values(nextSettings).filter((value) => typeof value === 'number');
       if (values.some((value) => Number(value) < 0)) {

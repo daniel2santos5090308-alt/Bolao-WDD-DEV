@@ -6,8 +6,10 @@ import { MatchRow, type BetDraft } from '../components/MatchRow';
 import { RankingPanel } from '../components/RankingPanel';
 import { useBolaoData } from '../hooks/useBolaoData';
 import { useRanking } from '../hooks/useRanking';
-import { getLegacy, getRoundNumber } from '../services/legacyBolao';
+import { getRoundNumber } from '../services/matches';
 import { formatCountdown, formatDayLabel, formatShortDate, getKickoff, getMatchStatus, useNow } from '../services/matchTime';
+import { calculateMatchPoints, formatPoints, getScoringSettings } from '../services/scoring';
+import * as storage from '../services/storage';
 
 interface DashboardPageProps {
   currentUser: BolaoUser;
@@ -71,7 +73,7 @@ export function DashboardPage({ currentUser, onNavigate }: DashboardPageProps) {
     : roundMatches.filter((match) => match.homeTeam === selectedTeam || match.awayTeam === selectedTeam);
 
   const myBets = data?.bets?.[currentUser.id] || {};
-  const settings = data ? getLegacy().Ranking.getSettings(data) as { bonusMultiplier?: number } : {};
+  const settings = getScoringSettings(data);
   const bonusMultiplier = Number(settings.bonusMultiplier || 2);
 
   // Resumo da rodada
@@ -115,7 +117,7 @@ export function DashboardPage({ currentUser, onNavigate }: DashboardPageProps) {
     setSaving(true);
     setFeedback(null);
     try {
-      const result = await getLegacy().Storage.saveBets(currentUser.id, dirtyMatches.map((match) => {
+      const result = await storage.saveBets(currentUser.id, dirtyMatches.map((match) => {
         const draft = getDraft(match);
         return { matchId: match.id, scoreHome: Number(draft.home), scoreAway: Number(draft.away) };
       }));
@@ -155,7 +157,6 @@ export function DashboardPage({ currentUser, onNavigate }: DashboardPageProps) {
 
   const { ranking: generalRanking } = useRanking(null, data?.version);
   const { ranking: roundRanking } = useRanking(selectedRoundId || null, data?.version);
-  const formatPoints = getLegacy().Ranking.formatPoints;
   const roundLeaders = roundRanking.filter((item) => item.position === 1 && item.points > 0);
 
   // Agrupa por dia
@@ -236,7 +237,7 @@ export function DashboardPage({ currentUser, onNavigate }: DashboardPageProps) {
                 const status = getMatchStatus(match, now);
                 const savedBet = myBets[match.id] || null;
                 const pointResult = status === 'finished' && savedBet && data
-                  ? getLegacy().Ranking.calculateMatchPoints(match, savedBet, getLegacy().Ranking.getSettings(data))
+                  ? calculateMatchPoints(match, savedBet, getScoringSettings(data))
                   : null;
                 return (
                   <MatchRow
