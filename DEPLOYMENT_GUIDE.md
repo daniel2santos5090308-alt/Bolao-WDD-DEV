@@ -24,8 +24,6 @@ O arquivo `netlify.toml` já configura o Netlify para publicar somente `public/`
 
 Não publicar:
 
-- `.env.e2e`
-- `.env.e2e.example`
 - `package.json`
 - `package-lock.json`
 - `node_modules/`

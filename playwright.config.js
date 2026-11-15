@@ -1,44 +1,36 @@
 const { defineConfig, devices } = require('@playwright/test');
-const fs = require('node:fs');
-const path = require('node:path');
 
-const envFile = path.join(__dirname, '.env.e2e');
-if (fs.existsSync(envFile)) {
-  const lines = fs.readFileSync(envFile, 'utf8').split(/\r?\n/);
-  for (const line of lines) {
-    const match = line.match(/^\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*)\s*$/);
-    if (!match || process.env[match[1]]) continue;
-    process.env[match[1]] = match[2].replace(/^['"]|['"]$/g, '');
-  }
-}
+/**
+ * E2E com Supabase simulado (tests/e2e/support/mockSupabase.js): nao usa senha
+ * nem toca no Supabase DEV/PROD. Sobe o Vite numa porta propria.
+ */
+const port = 4173;
+const baseURL = process.env.E2E_BASE_URL || `http://127.0.0.1:${port}`;
 
 module.exports = defineConfig({
   testDir: './tests/e2e',
-  fullyParallel: false,
-  timeout: 60000,
+  fullyParallel: true,
+  timeout: 30000,
   expect: {
     timeout: 10000
   },
   use: {
-    baseURL: process.env.E2E_BASE_URL || 'http://localhost:4173',
+    baseURL,
     trace: 'retain-on-failure',
-    screenshot: 'only-on-failure',
-    video: 'retain-on-failure'
+    screenshot: 'only-on-failure'
   },
-  webServer: {
-    command: 'npm start',
-    url: process.env.E2E_BASE_URL || 'http://localhost:4173',
-    reuseExistingServer: true,
-    timeout: 30000
+  webServer: process.env.E2E_BASE_URL ? undefined : {
+    command: `npx vite --host 127.0.0.1 --port ${port} --strictPort`,
+    url: baseURL,
+    reuseExistingServer: !process.env.CI,
+    timeout: 60000
   },
   reporter: [
     ['list'],
     ['html', { open: 'never' }]
   ],
   projects: [
-    {
-      name: 'chromium',
-      use: { ...devices['Desktop Chrome'] }
-    }
+    { name: 'desktop', use: { ...devices['Desktop Chrome'] } },
+    { name: 'celular', use: { ...devices['Pixel 7'] } }
   ]
 });
