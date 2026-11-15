@@ -44,7 +44,7 @@ export function AppShell({ children, currentUser, activeRoute, coinBalance, coin
         <div className="topbar__right">
           {/* Admin nao participa do bolao: sem carteira, sem saldo no topo. */}
           {!isAdmin ? (
-            <button type="button" className="coin-pill" onClick={() => onNavigate('coins')} aria-label="Saldo WDD Coins">
+            <button type="button" className="coin-pill" onClick={() => onNavigate('coins')} aria-label={coinLoading ? 'Saldo de WDD Coins: carregando' : `Saldo de WDD Coins: ${coinBalance.toLocaleString('pt-BR')}`}>
               <i className="bi bi-coin" aria-hidden="true" />
               <strong>{coinLoading ? '…' : coinBalance.toLocaleString('pt-BR')}</strong>
             </button>

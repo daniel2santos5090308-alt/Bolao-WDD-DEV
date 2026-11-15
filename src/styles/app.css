@@ -2042,6 +2042,39 @@ textarea {
   font-size: 1rem;
 }
 
+.password-field {
+  position: relative;
+}
+
+.login-card .password-field input {
+  padding-right: 48px;
+}
+
+.password-field__toggle {
+  position: absolute;
+  top: 50%;
+  right: 4px;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  transform: translateY(-50%);
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-2);
+  cursor: pointer;
+}
+
+.password-field__toggle:hover {
+  color: var(--text);
+}
+
+.password-field__toggle:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: -2px;
+}
+
 .login-card .primary-button {
   min-height: 46px;
   font-size: 1rem;
