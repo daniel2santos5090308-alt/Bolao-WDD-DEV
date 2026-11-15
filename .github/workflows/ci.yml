@@ -1,0 +1,56 @@
+# Validacao de todo PR e push de branch de trabalho.
+# Nao usa segredos: o E2E roda contra o Supabase simulado (tests/e2e/support/mockSupabase.js).
+name: CI
+
+on:
+  pull_request:
+    branches: [chore/dev-test-environment]
+  push:
+    branches: ['feat/**', 'fix/**', 'chore/**']
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  validar:
+    name: Typecheck, testes, audit e build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm audit --audit-level=high
+      - run: npx vite build
+
+  e2e:
+    name: E2E (desktop e celular)
+    needs: validar
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npx playwright test
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 7
