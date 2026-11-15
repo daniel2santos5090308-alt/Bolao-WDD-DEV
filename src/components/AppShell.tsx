@@ -50,7 +50,7 @@ export function AppShell({ children, currentUser, activeRoute, coinBalance, coin
             </button>
           ) : null}
           <span className="topbar__user">{currentUser.name}</span>
-          <button type="button" className="ghost-button" onClick={onLogout}>
+          <button type="button" className="ghost-button" onClick={onLogout} aria-label="Sair">
             <i className="bi bi-box-arrow-right" aria-hidden="true" />
             <span>Sair</span>
           </button>
