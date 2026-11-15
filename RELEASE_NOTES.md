@@ -1,5 +1,33 @@
 # Release Notes
 
+## v3.4.0-dev - 2026-11-15
+
+Fase 4 (UX), segunda parte: telas do participante (Jogos, Ranking, Tabela e Login). Somente DEV; produção recebe na janela de 23–24/01/2027. Sem migration nova.
+
+### Palpites
+
+- Palpite digitado numa rodada continua na barra "Salvar palpites" ao trocar de rodada e é salvo junto ("2 palpites não salvos (1 em outra rodada)"). Antes ele sumia da barra.
+- Trocar de tela, usar o Voltar do navegador ou sair com palpite não salvo pede confirmação. Fechar a aba mostra o aviso do navegador.
+
+### Carregamento
+
+- Ranking, Tabela e os rankings laterais mostram "Carregando…" enquanto os dados chegam, em vez de "Sem pontuação ainda" ou "Classificação ainda não cadastrada".
+
+### Acessibilidade
+
+- O saldo de WDD Coins no topo é lido pelo leitor de tela ("Saldo de WDD Coins: 1.000"). Antes ele lia só "Saldo WDD Coins".
+- O extrato de um participante trava a rolagem do fundo e, ao fechar, devolve o foco a quem o abriu.
+- Cada tela tem seu título na aba do navegador ("Ranking · Bolão WDD").
+
+### Login
+
+- Botão para mostrar ou ocultar a senha.
+
+### Testes
+
+- E2E: 12 fluxos × desktop e celular (24 testes). Os novos cobrem palpite em outra rodada, confirmação ao trocar de tela e mostrar senha.
+- 17 testes unitários (novo: aviso de palpite não salvo).
+
 ## v3.3.0-dev - 2026-11-15
 
 Fase 4 (UX), primeira parte: textos, Coins, Admin e testes de ponta a ponta. Somente DEV; produção recebe na janela de 23–24/01/2027.
