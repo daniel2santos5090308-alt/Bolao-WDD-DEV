@@ -22,7 +22,7 @@ export function useBolaoData() {
         minute: '2-digit'
       }));
     } catch (err) {
-      console.error('Erro ao carregar dados do Bolao WDD:', err);
+      console.error('Erro ao carregar dados do Bolão WDD:', err);
       setError('Não foi possível carregar os dados. Verifique a conexão e tente atualizar.');
     } finally {
       setLoading(false);

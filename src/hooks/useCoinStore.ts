@@ -97,7 +97,7 @@ export function useCoinStore(userId: string, seasonKey = '2027') {
       setHasLoaded(true);
     } catch (err) {
       console.error('Erro ao carregar loja WDD Coins:', err);
-      setError(err instanceof Error ? err.message : 'Nao foi possivel carregar a loja.');
+      setError(err instanceof Error ? err.message : 'Não foi possível carregar a loja.');
     } finally {
       setLoading(false);
     }
@@ -123,7 +123,7 @@ export function useCoinStore(userId: string, seasonKey = '2027') {
       return true;
     } catch (err) {
       console.error('Erro ao comprar item WDD Coins:', err);
-      setError(err instanceof Error ? err.message : 'Nao foi possivel comprar o item.');
+      setError(err instanceof Error ? err.message : 'Não foi possível comprar o item.');
       return false;
     } finally {
       setPurchasingItemId('');

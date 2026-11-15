@@ -25,20 +25,20 @@ export function ProfilePage({ currentUser }: ProfilePageProps) {
     }
 
     if (newPassword !== confirmPassword) {
-      setError('A confirmacao da senha nao confere.');
+      setError('A confirmação da senha não confere.');
       return;
     }
 
     setSaving(true);
     try {
       const success = await updatePasswordWithCurrent(currentPassword, newPassword);
-      if (!success) throw new Error('Senha atual invalida ou falha ao salvar.');
+      if (!success) throw new Error('Senha atual inválida ou falha ao salvar.');
       setCurrentPassword('');
       setNewPassword('');
       setConfirmPassword('');
       setMessage('Senha atualizada com sucesso.');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Nao foi possivel atualizar a senha.');
+      setError(err instanceof Error ? err.message : 'Não foi possível atualizar a senha.');
     } finally {
       setSaving(false);
     }
@@ -50,7 +50,7 @@ export function ProfilePage({ currentUser }: ProfilePageProps) {
         <div>
           <span className="eyebrow">Perfil</span>
           <h1>{currentUser.name}</h1>
-          <p>Gerencie seus dados de acesso e acompanhe sua identidade no Bolao WDD.</p>
+          <p>Gerencie seus dados de acesso e acompanhe sua identidade no Bolão WDD.</p>
         </div>
       </div>
 
@@ -59,7 +59,7 @@ export function ProfilePage({ currentUser }: ProfilePageProps) {
           <header>
             <div>
               <h2>Dados do participante</h2>
-              <p>Informacoes carregadas do perfil Supabase.</p>
+              <p>Informações carregadas do perfil Supabase.</p>
             </div>
           </header>
           <div className="info-list">

@@ -39,8 +39,8 @@ function getTransactionTypeLabel(type: string): string {
   const labels: Record<string, string> = {
     initial_balance: 'Saldo inicial',
     round_reward: 'Recompensa da rodada',
-    bonus_reward: 'Bonus',
-    full_round_reward: 'Participacao completa',
+    bonus_reward: 'Bônus',
+    full_round_reward: 'Participação completa',
     admin_adjustment: 'Ajuste admin',
     purchase: 'Compra',
     challenge_lock: 'Desafio bloqueado',
@@ -49,7 +49,7 @@ function getTransactionTypeLabel(type: string): string {
     reversal: 'Estorno'
   };
 
-  return labels[type] || type || 'Movimentacao';
+  return labels[type] || type || 'Movimentação';
 }
 
 function TransactionRow({ transaction }: { transaction: CoinTransaction }) {
@@ -149,14 +149,14 @@ export function CoinsPage({
         <div>
           <span className="eyebrow">WDD Coins</span>
           <h1>Carteira e extrato</h1>
-          <p>Consulte saldo, moedas bloqueadas e movimentacoes confirmadas da temporada.</p>
+          <p>Consulte saldo, moedas bloqueadas e movimentações confirmadas da temporada.</p>
         </div>
         <button type="button" onClick={() => onNavigate('jogos')}>Voltar aos jogos</button>
       </div>
 
       <div className="coin-summary-grid">
         <article className="coin-summary-card">
-          <span>Saldo disponivel</span>
+          <span>Saldo disponível</span>
           <strong>{walletLoading ? '...' : availableBalance.toLocaleString('pt-BR')}</strong>
         </article>
         <article className="coin-summary-card">
@@ -186,12 +186,12 @@ export function CoinsPage({
         {store.message ? <div className="inline-feedback">{store.message}</div> : null}
 
         {!store.hasLoaded ? (
-          <div className="empty-state">Clique em carregar loja para consultar itens e inventario.</div>
+          <div className="empty-state">Clique em carregar loja para consultar itens e inventário.</div>
         ) : (
           <div className="store-layout">
             <div>
               <div className="store-section-title">
-                <h3>Itens disponiveis</h3>
+                <h3>Itens disponíveis</h3>
                 <span>{store.items.length.toLocaleString('pt-BR')} itens</span>
               </div>
               {store.items.length === 0 ? (
@@ -212,7 +212,7 @@ export function CoinsPage({
               )}
             </div>
             <aside className="inventory-panel">
-              <h3>Meu inventario</h3>
+              <h3>Meu inventário</h3>
               {store.inventory.length === 0 ? (
                 <p>Nenhum item adquirido ainda.</p>
               ) : (
@@ -222,7 +222,7 @@ export function CoinsPage({
                     return (
                       <div key={inventoryItem.id} className="inventory-row">
                         <strong>{item?.name || 'Item adquirido'}</strong>
-                        <span>{item ? getItemTypeLabel(item.itemType) : 'Inventario'}</span>
+                        <span>{item ? getItemTypeLabel(item.itemType) : 'Inventário'}</span>
                       </div>
                     );
                   })}
@@ -246,23 +246,23 @@ export function CoinsPage({
 
         {transactions.error ? <div className="error-banner">{transactions.error}</div> : null}
         {!transactions.hasLoaded ? (
-          <div className="empty-state">Clique em carregar para consultar as movimentacoes.</div>
+          <div className="empty-state">Clique em carregar para consultar as movimentações.</div>
         ) : loadedTransactions.length === 0 ? (
-          <div className="empty-state">Nenhuma movimentacao registrada ainda.</div>
+          <div className="empty-state">Nenhuma movimentação registrada ainda.</div>
         ) : (
           <>
             <div className="coin-ledger-summary">
-              <span><strong>{loadedTransactions.length}</strong> movimentacoes</span>
+              <span><strong>{loadedTransactions.length}</strong> movimentações</span>
               <span><strong>{creditTotal.toLocaleString('pt-BR')}</strong> coins recebidas</span>
               <span><strong>{debitTotal.toLocaleString('pt-BR')}</strong> coins utilizadas</span>
             </div>
             <div className="coin-filter-tabs">
               <button type="button" className={transactionFilter === 'all' ? 'is-active' : ''} onClick={() => setTransactionFilter('all')}>Todos</button>
-              <button type="button" className={transactionFilter === 'credit' ? 'is-active' : ''} onClick={() => setTransactionFilter('credit')}>Creditos</button>
+              <button type="button" className={transactionFilter === 'credit' ? 'is-active' : ''} onClick={() => setTransactionFilter('credit')}>Créditos</button>
               <button type="button" className={transactionFilter === 'debit' ? 'is-active' : ''} onClick={() => setTransactionFilter('debit')}>Debitos</button>
             </div>
             {filteredTransactions.length === 0 ? (
-              <div className="empty-state">Nenhuma movimentacao neste filtro.</div>
+              <div className="empty-state">Nenhuma movimentação neste filtro.</div>
             ) : (
               <div className="coin-transaction-list">
                 {filteredTransactions.map((transaction) => (
