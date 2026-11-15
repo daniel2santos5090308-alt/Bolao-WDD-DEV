@@ -1,116 +1,274 @@
 import { useEffect, useMemo, useState } from 'react';
+import type { AppRoute } from '../app/routes';
 import { DetailsModal } from '../components/DetailsModal';
 import { EmptyState } from '../components/EmptyState';
-import { MatchCard } from '../components/MatchCard';
+import { MatchRow, type BetDraft } from '../components/MatchRow';
 import { RankingPanel } from '../components/RankingPanel';
 import { useBolaoData } from '../hooks/useBolaoData';
-import { getLatestRoundId, getLegacy, getRoundNumber } from '../services/legacyBolao';
+import { useRanking } from '../hooks/useRanking';
+import { getLegacy, getRoundNumber } from '../services/legacyBolao';
+import { formatCountdown, formatDayLabel, formatShortDate, getKickoff, getMatchStatus, useNow } from '../services/matchTime';
 
 interface DashboardPageProps {
   currentUser: BolaoUser;
+  onNavigate(route: AppRoute): void;
 }
 
-export function DashboardPage({ currentUser }: DashboardPageProps) {
-  const { data, setData, loading, error, lastLoadedAt, refresh } = useBolaoData();
-  const [selectedRoundId, setSelectedRoundId] = useState('all');
-  const [selectedTeam, setSelectedTeam] = useState('all');
-  const [detailsUser, setDetailsUser] = useState<RankingItem | null>(null);
-  const [page, setPage] = useState(1);
-  const pageSize = 5;
+function sortByKickoff(a: BolaoMatch, b: BolaoMatch) {
+  return `${a.date}T${a.time}`.localeCompare(`${b.date}T${b.time}`);
+}
 
-  useEffect(() => {
-    if (data?.rounds?.length && selectedRoundId === 'all') {
-      setSelectedRoundId(getLatestRoundId(data.rounds));
-    }
-  }, [data?.rounds, selectedRoundId]);
+/** Rodada "atual": a primeira com jogo nao finalizado; senao, a ultima. */
+function getCurrentRoundId(rounds: BolaoRound[], matches: BolaoMatch[]): string {
+  if (!rounds.length) return '';
+  const pending = rounds.find((round) => matches.some((match) => match.roundId === round.id && !match.result));
+  return (pending || rounds[rounds.length - 1]).id;
+}
+
+function draftFromBet(bet: BolaoBet | null | undefined): BetDraft {
+  return {
+    home: bet?.scoreHome !== null && bet?.scoreHome !== undefined ? String(bet.scoreHome) : '',
+    away: bet?.scoreAway !== null && bet?.scoreAway !== undefined ? String(bet.scoreAway) : ''
+  };
+}
+
+export function DashboardPage({ currentUser, onNavigate }: DashboardPageProps) {
+  const { data, loading, error, lastLoadedAt, refresh, reload } = useBolaoData();
+  const now = useNow(30000);
+  const [selectedRoundId, setSelectedRoundId] = useState('');
+  const [selectedTeam, setSelectedTeam] = useState('all');
+  const [drafts, setDrafts] = useState<Record<string, BetDraft>>({});
+  const [saving, setSaving] = useState(false);
+  const [feedback, setFeedback] = useState<{ tone: 'ok' | 'error'; text: string } | null>(null);
+  const [detailsUser, setDetailsUser] = useState<RankingItem | null>(null);
 
   const rounds = useMemo(
     () => [...(data?.rounds || [])].sort((a, b) => getRoundNumber(a) - getRoundNumber(b)),
     [data?.rounds]
   );
+  const matches = data?.matches || [];
 
+  useEffect(() => {
+    if (!data) return;
+    if (!selectedRoundId || !rounds.some((round) => round.id === selectedRoundId)) {
+      setSelectedRoundId(getCurrentRoundId(rounds, data.matches));
+    }
+  }, [data, rounds, selectedRoundId]);
+
+  const roundIndex = rounds.findIndex((round) => round.id === selectedRoundId);
+  const round = roundIndex >= 0 ? rounds[roundIndex] : null;
+  const roundMatches = useMemo(
+    () => matches.filter((match) => match.roundId === selectedRoundId).sort(sortByKickoff),
+    [matches, selectedRoundId]
+  );
   const teams = useMemo(() => {
     const names = new Set<string>();
-    (data?.matches || []).forEach((match) => {
-      names.add(match.homeTeam);
-      names.add(match.awayTeam);
-    });
+    roundMatches.forEach((match) => { names.add(match.homeTeam); names.add(match.awayTeam); });
     return [...names].sort((a, b) => a.localeCompare(b, 'pt-BR'));
-  }, [data?.matches]);
+  }, [roundMatches]);
+  const visibleMatches = selectedTeam === 'all'
+    ? roundMatches
+    : roundMatches.filter((match) => match.homeTeam === selectedTeam || match.awayTeam === selectedTeam);
 
-  const filteredMatches = useMemo(() => {
-    return [...(data?.matches || [])]
-      .filter((match) => selectedRoundId === 'all' || match.roundId === selectedRoundId)
-      .filter((match) => selectedTeam === 'all' || match.homeTeam === selectedTeam || match.awayTeam === selectedTeam)
-      .sort((a, b) => new Date(`${a.date}T${a.time}`).getTime() - new Date(`${b.date}T${b.time}`).getTime());
-  }, [data?.matches, selectedRoundId, selectedTeam]);
-  const totalPages = Math.max(1, Math.ceil(filteredMatches.length / pageSize));
-  const visibleMatches = filteredMatches.slice((page - 1) * pageSize, page * pageSize);
+  const myBets = data?.bets?.[currentUser.id] || {};
+  const settings = data ? getLegacy().Ranking.getSettings(data) as { bonusMultiplier?: number } : {};
+  const bonusMultiplier = Number(settings.bonusMultiplier || 2);
 
-  const generalRanking = useMemo(() => data ? getLegacy().Ranking.calculate(data) : [], [data]);
-  const roundRanking = useMemo(() => data ? getLegacy().Ranking.calculateByRound(data, selectedRoundId) : [], [data, selectedRoundId]);
-  const selectedRound = rounds.find((round) => round.id === selectedRoundId);
+  // Resumo da rodada
+  const finishedCount = roundMatches.filter((match) => match.result).length;
+  const betCount = roundMatches.filter((match) => myBets[match.id]?.scoreHome !== null && myBets[match.id]?.scoreHome !== undefined).length;
+  const openWithoutBet = roundMatches.filter((match) => {
+    const status = getMatchStatus(match, now);
+    return (status === 'open' || status === 'closing') && !(myBets[match.id] && myBets[match.id].scoreHome !== null);
+  }).length;
+  const nextKickoff = roundMatches
+    .filter((match) => !match.result)
+    .map((match) => getKickoff(match).getTime())
+    .filter((time) => time > now)
+    .sort((a, b) => a - b)[0];
+  const firstDate = roundMatches[0]?.date;
+  const lastDate = roundMatches[roundMatches.length - 1]?.date;
 
-  useEffect(() => {
-    setPage(1);
-  }, [selectedRoundId, selectedTeam]);
+  // Rascunhos de palpite
+  function getDraft(match: BolaoMatch): BetDraft {
+    return drafts[match.id] || draftFromBet(myBets[match.id]);
+  }
 
-  useEffect(() => {
-    if (page > totalPages) setPage(totalPages);
-  }, [page, totalPages]);
+  function isDirty(match: BolaoMatch): boolean {
+    const draft = drafts[match.id];
+    if (!draft) return false;
+    const saved = draftFromBet(myBets[match.id]);
+    return draft.home !== '' && draft.away !== '' && (draft.home !== saved.home || draft.away !== saved.away);
+  }
+
+  const dirtyMatches = roundMatches.filter((match) => {
+    const status = getMatchStatus(match, now);
+    return (status === 'open' || status === 'closing') && isDirty(match);
+  });
+  const incompleteDrafts = roundMatches.filter((match) => {
+    const draft = drafts[match.id];
+    return draft && (draft.home === '') !== (draft.away === '');
+  }).length;
+
+  async function saveAll() {
+    if (!dirtyMatches.length) return;
+    setSaving(true);
+    setFeedback(null);
+    try {
+      const result = await getLegacy().Storage.saveBets(currentUser.id, dirtyMatches.map((match) => {
+        const draft = getDraft(match);
+        return { matchId: match.id, scoreHome: Number(draft.home), scoreAway: Number(draft.away) };
+      }));
+
+      setDrafts((current) => {
+        const next = { ...current };
+        result.saved.forEach((matchId) => delete next[matchId]);
+        return next;
+      });
+      await reload();
+
+      if (result.failed.length) {
+        const names = matches
+          .filter((match) => result.failed.includes(match.id))
+          .map((match) => `${match.homeTeam} x ${match.awayTeam}`)
+          .join(', ');
+        setFeedback({ tone: 'error', text: `Não foi possível salvar: ${names}. O jogo pode ter começado.` });
+      } else {
+        setFeedback({ tone: 'ok', text: result.saved.length === 1 ? 'Palpite salvo.' : `${result.saved.length} palpites salvos.` });
+      }
+    } catch (err) {
+      console.error('Erro ao salvar palpites:', err);
+      setFeedback({ tone: 'error', text: 'Erro ao salvar. Verifique a conexão e tente de novo.' });
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  function goToRound(offset: number) {
+    const target = rounds[roundIndex + offset];
+    if (target) {
+      setSelectedRoundId(target.id);
+      setSelectedTeam('all');
+      setFeedback(null);
+    }
+  }
+
+  const { ranking: generalRanking } = useRanking(null, data?.version);
+  const { ranking: roundRanking } = useRanking(selectedRoundId || null, data?.version);
+  const formatPoints = getLegacy().Ranking.formatPoints;
+  const roundLeaders = roundRanking.filter((item) => item.position === 1 && item.points > 0);
+
+  // Agrupa por dia
+  const days = useMemo(() => {
+    const groups: Array<{ date: string; matches: BolaoMatch[] }> = [];
+    visibleMatches.forEach((match) => {
+      const last = groups[groups.length - 1];
+      if (last && last.date === match.date) last.matches.push(match);
+      else groups.push({ date: match.date, matches: [match] });
+    });
+    return groups;
+  }, [visibleMatches]);
 
   return (
     <>
-      <section className="hero-board">
-        <div>
-          <span className="eyebrow">Central da temporada</span>
-          <h1>{selectedRound?.name || 'Jogos e apostas'}</h1>
-          <p>Base React 2027 preparada para temporadas, perfis, rankings, PWA e WDD Coins com atualizacao manual.</p>
+      <section className="round-header">
+        <div className="round-stepper">
+          <button type="button" className="icon-button" onClick={() => goToRound(-1)} disabled={roundIndex <= 0} aria-label="Rodada anterior">
+            <i className="bi bi-chevron-left" aria-hidden="true" />
+          </button>
+          <div className="round-stepper__title">
+            <span className="eyebrow">{data?.season?.name || 'Temporada'}</span>
+            <h1>{round?.name || 'Sem rodadas'}</h1>
+            {firstDate ? (
+              <span className="round-stepper__dates">
+                {formatShortDate(firstDate)}{lastDate && lastDate !== firstDate ? ` a ${formatShortDate(lastDate)}` : ''} · {roundMatches.length} {roundMatches.length === 1 ? 'jogo' : 'jogos'}
+              </span>
+            ) : null}
+          </div>
+          <button type="button" className="icon-button" onClick={() => goToRound(1)} disabled={roundIndex < 0 || roundIndex >= rounds.length - 1} aria-label="Próxima rodada">
+            <i className="bi bi-chevron-right" aria-hidden="true" />
+          </button>
         </div>
-        <div className="hero-actions">
-          <button type="button" onClick={refresh} disabled={loading}>Atualizar</button>
-          {lastLoadedAt ? <span>Atualizado {lastLoadedAt}</span> : null}
+
+        <div className="round-stats">
+          <div className="round-progress" aria-label={`${finishedCount} de ${roundMatches.length} jogos encerrados`}>
+            <div className="progress"><span style={{ width: `${roundMatches.length ? (finishedCount / roundMatches.length) * 100 : 0}%` }} /></div>
+            <span>{finishedCount}/{roundMatches.length} encerrados</span>
+          </div>
+          <span className={`stat-pill ${openWithoutBet ? 'stat-pill--warn' : 'stat-pill--ok'}`}>
+            <i className={`bi ${openWithoutBet ? 'bi-exclamation-triangle' : 'bi-check2-circle'}`} aria-hidden="true" />
+            Seus palpites {betCount}/{roundMatches.length}{openWithoutBet ? ` · faltam ${openWithoutBet}` : ''}
+          </span>
+          {nextKickoff ? (
+            <span className="stat-pill">
+              <i className="bi bi-clock" aria-hidden="true" /> Próximo jogo em {formatCountdown(nextKickoff - now)}
+            </span>
+          ) : null}
+        </div>
+
+        <div className="round-tools">
+          <select value={selectedRoundId} onChange={(event) => { setSelectedRoundId(event.target.value); setSelectedTeam('all'); }} aria-label="Escolher rodada">
+            {rounds.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
+          </select>
+          <select value={selectedTeam} onChange={(event) => setSelectedTeam(event.target.value)} aria-label="Filtrar por time">
+            <option value="all">Todos os times</option>
+            {teams.map((team) => <option key={team} value={team}>{team}</option>)}
+          </select>
+          <button type="button" className="ghost-button" onClick={refresh} disabled={loading}>
+            <i className="bi bi-arrow-clockwise" aria-hidden="true" /> Atualizar
+          </button>
+          {lastLoadedAt ? <span className="muted-text">às {lastLoadedAt}</span> : null}
         </div>
       </section>
 
-      <section className="filters-card" aria-label="Filtros">
-        <select value={selectedRoundId} onChange={(event) => setSelectedRoundId(event.target.value)}>
-          <option value="all">Todas as rodadas</option>
-          {rounds.map((round) => <option key={round.id} value={round.id}>{round.name}</option>)}
-        </select>
-        <select value={selectedTeam} onChange={(event) => setSelectedTeam(event.target.value)}>
-          <option value="all">Todos os times</option>
-          {teams.map((team) => <option key={team} value={team}>{team}</option>)}
-        </select>
-      </section>
+      {error ? <div className="banner banner--error">{error}</div> : null}
 
-      {error ? <div className="error-banner">{error}</div> : null}
+      <div className="dashboard-grid">
+        <section className="matches-panel" aria-label="Jogos da rodada">
+          {loading && !data ? <EmptyState>Carregando jogos…</EmptyState> : null}
+          {data && !rounds.length ? <EmptyState>Nenhuma rodada cadastrada nesta temporada ainda.</EmptyState> : null}
+          {data && rounds.length > 0 && visibleMatches.length === 0 ? <EmptyState>Nenhum jogo nesta rodada.</EmptyState> : null}
 
-      <div className="content-grid">
-        <section className="matches-area">
-          {loading && !data ? <EmptyState>Carregando jogos...</EmptyState> : null}
-          {!loading && filteredMatches.length === 0 ? <EmptyState>Nenhum jogo encontrado para o filtro.</EmptyState> : null}
-          {data ? visibleMatches.map((match) => {
-            const round = rounds.find((item) => item.id === match.roundId);
-            return (
-              <MatchCard
-                key={match.id}
-                match={match}
-                roundName={round?.name || 'Rodada'}
-                currentUser={currentUser}
-                data={data}
-                onSaved={setData}
-              />
-            );
-          }) : null}
-          {filteredMatches.length > pageSize ? (
-            <div className="pagination-bar">
-              <button type="button" onClick={() => setPage((value) => Math.max(1, value - 1))} disabled={page === 1}>
-                Anterior
-              </button>
-              <span>Pagina {page} de {totalPages}</span>
-              <button type="button" onClick={() => setPage((value) => Math.min(totalPages, value + 1))} disabled={page === totalPages}>
-                Proxima
+          {days.map((day) => (
+            <div className="day-group" key={day.date}>
+              <h2 className="day-label">{formatDayLabel(day.date)}</h2>
+              {day.matches.map((match) => {
+                const status = getMatchStatus(match, now);
+                const savedBet = myBets[match.id] || null;
+                const pointResult = status === 'finished' && savedBet && data
+                  ? getLegacy().Ranking.calculateMatchPoints(match, savedBet, getLegacy().Ranking.getSettings(data))
+                  : null;
+                return (
+                  <MatchRow
+                    key={match.id}
+                    match={match}
+                    status={status}
+                    now={now}
+                    savedBet={savedBet}
+                    draft={getDraft(match)}
+                    dirty={isDirty(match)}
+                    bonusMultiplier={bonusMultiplier}
+                    pointResult={pointResult}
+                    onDraftChange={(next) => {
+                      setFeedback(null);
+                      setDrafts((current) => ({ ...current, [match.id]: next }));
+                    }}
+                  />
+                );
+              })}
+            </div>
+          ))}
+
+          {feedback ? <div className={`banner banner--${feedback.tone}`} role="status">{feedback.text}</div> : null}
+
+          {dirtyMatches.length || incompleteDrafts ? (
+            <div className="save-bar">
+              <span>
+                {dirtyMatches.length ? `${dirtyMatches.length} ${dirtyMatches.length === 1 ? 'palpite não salvo' : 'palpites não salvos'}` : ''}
+                {incompleteDrafts ? `${dirtyMatches.length ? ' · ' : ''}${incompleteDrafts} incompleto${incompleteDrafts > 1 ? 's' : ''}` : ''}
+              </span>
+              <button type="button" className="primary-button" onClick={saveAll} disabled={saving || !dirtyMatches.length}>
+                {saving ? 'Salvando…' : 'Salvar palpites'}
               </button>
             </div>
           ) : null}
@@ -118,22 +276,27 @@ export function DashboardPage({ currentUser }: DashboardPageProps) {
 
         <aside className="side-stack">
           <RankingPanel
-            title="Ranking da Rodada"
+            title="Ranking da rodada"
             tone="round"
             ranking={roundRanking}
-            summary={roundRanking[0] ? `Melhor: ${roundRanking[0].name} (${getLegacy().Ranking.formatPoints(roundRanking[0].points)} pts)` : ''}
+            currentUserId={currentUser.id}
+            summary={roundLeaders.length
+              ? `${roundLeaders.length > 1 ? 'Melhores' : 'Melhor'} da rodada: ${roundLeaders.map((item) => item.name).join(', ')} (${formatPoints(roundLeaders[0].points)} pts)`
+              : ''}
             onDetails={setDetailsUser}
           />
           <RankingPanel
-            title="Ranking Geral"
+            title="Ranking geral"
             tone="general"
             ranking={generalRanking}
+            currentUserId={currentUser.id}
             onDetails={setDetailsUser}
+            onSeeAll={() => onNavigate('ranking')}
           />
         </aside>
       </div>
 
-      <DetailsModal user={detailsUser} onClose={() => setDetailsUser(null)} />
+      <DetailsModal user={detailsUser} data={data} roundId={null} onClose={() => setDetailsUser(null)} />
     </>
   );
 }

@@ -8,27 +8,26 @@ export function StandingsPage() {
 
   return (
     <section className="page-stack">
-      <div className="section-hero">
+      <header className="page-header">
         <div>
-          <span className="eyebrow">Brasileirao</span>
-          <h1>Classificacao</h1>
-          <p>Tabela atualizada manualmente via admin, sem consumo automatico de API.</p>
+          <span className="eyebrow">{data?.season?.name || 'Brasileirão'}</span>
+          <h1>Tabela</h1>
+          <p>Classificação do campeonato, atualizada pelo admin.</p>
         </div>
-        <div className="hero-actions">
-          <button type="button" onClick={refresh} disabled={loading}>Atualizar</button>
-          {lastLoadedAt ? <span>Atualizado {lastLoadedAt}</span> : null}
+        <div className="page-header__actions">
+          <button type="button" className="ghost-button" onClick={refresh} disabled={loading}>
+            <i className="bi bi-arrow-clockwise" aria-hidden="true" /> Atualizar
+          </button>
+          {lastLoadedAt ? <span className="muted-text">às {lastLoadedAt}</span> : null}
         </div>
-      </div>
+      </header>
 
-      {error ? <div className="error-banner">{error}</div> : null}
-      {loading && !data ? <EmptyState>Carregando classificacao...</EmptyState> : null}
+      {error ? <div className="banner banner--error">{error}</div> : null}
+      {loading && !data ? <EmptyState>Carregando tabela…</EmptyState> : null}
 
-      <section className="table-card">
-        <header>
-          <h2>Classificacao Brasileirao 2027</h2>
-        </header>
-        <StandingsLegend />
+      <section className="panel">
         <StandingsTable standings={standings} />
+        <StandingsLegend />
       </section>
     </section>
   );
