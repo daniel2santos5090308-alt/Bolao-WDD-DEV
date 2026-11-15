@@ -56,7 +56,7 @@ Fase 4 (UX), primeira parte: textos, Coins, Admin e testes de ponta a ponta. Som
 
 ### Banco de dados
 
-- `20261117100000_coin_texts_accents.sql` (pendente no DEV): mensagens e descrições do extrato de WDD Coins com acento; nome do item "Card Bônus Iluminado". Mesma lógica de prêmios.
+- `20261117100000_coin_texts_accents.sql` (aplicada no DEV em 2026-11-15): mensagens e descrições do extrato de WDD Coins com acento; nome do item "Card Bônus Iluminado". Mesma lógica de prêmios.
 
 ### Testes
 
