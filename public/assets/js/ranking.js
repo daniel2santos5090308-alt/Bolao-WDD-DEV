@@ -164,13 +164,22 @@ const Ranking = {
             };
         });
 
-        ranking.sort((a, b) => {
+        // Desempate do bolao: pontos -> cravadas -> na trave -> jogos apostados.
+        // Persistindo o empate, a posicao e compartilhada (1, 1, 3). O nome so
+        // define a ordem de exibicao entre empatados, nunca a posicao.
+        const compareStats = (a, b) => {
             if (b.points !== a.points) return b.points - a.points;
             if (b.exactHits !== a.exactHits) return b.exactHits - a.exactHits;
             if (b.nearMisses !== a.nearMisses) return b.nearMisses - a.nearMisses;
-            if (b.efficiency !== a.efficiency) return b.efficiency - a.efficiency;
-            if (b.betsCount !== a.betsCount) return b.betsCount - a.betsCount;
-            return String(a.name || '').localeCompare(String(b.name || ''), 'pt-BR');
+            return b.betsCount - a.betsCount;
+        };
+
+        ranking.sort((a, b) => compareStats(a, b)
+            || String(a.name || '').localeCompare(String(b.name || ''), 'pt-BR'));
+
+        ranking.forEach((item, index) => {
+            const previous = ranking[index - 1];
+            item.position = previous && compareStats(previous, item) === 0 ? previous.position : index + 1;
         });
 
         return ranking;
@@ -204,7 +213,7 @@ const Ranking = {
     },
 
     getRankingRowHtml: (user, index, detailsCall, title) => `
-        <td>${index + 1}&ordm;</td>
+        <td>${user.position || index + 1}&ordm;</td>
         <td>${Ranking.getNameButtonHtml(user, detailsCall, title)}</td>
         <td class="text-center">${Ranking.formatPoints(user.points)}</td>
         <td class="text-center">${user.exactHits}</td>
