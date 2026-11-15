@@ -4,7 +4,8 @@ import type { CoinSettings } from '../hooks/useCoinSettings';
 import { StandingsLegend, StandingsTable } from '../components/StandingsTable';
 import { useBolaoData } from '../hooks/useBolaoData';
 import { useCoinSettings } from '../hooks/useCoinSettings';
-import { getRoundNumber } from '../services/matches';
+import { getRarityLabel } from '../services/coinLabels';
+import { formatMatchDateTime, getCurrentRoundId, getRoundNumber } from '../services/matches';
 import * as storage from '../services/storage';
 import { requireSupabase } from '../services/supabase';
 import { generateId } from '../services/utils';
@@ -55,9 +56,9 @@ interface AdminUserStoreItem {
 
 const coinFields: Array<{ key: keyof Omit<CoinSettings, 'seasonKey'>; label: string; help: string }> = [
   { key: 'initialBalance', label: 'Saldo inicial', help: 'Crédito único ao criar a carteira.' },
-  { key: 'firstPlaceReward', label: '1o lugar da rodada', help: 'Prêmio por melhor pontuação da rodada.' },
-  { key: 'secondPlaceReward', label: '2o lugar da rodada', help: 'Prêmio por segunda melhor pontuação.' },
-  { key: 'thirdPlaceReward', label: '3o lugar da rodada', help: 'Prêmio por terceira melhor pontuação.' },
+  { key: 'firstPlaceReward', label: '1º lugar da rodada', help: 'Prêmio por melhor pontuação da rodada.' },
+  { key: 'secondPlaceReward', label: '2º lugar da rodada', help: 'Prêmio por segunda melhor pontuação.' },
+  { key: 'thirdPlaceReward', label: '3º lugar da rodada', help: 'Prêmio por terceira melhor pontuação.' },
   { key: 'exactScoreReward', label: 'Placar exato', help: 'Recompensa por cravada simples.' },
   { key: 'bonusExactScoreReward', label: 'Placar exato bônus', help: 'Recompensa extra no jogo bônus.' },
   { key: 'fullRoundParticipationReward', label: 'Participação completa', help: 'Recompensa por palpitar em todos os jogos da rodada.' }
@@ -173,7 +174,8 @@ export function AdminPage() {
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const [roundName, setRoundName] = useState('');
-  const [filterRoundId, setFilterRoundId] = useState('all');
+  // '' = ainda nao escolhido: mostra a rodada atual (evita listar a temporada inteira).
+  const [filterRoundChoice, setFilterRoundId] = useState('');
   const [matchForm, setMatchForm] = useState(emptyMatchForm());
   const [scoringDraft, setScoringDraft] = useState<BolaoScoringSettings | null>(null);
   const [standingForm, setStandingForm] = useState<BolaoStanding>(emptyStandingForm());
@@ -197,6 +199,7 @@ export function AdminPage() {
 
   const rounds = useMemo(() => [...(data?.rounds || [])].sort((a, b) => getRoundNumber(a) - getRoundNumber(b)), [data?.rounds]);
   const matches = data?.matches || [];
+  const filterRoundId = filterRoundChoice || getCurrentRoundId(rounds, matches) || 'all';
   const standings = data?.standings || [];
   const scoring = scoringDraft || data?.scoringSettings || defaultScoring;
   const coins = coinDraft || coinSettings.settings;
@@ -575,7 +578,7 @@ export function AdminPage() {
   return (
     <section className="admin-page">
       <div className="admin-hero">
-        <div><span className="eyebrow">Administração</span><h1>Painel admin</h1><p>Controle jogos, placares, pontuação, classificação e WDD Coins no novo modelo React.</p></div>
+        <div><span className="eyebrow">Administração</span><h1>Painel admin</h1><p>Jogos, placares, pontuação, tabela do campeonato e WDD Coins.</p></div>
         <div className="hero-actions"><button type="button" onClick={refresh} disabled={bolaoData.loading}>Atualizar</button><button type="button" onClick={exportBackup}>Exportar JSON</button></div>
       </div>
 
@@ -632,7 +635,7 @@ function NumberField({ label, value, onChange, help, min = 0, step = '1' }: { la
 function AdminMatchRow({ match, roundName, onEdit, onDelete, onScore, onClear, onBonus }: { match: BolaoMatch; roundName: string; onEdit(): void; onDelete(): void; onScore(match: BolaoMatch, home: string, away: string): void; onClear(match: BolaoMatch): void; onBonus(): void }) {
   const [home, setHome] = useState(match.score?.home?.toString() || '');
   const [away, setAway] = useState(match.score?.away?.toString() || '');
-  return <article className={`admin-match-row ${match.isBonus ? 'is-bonus' : ''}`}><div><strong>{match.homeTeam} x {match.awayTeam}</strong><span>{roundName} | {match.date} {match.time}</span></div><div className="score-editor"><input value={home} onChange={(event) => setHome(event.target.value)} type="number" min="0" /><span>x</span><input value={away} onChange={(event) => setAway(event.target.value)} type="number" min="0" /></div><div className="admin-row-actions"><button type="button" onClick={() => onScore(match, home, away)}>Salvar placar</button><button type="button" onClick={() => onClear(match)}>Limpar</button><button type="button" onClick={onBonus}>{match.isBonus ? 'Remover bônus' : 'Marcar bônus'}</button><button type="button" onClick={onEdit}>Editar</button><button type="button" onClick={onDelete}>Excluir</button></div></article>;
+  return <article className={`admin-match-row ${match.isBonus ? 'is-bonus' : ''}`}><div><strong>{match.homeTeam} x {match.awayTeam}</strong><span>{roundName} | {formatMatchDateTime(match)}</span></div><div className="score-editor"><input value={home} onChange={(event) => setHome(event.target.value)} type="number" min="0" /><span>x</span><input value={away} onChange={(event) => setAway(event.target.value)} type="number" min="0" /></div><div className="admin-row-actions"><button type="button" onClick={() => onScore(match, home, away)}>Salvar placar</button><button type="button" onClick={() => onClear(match)}>Limpar</button><button type="button" onClick={onBonus}>{match.isBonus ? 'Remover bônus' : 'Marcar bônus'}</button><button type="button" onClick={onEdit}>Editar</button><button type="button" onClick={onDelete}>Excluir</button></div></article>;
 }
 
 function ScoringAdmin({ scoring, onChange, onSave }: { scoring: BolaoScoringSettings; onChange(value: BolaoScoringSettings): void; onSave(): void }) {
@@ -719,7 +722,7 @@ function CoinsAdmin({ coins, setCoinDraft, saveCoinSettings, saving, finishedRou
               <article><span>Carteiras</span><strong>{coinWallets.length.toLocaleString('pt-BR')}</strong></article>
               <article><span>Saldo disponível</span><strong>{totalAvailableBalance.toLocaleString('pt-BR')}</strong></article>
               <article><span>Saldo bloqueado</span><strong>{totalLockedBalance.toLocaleString('pt-BR')}</strong></article>
-              <article><span>Total processado</span><strong>{totalProcessedAmount.toLocaleString('pt-BR')}</strong><small>{totalRecentCredits.toLocaleString('pt-BR')} nos ultimos lancamentos</small></article>
+              <article><span>Total processado</span><strong>{totalProcessedAmount.toLocaleString('pt-BR')}</strong><small>{totalRecentCredits.toLocaleString('pt-BR')} nos últimos lançamentos</small></article>
               <article><span>Itens da loja</span><strong>{coinStoreItems.length.toLocaleString('pt-BR')}</strong><small>{coinUserItems.length.toLocaleString('pt-BR')} compras registradas</small></article>
             </div>
             <div className="admin-filter-row">
@@ -743,7 +746,7 @@ function CoinsAdmin({ coins, setCoinDraft, saveCoinSettings, saving, finishedRou
                   {coinProcesses.length === 0 ? <div className="empty-row">Nenhuma rodada processada.</div> : coinProcesses.map((process) => (
                     <div key={process.id} className="admin-list-row">
                       <strong>{roundNameById.get(process.roundId) || process.roundId}</strong>
-                      <span>{process.transactionsCount} lancamentos | {process.totalAmount.toLocaleString('pt-BR')} coins</span>
+                      <span>{process.transactionsCount} lançamentos | {process.totalAmount.toLocaleString('pt-BR')} coins</span>
                     </div>
                   ))}
                 </div>
@@ -776,7 +779,7 @@ function CoinsAdmin({ coins, setCoinDraft, saveCoinSettings, saving, finishedRou
                   {coinStoreItems.length === 0 ? <div className="empty-row">Nenhum item cadastrado.</div> : coinStoreItems.map((item) => (
                     <div key={item.id} className="admin-list-row">
                       <strong>{item.name}</strong>
-                      <span>{item.price.toLocaleString('pt-BR')} coins | {item.rarity} | {item.isActive ? 'ativo' : 'inativo'}</span>
+                      <span>{item.price.toLocaleString('pt-BR')} coins | {getRarityLabel(item.rarity)} | {item.isActive ? 'ativo' : 'inativo'}</span>
                     </div>
                   ))}
                 </div>

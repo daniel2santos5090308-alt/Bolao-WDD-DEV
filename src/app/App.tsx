@@ -15,7 +15,8 @@ export function App() {
   const [currentUser, setCurrentUser] = useState<BolaoUser | null>(() => getCurrentUser());
   const isAdmin = currentUser?.role === 'admin';
   const [activeRoute, setActiveRoute] = useState<AppRoute>(() => parseRouteFromHash(window.location.hash, Boolean(isAdmin)));
-  const coinWallet = useCoinWallet(currentUser?.id || '', '2027');
+  // Admin nao tem carteira: userId vazio = nenhuma consulta.
+  const coinWallet = useCoinWallet(isAdmin ? '' : currentUser?.id || '', '2027');
 
   // Perfil salvo, mas a sessao do Supabase expirou: volta para o login.
   useEffect(() => {

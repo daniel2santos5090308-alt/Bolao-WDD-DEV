@@ -59,7 +59,7 @@ export function ProfilePage({ currentUser }: ProfilePageProps) {
           <header>
             <div>
               <h2>Dados do participante</h2>
-              <p>Informações carregadas do perfil Supabase.</p>
+              <p>Como você aparece no bolão.</p>
             </div>
           </header>
           <div className="info-list">

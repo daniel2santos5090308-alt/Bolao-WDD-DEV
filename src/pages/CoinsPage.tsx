@@ -1,10 +1,11 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { CSSProperties } from 'react';
 import type { CoinTransaction } from '../hooks/useCoinTransactions';
 import { useCoinTransactions } from '../hooks/useCoinTransactions';
 import type { CoinStoreItem } from '../hooks/useCoinStore';
 import { useCoinStore } from '../hooks/useCoinStore';
 import type { AppRoute } from '../app/routes';
+import { getItemTypeLabel, getRarityLabel } from '../services/coinLabels';
 
 interface CoinsPageProps {
   currentUser: BolaoUser;
@@ -68,16 +69,6 @@ function TransactionRow({ transaction }: { transaction: CoinTransaction }) {
   );
 }
 
-function getItemTypeLabel(type: string): string {
-  const labels: Record<string, string> = {
-    profile_frame: 'Moldura de perfil',
-    match_card_skin: 'Skin de card',
-    profile_badge: 'Selo de perfil'
-  };
-
-  return labels[type] || type || 'Item';
-}
-
 function isImagePreview(value: string): boolean {
   return /\.(png|jpe?g|webp|gif|avif|svg)$/i.test(value) || value.startsWith('/assets/');
 }
@@ -93,7 +84,7 @@ function StoreItemCard({ item, owned, availableBalance, purchasing, onPurchase }
       </div>
       <div className="store-item-card__body">
         <div>
-          <span className="store-item-card__meta">{getItemTypeLabel(item.itemType)} | {item.rarity}</span>
+          <span className="store-item-card__meta">{[getItemTypeLabel(item.itemType), getRarityLabel(item.rarity)].filter(Boolean).join(' · ')}</span>
           <h3>{item.name}</h3>
           <p>{item.description}</p>
         </div>
@@ -118,7 +109,6 @@ export function CoinsPage({
   lockedBalance,
   walletLoading,
   walletError,
-  onNavigate,
   onWalletRefresh
 }: CoinsPageProps) {
   const transactions = useCoinTransactions(currentUser.id, '2027');
@@ -135,6 +125,14 @@ export function CoinsPage({
     return loadedTransactions;
   }, [loadedTransactions, transactionFilter]);
 
+  // Loja e extrato carregam ao abrir a tela (3 consultas pequenas, so nesta tela).
+  const loadStore = store.load;
+  const loadTransactions = transactions.load;
+  useEffect(() => {
+    void loadStore();
+    void loadTransactions();
+  }, [loadStore, loadTransactions]);
+
   async function handlePurchase(item: CoinStoreItem) {
     const success = await store.purchase(item);
     if (!success) return;
@@ -149,9 +147,8 @@ export function CoinsPage({
         <div>
           <span className="eyebrow">WDD Coins</span>
           <h1>Carteira e extrato</h1>
-          <p>Consulte saldo, moedas bloqueadas e movimentações confirmadas da temporada.</p>
+          <p>Seu saldo, a loja e tudo o que entrou e saiu nesta temporada.</p>
         </div>
-        <button type="button" onClick={() => onNavigate('jogos')}>Voltar aos jogos</button>
       </div>
 
       <div className="coin-summary-grid">
@@ -175,10 +172,10 @@ export function CoinsPage({
         <header>
           <div>
             <h2>Loja WDD</h2>
-            <p>Itens visuais comprados com WDD Coins. Carregamento manual para evitar leituras desnecessarias.</p>
+            <p>Itens visuais comprados com WDD Coins.</p>
           </div>
           <button type="button" onClick={store.load} disabled={store.loading}>
-            {store.loading ? 'Carregando...' : store.hasLoaded ? 'Atualizar loja' : 'Carregar loja'}
+            {store.loading ? 'Carregando...' : 'Atualizar loja'}
           </button>
         </header>
 
@@ -186,7 +183,7 @@ export function CoinsPage({
         {store.message ? <div className="inline-feedback">{store.message}</div> : null}
 
         {!store.hasLoaded ? (
-          <div className="empty-state">Clique em carregar loja para consultar itens e inventário.</div>
+          <div className="empty-state">{store.error ? 'Loja indisponível no momento.' : 'Carregando a loja...'}</div>
         ) : (
           <div className="store-layout">
             <div>
@@ -237,16 +234,16 @@ export function CoinsPage({
         <header>
           <div>
             <h2>Extrato</h2>
-            <p>Carregamento manual para evitar leituras desnecessarias.</p>
+            <p>Prêmios, compras e ajustes da temporada, do mais recente para o mais antigo.</p>
           </div>
           <button type="button" onClick={transactions.load} disabled={transactions.loading}>
-            {transactions.loading ? 'Carregando...' : transactions.hasLoaded ? 'Atualizar extrato' : 'Carregar extrato'}
+            {transactions.loading ? 'Carregando...' : 'Atualizar extrato'}
           </button>
         </header>
 
         {transactions.error ? <div className="error-banner">{transactions.error}</div> : null}
         {!transactions.hasLoaded ? (
-          <div className="empty-state">Clique em carregar para consultar as movimentações.</div>
+          <div className="empty-state">{transactions.error ? 'Extrato indisponível no momento.' : 'Carregando o extrato...'}</div>
         ) : loadedTransactions.length === 0 ? (
           <div className="empty-state">Nenhuma movimentação registrada ainda.</div>
         ) : (
@@ -259,7 +256,7 @@ export function CoinsPage({
             <div className="coin-filter-tabs">
               <button type="button" className={transactionFilter === 'all' ? 'is-active' : ''} onClick={() => setTransactionFilter('all')}>Todos</button>
               <button type="button" className={transactionFilter === 'credit' ? 'is-active' : ''} onClick={() => setTransactionFilter('credit')}>Créditos</button>
-              <button type="button" className={transactionFilter === 'debit' ? 'is-active' : ''} onClick={() => setTransactionFilter('debit')}>Debitos</button>
+              <button type="button" className={transactionFilter === 'debit' ? 'is-active' : ''} onClick={() => setTransactionFilter('debit')}>Débitos</button>
             </div>
             {filteredTransactions.length === 0 ? (
               <div className="empty-state">Nenhuma movimentação neste filtro.</div>

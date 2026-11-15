@@ -6,7 +6,7 @@ import { MatchRow, type BetDraft } from '../components/MatchRow';
 import { RankingPanel } from '../components/RankingPanel';
 import { useBolaoData } from '../hooks/useBolaoData';
 import { useRanking } from '../hooks/useRanking';
-import { getRoundNumber } from '../services/matches';
+import { getCurrentRoundId, getRoundNumber } from '../services/matches';
 import { formatCountdown, formatDayLabel, formatShortDate, getKickoff, getMatchStatus, useNow } from '../services/matchTime';
 import { calculateMatchPoints, formatPoints, getScoringSettings } from '../services/scoring';
 import * as storage from '../services/storage';
@@ -18,13 +18,6 @@ interface DashboardPageProps {
 
 function sortByKickoff(a: BolaoMatch, b: BolaoMatch) {
   return `${a.date}T${a.time}`.localeCompare(`${b.date}T${b.time}`);
-}
-
-/** Rodada "atual": a primeira com jogo nao finalizado; senao, a ultima. */
-function getCurrentRoundId(rounds: BolaoRound[], matches: BolaoMatch[]): string {
-  if (!rounds.length) return '';
-  const pending = rounds.find((round) => matches.some((match) => match.roundId === round.id && !match.result));
-  return (pending || rounds[rounds.length - 1]).id;
 }
 
 function draftFromBet(bet: BolaoBet | null | undefined): BetDraft {
