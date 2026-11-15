@@ -336,3 +336,21 @@ test('coinLabels traduz tipo e raridade gravados no banco', async () => {
   assert.equal(getRarityLabel('Lendario'), 'Lendário');
   assert.equal(getRarityLabel('raro'), 'Raro');
 });
+
+test('unsavedChanges: pergunta só com palpite pendente e zera ao confirmar', async () => {
+  const { setUnsavedCount, getUnsavedCount, confirmDiscardUnsaved, unsavedMessage } = await import('../src/services/unsavedChanges.ts');
+  const asked: string[] = [];
+
+  setUnsavedCount(0);
+  assert.equal(confirmDiscardUnsaved((message) => { asked.push(message); return false; }), true);
+  assert.equal(asked.length, 0);
+
+  setUnsavedCount(2);
+  assert.equal(confirmDiscardUnsaved(() => false), false);
+  assert.equal(getUnsavedCount(), 2);
+  assert.equal(confirmDiscardUnsaved(() => true), true);
+  assert.equal(getUnsavedCount(), 0);
+
+  assert.match(unsavedMessage(1), /1 palpite não salvo\. .*esse palpite\?/);
+  assert.match(unsavedMessage(3), /3 palpites não salvos\. .*esses palpites\?/);
+});

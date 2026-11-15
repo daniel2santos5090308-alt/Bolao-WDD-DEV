@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { AppShell } from '../components/AppShell';
-import { parseRouteFromHash, type AppRoute } from './routes';
+import { appRoutes, parseRouteFromHash, type AppRoute } from './routes';
 import { AdminPage } from '../pages/AdminPage';
 import { CoinsPage } from '../pages/CoinsPage';
 import { DashboardPage } from '../pages/DashboardPage';
@@ -10,11 +10,14 @@ import { RankingPage } from '../pages/RankingPage';
 import { StandingsPage } from '../pages/StandingsPage';
 import { useCoinWallet } from '../hooks/useCoinWallet';
 import { getCurrentUser, hasSupabaseAuthSession, logout } from '../services/auth';
+import { confirmDiscardUnsaved } from '../services/unsavedChanges';
 
 export function App() {
   const [currentUser, setCurrentUser] = useState<BolaoUser | null>(() => getCurrentUser());
   const isAdmin = currentUser?.role === 'admin';
   const [activeRoute, setActiveRoute] = useState<AppRoute>(() => parseRouteFromHash(window.location.hash, Boolean(isAdmin)));
+  const activeRouteRef = useRef(activeRoute);
+  activeRouteRef.current = activeRoute;
   // Admin nao tem carteira: userId vazio = nenhuma consulta.
   const coinWallet = useCoinWallet(isAdmin ? '' : currentUser?.id || '', '2027');
 
@@ -34,7 +37,14 @@ export function App() {
 
   useEffect(() => {
     function syncRoute() {
-      setActiveRoute(parseRouteFromHash(window.location.hash, Boolean(isAdmin)));
+      const next = parseRouteFromHash(window.location.hash, Boolean(isAdmin));
+      if (next === activeRouteRef.current) return;
+      // Botao Voltar do navegador com palpite pendente: desfaz a troca sem disparar outro hashchange.
+      if (!confirmDiscardUnsaved()) {
+        window.history.pushState(null, '', `#/${activeRouteRef.current}`);
+        return;
+      }
+      setActiveRoute(next);
     }
 
     window.addEventListener('hashchange', syncRoute);
@@ -50,7 +60,13 @@ export function App() {
     setCurrentUser(user);
   }
 
+  useEffect(() => {
+    const label = currentUser ? appRoutes.find((route) => route.id === activeRoute)?.label : 'Entrar';
+    document.title = label ? `${label} · Bolão WDD` : 'Bolão WDD';
+  }, [currentUser, activeRoute]);
+
   async function handleLogout() {
+    if (!confirmDiscardUnsaved()) return;
     await logout();
     setCurrentUser(null);
   }
@@ -58,6 +74,8 @@ export function App() {
   if (!currentUser) return <LoginPage onLogin={handleLogin} />;
 
   function handleNavigate(route: AppRoute) {
+    if (route !== activeRoute && !confirmDiscardUnsaved()) return;
+    activeRouteRef.current = route;
     window.location.hash = `/${route}`;
     setActiveRoute(route);
   }
