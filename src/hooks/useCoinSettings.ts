@@ -89,7 +89,7 @@ export function useCoinSettings(seasonKey = '2027') {
     }
   }, [seasonKey]);
 
-  const save = useCallback(async (nextSettings: CoinSettings) => {
+  const save = useCallback(async (nextSettings: CoinSettings): Promise<boolean> => {
     setSaving(true);
     setError('');
     setSavedMessage('');
@@ -112,9 +112,11 @@ export function useCoinSettings(seasonKey = '2027') {
 
       setSettings(nextSettings);
       setSavedMessage('Configuracoes salvas.');
+      return true;
     } catch (err) {
       console.error('Erro ao salvar configuracoes WDD Coins:', err);
       setError(err instanceof Error ? err.message : 'Nao foi possivel salvar as configuracoes.');
+      return false;
     } finally {
       setSaving(false);
     }

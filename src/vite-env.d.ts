@@ -56,7 +56,20 @@ interface BolaoScoringSettings {
   bonusEnabled: boolean;
 }
 
+interface BolaoSeason {
+  key: string;
+  name: string;
+}
+
+interface BolaoVisibleBet extends BolaoBet {
+  userId: string;
+  matchId: string;
+  pick?: string | null;
+}
+
 interface BolaoData {
+  version?: number | null;
+  season?: BolaoSeason | null;
   users: BolaoUser[];
   rounds: BolaoRound[];
   matches: BolaoMatch[];
@@ -67,6 +80,7 @@ interface BolaoData {
 
 interface RankingItem {
   id: string;
+  position?: number;
   name: string;
   points: number;
   exactHits: number;
@@ -80,6 +94,18 @@ interface RankingItem {
   }>;
 }
 
+interface RankingHistoryRow {
+  roundId: string;
+  roundNumber: number;
+  roundName: string;
+  userId: string;
+  userName: string;
+  roundPoints: number;
+  roundPosition: number;
+  totalPoints: number;
+  position: number;
+}
+
 interface MatchPointResult {
   isHit: boolean;
   label: string;
@@ -90,6 +116,12 @@ interface BolaoLegacyApi {
   Storage: {
     getCurrentUser(): BolaoUser | null;
     getData(options?: { forceRefresh?: boolean }): Promise<BolaoData>;
+    getRanking(roundId?: string | null): Promise<RankingItem[]>;
+    getRankingHistory(): Promise<RankingHistoryRow[]>;
+    saveBets(userId: string, bets: Array<{ matchId: string; scoreHome: number; scoreAway: number; createdAt?: string }>): Promise<{ saved: string[]; failed: string[] }>;
+    getVisibleBets(filters?: { roundId?: string | null; userId?: string | null }): Promise<BolaoVisibleBet[]>;
+    updateMatches(matches: BolaoMatch[]): Promise<boolean>;
+    replaceStandings(standings: BolaoStanding[], removedIds?: string[]): Promise<boolean>;
     cloneData(data: BolaoData): BolaoData;
     saveBet(userId: string, matchId: string, bet: BolaoBet): Promise<boolean>;
     addRound(round: BolaoRound): Promise<boolean>;

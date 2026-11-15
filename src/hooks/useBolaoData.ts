@@ -23,7 +23,7 @@ export function useBolaoData() {
       }));
     } catch (err) {
       console.error('Erro ao carregar dados do Bolao WDD:', err);
-      setError('Nao foi possivel carregar os dados. Tente atualizar.');
+      setError('Não foi possível carregar os dados. Verifique a conexão e tente atualizar.');
     } finally {
       setLoading(false);
     }
@@ -39,6 +39,9 @@ export function useBolaoData() {
     loading,
     error,
     lastLoadedAt,
-    refresh: () => load({ forceRefresh: true })
+    /** Baixa tudo de novo (botao "Atualizar"). */
+    refresh: () => load({ forceRefresh: true }),
+    /** Le do cache local; so vai ao banco se o carimbo de versao mudou. */
+    reload: () => load()
   };
 }

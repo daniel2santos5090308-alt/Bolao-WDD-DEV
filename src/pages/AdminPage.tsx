@@ -221,9 +221,18 @@ export function AdminPage() {
     setMessage('');
   }
 
+  /** Botao "Atualizar": baixa tudo de novo. */
   async function refresh() {
     await bolaoData.refresh();
     await coinSettings.refresh();
+  }
+
+  /**
+   * Depois de cada acao do admin: le do cache local (ja atualizado pela gravacao).
+   * Nao baixa a base inteira de novo; a sincronizacao vem pelo carimbo de versao.
+   */
+  async function syncAfterWrite() {
+    await bolaoData.reload();
   }
 
   async function handleCreateRound(event: FormEvent) {
@@ -235,16 +244,16 @@ export function AdminPage() {
     if (!success) return fail('Nao foi possivel criar a rodada.');
     setRoundName('');
     notify('Rodada criada com sucesso.');
-    await refresh();
+    await syncAfterWrite();
   }
 
   async function handleDeleteRound(roundId: string) {
-    if (!window.confirm('Excluir esta rodada e seus jogos?')) return;
-    for (const match of matches.filter((item) => item.roundId === roundId)) await storage.deleteMatch(match.id);
+    if (!window.confirm('Excluir esta rodada, seus jogos e as apostas desses jogos?')) return;
+    // Uma chamada: o banco apaga jogos e apostas da rodada em cascata.
     const success = await storage.deleteRound(roundId);
     if (!success) return fail('Nao foi possivel excluir a rodada.');
     notify('Rodada excluida.');
-    await refresh();
+    await syncAfterWrite();
   }
 
   async function handleSaveMatch(event: FormEvent) {
@@ -267,7 +276,7 @@ export function AdminPage() {
     if (!success) return fail('Nao foi possivel salvar o jogo.');
     setMatchForm(emptyMatchForm(matchForm.roundId));
     notify('Jogo salvo com sucesso.');
-    await refresh();
+    await syncAfterWrite();
   }
 
   async function handleDeleteMatch(matchId: string) {
@@ -275,18 +284,18 @@ export function AdminPage() {
     const success = await storage.deleteMatch(matchId);
     if (!success) return fail('Nao foi possivel excluir o jogo.');
     notify('Jogo excluido.');
-    await refresh();
+    await syncAfterWrite();
   }
 
   async function setRoundBonus(roundId: string, matchId: string | null) {
-    let success = true;
-    for (const match of matches.filter((item) => item.roundId === roundId)) {
-      const nextIsBonus = Boolean(matchId && match.id === matchId);
-      if (Boolean(match.isBonus) !== nextIsBonus) success = (await storage.updateMatch({ ...match, isBonus: nextIsBonus })) && success;
-    }
+    // So os jogos que mudam, numa unica gravacao.
+    const changed = matches
+      .filter((item) => item.roundId === roundId && Boolean(item.isBonus) !== Boolean(matchId && item.id === matchId))
+      .map((item) => ({ ...item, isBonus: Boolean(matchId && item.id === matchId) }));
+    const success = await storage.updateMatches(changed);
     if (!success) return fail('Nao foi possivel atualizar o jogo bonus.');
     notify(matchId ? 'Jogo bonus atualizado.' : 'Bonus removido.');
-    await refresh();
+    await syncAfterWrite();
   }
 
   async function randomBonus() {
@@ -304,14 +313,14 @@ export function AdminPage() {
     const success = await storage.updateMatch({ ...match, score: { home: homeScore, away: awayScore }, result: resultFromScore(homeScore, awayScore) });
     if (!success) return fail('Nao foi possivel salvar o placar.');
     notify('Placar salvo.');
-    await refresh();
+    await syncAfterWrite();
   }
 
   async function clearScore(match: BolaoMatch) {
     const success = await storage.updateMatch({ ...match, score: null, result: null });
     if (!success) return fail('Nao foi possivel limpar o placar.');
     notify('Placar limpo.');
-    await refresh();
+    await syncAfterWrite();
   }
 
   async function saveScoring() {
@@ -319,7 +328,7 @@ export function AdminPage() {
     if (!success) return fail('Nao foi possivel salvar a pontuacao.');
     setScoringDraft(null);
     notify('Pontuacao salva.');
-    await refresh();
+    await syncAfterWrite();
   }
 
   async function handleSaveStanding(event: FormEvent) {
@@ -330,7 +339,7 @@ export function AdminPage() {
     if (!success) return fail('Nao foi possivel salvar a classificacao.');
     setStandingForm(emptyStandingForm());
     notify('Classificacao salva.');
-    await refresh();
+    await syncAfterWrite();
   }
 
   async function deleteStanding(id: string) {
@@ -338,7 +347,7 @@ export function AdminPage() {
     const success = await storage.deleteStanding(id);
     if (!success) return fail('Nao foi possivel excluir a linha.');
     notify('Linha excluida.');
-    await refresh();
+    await syncAfterWrite();
   }
 
   function previewCsv() {
@@ -356,23 +365,24 @@ export function AdminPage() {
     if (!window.confirm('Salvar esta classificacao em lote? Times fora do CSV serao removidos.')) return;
     const existingByTeam = new Map(standings.map((item) => [item.team.toLocaleLowerCase('pt-BR'), item]));
     const csvTeams = new Set(csvPreview.map((item) => item.team.toLocaleLowerCase('pt-BR')));
-    let success = true;
-    for (const row of csvPreview) {
-      const existing = existingByTeam.get(row.team.toLocaleLowerCase('pt-BR'));
-      const payload = { id: existing?.id || utils.generateId(), ...row };
-      success = (existing ? await storage.updateStanding(payload) : await storage.addStanding(payload)) && success;
-    }
-    for (const standing of standings) {
-      if (!csvTeams.has(standing.team.toLocaleLowerCase('pt-BR'))) success = (await storage.deleteStanding(standing.id)) && success;
-    }
+    // Duas chamadas no total: upsert de todas as linhas + remocao das que sairam.
+    const payload = csvPreview.map((row) => ({
+      id: existingByTeam.get(row.team.toLocaleLowerCase('pt-BR'))?.id || utils.generateId(),
+      ...row
+    }));
+    const removedIds = standings
+      .filter((standing) => !csvTeams.has(standing.team.toLocaleLowerCase('pt-BR')))
+      .map((standing) => standing.id);
+    const success = await storage.replaceStandings(payload, removedIds);
     if (!success) return fail('A classificacao foi parcialmente atualizada. Confira os dados.');
     setCsvPreview([]);
     notify('Classificacao atualizada em lote.');
-    await refresh();
+    await syncAfterWrite();
   }
 
   async function saveCoinSettings() {
-    await coinSettings.save(coins);
+    const success = await coinSettings.save(coins);
+    if (!success) return fail('Nao foi possivel salvar as configuracoes WDD Coins.');
     setCoinDraft(null);
     notify('Configuracoes WDD Coins salvas.');
   }
@@ -535,7 +545,6 @@ export function AdminPage() {
       if (rpcError) throw rpcError;
       const total = (rewards || []).reduce((sum, row) => sum + Number(row.reward_amount || 0), 0);
       notify(`Rodada processada: ${(rewards || []).length} lancamentos e ${total} WDD Coins creditadas.`);
-      await refresh();
       await loadCoinAdminData();
     } catch (err) {
       fail(getErrorMessage(err, 'Nao foi possivel processar a rodada.'));
@@ -544,9 +553,17 @@ export function AdminPage() {
     }
   }
 
-  function exportBackup() {
+  async function exportBackup() {
     if (!data) return;
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    let allBets: BolaoVisibleBet[] = [];
+    try {
+      // Admin ve todas as apostas da temporada (paginado, sem limite de 1000 linhas)
+      allBets = await storage.getVisibleBets();
+    } catch (err) {
+      return fail(getErrorMessage(err, 'Nao foi possivel carregar as apostas para o backup.'));
+    }
+    const backup = { exportedAt: new Date().toISOString(), ...data, bets: allBets };
+    const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const anchor = document.createElement('a');
     anchor.href = url;
