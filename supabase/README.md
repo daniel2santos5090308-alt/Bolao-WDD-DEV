@@ -27,6 +27,7 @@ Fonte oficial do schema a partir de 2026-11. A pasta `Querys/` fica só como his
 | `20261116100000_app_snapshot.sql` | Fase 2: carimbo de versão, snapshot da temporada, extrato filtrado | ✅ 2026-11-16 | jan/2027 |
 | `20261116110000_ranking_history.sql` | Visual novo: histórico do ranking (setas, últimas rodadas, corrida pelo título) | ✅ 2026-11-16 | jan/2027 |
 | `20261116120000_season_names.sql` | Nome das temporadas com acento | ✅ 2026-11-16 | jan/2027 |
+| `20261117100000_coin_texts_accents.sql` | Fase 4: textos de WDD Coins com acento (extrato, erros, item da loja) | pendente | jan/2027 |
 
 Banco novo do zero: rode todas na ordem acima.
 
