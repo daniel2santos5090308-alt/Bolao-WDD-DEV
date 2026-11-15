@@ -45,7 +45,7 @@ GitHub > Repository > Settings > Secrets and variables > Actions > New repositor
 Valores atuais podem ser encontrados em:
 
 ```text
-public/assets/js/supabase-init.js
+Netlify > Site configuration > Environment variables (SUPABASE_URL e SUPABASE_ANON_KEY)
 ```
 
 ## Como Rodar Manualmente

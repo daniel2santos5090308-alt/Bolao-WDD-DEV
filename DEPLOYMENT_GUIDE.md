@@ -41,10 +41,12 @@ Não publicar:
 
 ## Configuração Esperada no Front-end
 
-O arquivo `public/assets/js/supabase-init.js` deve conter apenas:
+As variáveis de ambiente do site no Netlify devem ser apenas:
 
 - `SUPABASE_URL`
 - `SUPABASE_ANON_KEY`
+
+O build (`npm run build:react`) grava esses valores em `public/assets/js/runtime-config.js`, que o app lê ao abrir.
 
 A chave `service_role` nunca deve aparecer no front-end.
 
