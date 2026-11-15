@@ -47,17 +47,16 @@ Roda os módulos TypeScript direto no Node 22 (`--experimental-strip-types`). Co
 
 ## Testes E2E
 
-> Desatualizado: `tests/e2e/bolao-crud-bet.spec.js` ainda usa os seletores das telas antigas (antes do React) e precisa ser refeito.
+Os testes E2E (`tests/e2e/app.spec.js`) abrem o app no Chromium, em tamanho de desktop e de celular, contra um **Supabase simulado** (`tests/e2e/support/mockSupabase.js`). Não precisam de senha e não leem nem gravam nada no Supabase DEV ou PROD.
 
-Os testes E2E abrem a aplicação no navegador e executam o fluxo real contra o Supabase DEV:
+Cobrem:
 
-- login admin;
-- criação de rodada;
-- criação e edição de jogo;
-- login de usuário;
-- aposta;
-- finalização de placar;
-- exclusão do jogo e da rodada de teste.
+- login (senha errada, participante, admin) e endereços antigos (`login.html`);
+- salvar palpites em lote;
+- ranking vindo do banco;
+- WDD Coins carregando loja e extrato ao abrir;
+- sair;
+- admin abrindo a lista de jogos na rodada atual.
 
 Antes da primeira execução, instale o navegador do Playwright:
 
@@ -65,16 +64,7 @@ Antes da primeira execução, instale o navegador do Playwright:
 npx playwright install chromium
 ```
 
-Crie um arquivo local `.env.e2e` na raiz do projeto. Esse arquivo é ignorado pelo Git:
-
-```text
-E2E_ADMIN_USER=admin
-E2E_ADMIN_PASSWORD=sua_senha_admin
-E2E_BETTOR_USER=daniel
-E2E_BETTOR_PASSWORD=sua_senha_usuario
-```
-
-Depois rode:
+Depois rode (o Vite sobe sozinho na porta 4173):
 
 ```bash
 npm run test:e2e
@@ -85,8 +75,6 @@ Para acompanhar o navegador:
 ```bash
 npm run test:e2e:headed
 ```
-
-Sem as senhas configuradas, o teste E2E fica marcado como `skipped` e não altera dados.
 
 ## Validação antes de alterações
 

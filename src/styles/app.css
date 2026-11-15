@@ -1385,6 +1385,7 @@ textarea {
 
 .admin-panel {
   display: grid;
+  align-content: start;
   gap: 14px;
   padding: 16px;
 }
@@ -1463,6 +1464,8 @@ textarea {
 .admin-fields-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  align-content: start;
+  align-items: start;
   gap: 12px;
 }
 
@@ -1472,7 +1475,13 @@ textarea {
 
 .admin-field {
   display: grid;
+  align-content: start;
   gap: 5px;
+}
+
+.admin-field input,
+.admin-field select {
+  width: 100%;
 }
 
 .admin-field span {
@@ -2033,7 +2042,56 @@ textarea {
   font-size: 1rem;
 }
 
+.password-field {
+  position: relative;
+}
+
+.login-card .password-field input {
+  padding-right: 48px;
+}
+
+.password-field__toggle {
+  position: absolute;
+  top: 50%;
+  right: 4px;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  transform: translateY(-50%);
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-2);
+  cursor: pointer;
+}
+
+.password-field__toggle:hover {
+  color: var(--text);
+}
+
+.password-field__toggle:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: -2px;
+}
+
 .login-card .primary-button {
   min-height: 46px;
   font-size: 1rem;
+}
+
+/* ---------- WDD Coins: saldo em uma linha no celular ---------- */
+@media (max-width: 640px) {
+  .coin-summary-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .coin-summary-card {
+    padding: 10px;
+  }
+
+  .coin-summary-card strong {
+    font-size: 1.4rem;
+  }
 }

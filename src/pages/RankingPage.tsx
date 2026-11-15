@@ -1,6 +1,5 @@
 import { useMemo, useState } from 'react';
 import { DetailsModal } from '../components/DetailsModal';
-import { EmptyState } from '../components/EmptyState';
 import { RaceChart } from '../components/RaceChart';
 import { RankingStats } from '../components/RankingPanel';
 import { useBolaoData } from '../hooks/useBolaoData';
@@ -30,7 +29,8 @@ export function RankingPage({ currentUser }: RankingPageProps) {
     [data?.rounds]
   );
   const roundId = scope === 'season' ? null : scope;
-  const { ranking, error: rankingError } = useRanking(roundId, data?.version);
+  const { ranking, loading: rankingLoading, error: rankingError } = useRanking(roundId, data?.version);
+  const waiting = (loading && !data) || (rankingLoading && ranking.length === 0);
   const history = useRankingHistory(data?.version);
 
   // Movimento e ultimas 5 rodadas (so no ranking da temporada)
@@ -71,7 +71,6 @@ export function RankingPage({ currentUser }: RankingPageProps) {
       </header>
 
       {error || rankingError ? <div className="banner banner--error">{error || rankingError}</div> : null}
-      {loading && !data ? <EmptyState>Carregando ranking…</EmptyState> : null}
 
       {podium.length ? (
         <div className={`podium podium--count-${podium.length}`}>
@@ -104,7 +103,7 @@ export function RankingPage({ currentUser }: RankingPageProps) {
             </thead>
             <tbody>
               {ranking.length === 0 ? (
-                <tr><td colSpan={9} className="table-empty">Sem pontuação ainda.</td></tr>
+                <tr><td colSpan={9} className="table-empty">{waiting ? 'Carregando ranking…' : 'Sem pontuação ainda.'}</td></tr>
               ) : ranking.map((item, index) => {
                 const position = item.position ?? index + 1;
                 return (

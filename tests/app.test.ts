@@ -315,3 +315,42 @@ test('paginas HTML nao carregam o JS legado nem expoem cadastro publico', () => 
     assert.equal(html.includes('register'), false, `${page} nao deve expor register`);
   }
 });
+
+/* ---------- rodada atual e rotulos de Coins ---------- */
+
+test('getCurrentRoundId: primeira rodada (por numero) com jogo sem resultado; senao, a ultima', async () => {
+  const { getCurrentRoundId } = await import('../src/services/matches.ts');
+  const rounds = [{ id: 'r2', name: 'Rodada 2', number: 2 }, { id: 'r1', name: 'Rodada 1', number: 1 }, { id: 'r3', name: 'Rodada 3', number: 3 }];
+  const match = (id: string, roundId: string, result: string | null): BolaoMatch => ({ id, roundId, date: '2027-01-27', time: '19:00', homeTeam: 'A', awayTeam: 'B', result });
+
+  assert.equal(getCurrentRoundId(rounds, [match('a', 'r1', 'home'), match('b', 'r2', null), match('c', 'r3', null)]), 'r2');
+  assert.equal(getCurrentRoundId(rounds, [match('a', 'r1', 'home'), match('b', 'r2', 'draw')]), 'r3');
+  assert.equal(getCurrentRoundId([], []), '');
+});
+
+test('coinLabels traduz tipo e raridade gravados no banco', async () => {
+  const { getItemTypeLabel, getRarityLabel } = await import('../src/services/coinLabels.ts');
+  assert.equal(getItemTypeLabel('profile_badge'), 'Selo de perfil');
+  assert.equal(getItemTypeLabel('desconhecido'), 'desconhecido');
+  assert.equal(getRarityLabel('epico'), 'Épico');
+  assert.equal(getRarityLabel('Lendario'), 'Lendário');
+  assert.equal(getRarityLabel('raro'), 'Raro');
+});
+
+test('unsavedChanges: pergunta só com palpite pendente e zera ao confirmar', async () => {
+  const { setUnsavedCount, getUnsavedCount, confirmDiscardUnsaved, unsavedMessage } = await import('../src/services/unsavedChanges.ts');
+  const asked: string[] = [];
+
+  setUnsavedCount(0);
+  assert.equal(confirmDiscardUnsaved((message) => { asked.push(message); return false; }), true);
+  assert.equal(asked.length, 0);
+
+  setUnsavedCount(2);
+  assert.equal(confirmDiscardUnsaved(() => false), false);
+  assert.equal(getUnsavedCount(), 2);
+  assert.equal(confirmDiscardUnsaved(() => true), true);
+  assert.equal(getUnsavedCount(), 0);
+
+  assert.match(unsavedMessage(1), /1 palpite não salvo\. .*esse palpite\?/);
+  assert.match(unsavedMessage(3), /3 palpites não salvos\. .*esses palpites\?/);
+});

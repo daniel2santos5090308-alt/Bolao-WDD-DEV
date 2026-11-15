@@ -4,7 +4,8 @@ import type { CoinSettings } from '../hooks/useCoinSettings';
 import { StandingsLegend, StandingsTable } from '../components/StandingsTable';
 import { useBolaoData } from '../hooks/useBolaoData';
 import { useCoinSettings } from '../hooks/useCoinSettings';
-import { getRoundNumber } from '../services/matches';
+import { getRarityLabel } from '../services/coinLabels';
+import { formatMatchDateTime, getCurrentRoundId, getRoundNumber } from '../services/matches';
 import * as storage from '../services/storage';
 import { requireSupabase } from '../services/supabase';
 import { generateId } from '../services/utils';
@@ -54,13 +55,13 @@ interface AdminUserStoreItem {
 }
 
 const coinFields: Array<{ key: keyof Omit<CoinSettings, 'seasonKey'>; label: string; help: string }> = [
-  { key: 'initialBalance', label: 'Saldo inicial', help: 'Credito unico ao criar a carteira.' },
-  { key: 'firstPlaceReward', label: '1o lugar da rodada', help: 'Premio por melhor pontuacao da rodada.' },
-  { key: 'secondPlaceReward', label: '2o lugar da rodada', help: 'Premio por segunda melhor pontuacao.' },
-  { key: 'thirdPlaceReward', label: '3o lugar da rodada', help: 'Premio por terceira melhor pontuacao.' },
+  { key: 'initialBalance', label: 'Saldo inicial', help: 'Crédito único ao criar a carteira.' },
+  { key: 'firstPlaceReward', label: '1º lugar da rodada', help: 'Prêmio por melhor pontuação da rodada.' },
+  { key: 'secondPlaceReward', label: '2º lugar da rodada', help: 'Prêmio por segunda melhor pontuação.' },
+  { key: 'thirdPlaceReward', label: '3º lugar da rodada', help: 'Prêmio por terceira melhor pontuação.' },
   { key: 'exactScoreReward', label: 'Placar exato', help: 'Recompensa por cravada simples.' },
-  { key: 'bonusExactScoreReward', label: 'Placar exato bonus', help: 'Recompensa extra no jogo bonus.' },
-  { key: 'fullRoundParticipationReward', label: 'Participacao completa', help: 'Recompensa por palpitar em todos os jogos da rodada.' }
+  { key: 'bonusExactScoreReward', label: 'Placar exato bônus', help: 'Recompensa extra no jogo bônus.' },
+  { key: 'fullRoundParticipationReward', label: 'Participação completa', help: 'Recompensa por palpitar em todos os jogos da rodada.' }
 ];
 
 const defaultScoring: BolaoScoringSettings = {
@@ -109,7 +110,7 @@ function readString(value: unknown): string {
 function parseInteger(value: string, label: string, line: number) {
   const parsed = Number(String(value || '').trim());
   if (!Number.isInteger(parsed) || parsed < 0) {
-    throw new Error(`Linha ${line}: ${label} deve ser um numero inteiro maior ou igual a zero.`);
+    throw new Error(`Linha ${line}: ${label} deve ser um número inteiro maior ou igual a zero.`);
   }
   return parsed;
 }
@@ -132,11 +133,11 @@ function parseStandingsCsv(csv: string): Omit<BolaoStanding, 'id'>[] {
     const lineNumber = lineIndex + 2;
     const parts = line.split(delimiter).map((value) => value.trim());
     const team = parts[index.team];
-    if (!team) throw new Error(`Linha ${lineNumber}: time obrigatorio.`);
+    if (!team) throw new Error(`Linha ${lineNumber}: time obrigatório.`);
 
     const position = parseInteger(parts[index.position], 'position', lineNumber);
     const normalizedTeam = team.toLocaleLowerCase('pt-BR');
-    if (seenPositions.has(position)) throw new Error(`Linha ${lineNumber}: posicao duplicada.`);
+    if (seenPositions.has(position)) throw new Error(`Linha ${lineNumber}: posição duplicada.`);
     if (seenTeams.has(normalizedTeam)) throw new Error(`Linha ${lineNumber}: time duplicado.`);
     seenPositions.add(position);
     seenTeams.add(normalizedTeam);
@@ -173,7 +174,8 @@ export function AdminPage() {
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const [roundName, setRoundName] = useState('');
-  const [filterRoundId, setFilterRoundId] = useState('all');
+  // '' = ainda nao escolhido: mostra a rodada atual (evita listar a temporada inteira).
+  const [filterRoundChoice, setFilterRoundId] = useState('');
   const [matchForm, setMatchForm] = useState(emptyMatchForm());
   const [scoringDraft, setScoringDraft] = useState<BolaoScoringSettings | null>(null);
   const [standingForm, setStandingForm] = useState<BolaoStanding>(emptyStandingForm());
@@ -197,6 +199,7 @@ export function AdminPage() {
 
   const rounds = useMemo(() => [...(data?.rounds || [])].sort((a, b) => getRoundNumber(a) - getRoundNumber(b)), [data?.rounds]);
   const matches = data?.matches || [];
+  const filterRoundId = filterRoundChoice || getCurrentRoundId(rounds, matches) || 'all';
   const standings = data?.standings || [];
   const scoring = scoringDraft || data?.scoringSettings || defaultScoring;
   const coins = coinDraft || coinSettings.settings;
@@ -242,7 +245,7 @@ export function AdminPage() {
     if (!name) return;
     const nextNumber = rounds.length ? Math.max(...rounds.map(getRoundNumber)) + 1 : 1;
     const success = await storage.addRound({ id: generateId(), name, number: nextNumber });
-    if (!success) return fail('Nao foi possivel criar a rodada.');
+    if (!success) return fail('Não foi possível criar a rodada.');
     setRoundName('');
     notify('Rodada criada com sucesso.');
     await syncAfterWrite();
@@ -252,7 +255,7 @@ export function AdminPage() {
     if (!window.confirm('Excluir esta rodada, seus jogos e as apostas desses jogos?')) return;
     // Uma chamada: o banco apaga jogos e apostas da rodada em cascata.
     const success = await storage.deleteRound(roundId);
-    if (!success) return fail('Nao foi possivel excluir a rodada.');
+    if (!success) return fail('Não foi possível excluir a rodada.');
     notify('Rodada excluida.');
     await syncAfterWrite();
   }
@@ -274,7 +277,7 @@ export function AdminPage() {
       score: existing?.score || null
     };
     const success = existing ? await storage.updateMatch(payload) : await storage.addMatch(payload);
-    if (!success) return fail('Nao foi possivel salvar o jogo.');
+    if (!success) return fail('Não foi possível salvar o jogo.');
     setMatchForm(emptyMatchForm(matchForm.roundId));
     notify('Jogo salvo com sucesso.');
     await syncAfterWrite();
@@ -283,7 +286,7 @@ export function AdminPage() {
   async function handleDeleteMatch(matchId: string) {
     if (!window.confirm('Excluir este jogo?')) return;
     const success = await storage.deleteMatch(matchId);
-    if (!success) return fail('Nao foi possivel excluir o jogo.');
+    if (!success) return fail('Não foi possível excluir o jogo.');
     notify('Jogo excluido.');
     await syncAfterWrite();
   }
@@ -294,15 +297,15 @@ export function AdminPage() {
       .filter((item) => item.roundId === roundId && Boolean(item.isBonus) !== Boolean(matchId && item.id === matchId))
       .map((item) => ({ ...item, isBonus: Boolean(matchId && item.id === matchId) }));
     const success = await storage.updateMatches(changed);
-    if (!success) return fail('Nao foi possivel atualizar o jogo bonus.');
-    notify(matchId ? 'Jogo bonus atualizado.' : 'Bonus removido.');
+    if (!success) return fail('Não foi possível atualizar o jogo bônus.');
+    notify(matchId ? 'Jogo bônus atualizado.' : 'Bônus removido.');
     await syncAfterWrite();
   }
 
   async function randomBonus() {
-    if (!filterRoundId || filterRoundId === 'all') return fail('Selecione uma rodada para sortear o bonus.');
+    if (!filterRoundId || filterRoundId === 'all') return fail('Selecione uma rodada para sortear o bônus.');
     const roundMatches = matches.filter((match) => match.roundId === filterRoundId);
-    if (!roundMatches.length) return fail('Esta rodada nao possui jogos.');
+    if (!roundMatches.length) return fail('Esta rodada não possui jogos.');
     const selected = roundMatches[Math.floor(Math.random() * roundMatches.length)];
     await setRoundBonus(filterRoundId, selected.id);
   }
@@ -310,25 +313,25 @@ export function AdminPage() {
   async function saveScore(match: BolaoMatch, home: string, away: string) {
     const homeScore = Number(home);
     const awayScore = Number(away);
-    if (!Number.isInteger(homeScore) || homeScore < 0 || !Number.isInteger(awayScore) || awayScore < 0) return fail('Informe um placar valido.');
+    if (!Number.isInteger(homeScore) || homeScore < 0 || !Number.isInteger(awayScore) || awayScore < 0) return fail('Informe um placar válido.');
     const success = await storage.updateMatch({ ...match, score: { home: homeScore, away: awayScore }, result: resultFromScore(homeScore, awayScore) });
-    if (!success) return fail('Nao foi possivel salvar o placar.');
+    if (!success) return fail('Não foi possível salvar o placar.');
     notify('Placar salvo.');
     await syncAfterWrite();
   }
 
   async function clearScore(match: BolaoMatch) {
     const success = await storage.updateMatch({ ...match, score: null, result: null });
-    if (!success) return fail('Nao foi possivel limpar o placar.');
+    if (!success) return fail('Não foi possível limpar o placar.');
     notify('Placar limpo.');
     await syncAfterWrite();
   }
 
   async function saveScoring() {
     const success = await storage.updateScoringSettings(scoring);
-    if (!success) return fail('Nao foi possivel salvar a pontuacao.');
+    if (!success) return fail('Não foi possível salvar a pontuação.');
     setScoringDraft(null);
-    notify('Pontuacao salva.');
+    notify('Pontuação salva.');
     await syncAfterWrite();
   }
 
@@ -337,16 +340,16 @@ export function AdminPage() {
     const payload = { ...standingForm, id: standingForm.id || generateId(), goalDiff: getGoalDiff(standingForm.goalsFor, standingForm.goalsAgainst) };
     const existing = standings.some((item) => item.id === payload.id);
     const success = existing ? await storage.updateStanding(payload) : await storage.addStanding(payload);
-    if (!success) return fail('Nao foi possivel salvar a classificacao.');
+    if (!success) return fail('Não foi possível salvar a classificação.');
     setStandingForm(emptyStandingForm());
-    notify('Classificacao salva.');
+    notify('Classificação salva.');
     await syncAfterWrite();
   }
 
   async function deleteStanding(id: string) {
-    if (!window.confirm('Excluir esta linha da classificacao?')) return;
+    if (!window.confirm('Excluir esta linha da classificação?')) return;
     const success = await storage.deleteStanding(id);
-    if (!success) return fail('Nao foi possivel excluir a linha.');
+    if (!success) return fail('Não foi possível excluir a linha.');
     notify('Linha excluida.');
     await syncAfterWrite();
   }
@@ -354,16 +357,16 @@ export function AdminPage() {
   function previewCsv() {
     try {
       setCsvPreview(parseStandingsCsv(csvText));
-      notify('CSV validado. Confira a previa antes de salvar.');
+      notify('CSV validado. Confira a prévia antes de salvar.');
     } catch (err) {
       setCsvPreview([]);
-      fail(err instanceof Error ? err.message : 'CSV invalido.');
+      fail(err instanceof Error ? err.message : 'CSV inválido.');
     }
   }
 
   async function saveCsv() {
-    if (!csvPreview.length) return fail('Pre-visualize um CSV valido antes de salvar.');
-    if (!window.confirm('Salvar esta classificacao em lote? Times fora do CSV serao removidos.')) return;
+    if (!csvPreview.length) return fail('Pré-visualize um CSV válido antes de salvar.');
+    if (!window.confirm('Salvar esta classificação em lote? Times fora do CSV serão removidos.')) return;
     const existingByTeam = new Map(standings.map((item) => [item.team.toLocaleLowerCase('pt-BR'), item]));
     const csvTeams = new Set(csvPreview.map((item) => item.team.toLocaleLowerCase('pt-BR')));
     // Duas chamadas no total: upsert de todas as linhas + remocao das que sairam.
@@ -375,17 +378,17 @@ export function AdminPage() {
       .filter((standing) => !csvTeams.has(standing.team.toLocaleLowerCase('pt-BR')))
       .map((standing) => standing.id);
     const success = await storage.replaceStandings(payload, removedIds);
-    if (!success) return fail('A classificacao foi parcialmente atualizada. Confira os dados.');
+    if (!success) return fail('A classificação foi parcialmente atualizada. Confira os dados.');
     setCsvPreview([]);
-    notify('Classificacao atualizada em lote.');
+    notify('Classificação atualizada em lote.');
     await syncAfterWrite();
   }
 
   async function saveCoinSettings() {
     const success = await coinSettings.save(coins);
-    if (!success) return fail('Nao foi possivel salvar as configuracoes WDD Coins.');
+    if (!success) return fail('Não foi possível salvar as configurações WDD Coins.');
     setCoinDraft(null);
-    notify('Configuracoes WDD Coins salvas.');
+    notify('Configurações WDD Coins salvas.');
   }
 
   async function loadCoinAdminData() {
@@ -478,16 +481,16 @@ export function AdminPage() {
         purchasedAt: readString(row.purchased_at)
       })));
       setCoinAdminLoaded(true);
-      notify('Historico WDD Coins carregado.');
+      notify('Histórico WDD Coins carregado.');
     } catch (err) {
-      fail(getErrorMessage(err, 'Nao foi possivel carregar o historico WDD Coins.'));
+      fail(getErrorMessage(err, 'Não foi possível carregar o histórico WDD Coins.'));
     } finally {
       setCoinAdminLoading(false);
     }
   }
 
   async function initializeCoinWallets() {
-    const confirmed = window.confirm('Inicializar carteiras WDD Coins para todos os participantes? Se o saldo inicial estiver configurado acima de zero, ele sera creditado uma unica vez por usuario.');
+    const confirmed = window.confirm('Inicializar carteiras WDD Coins para todos os participantes? Se o saldo inicial estiver configurado acima de zero, ele será creditado uma única vez por usuário.');
     if (!confirmed) return;
 
     setWalletInitializing(true);
@@ -498,7 +501,7 @@ export function AdminPage() {
       notify(`Carteiras verificadas: ${(wallets || []).length} participantes preparados para a temporada ${coins.seasonKey}.`);
       await loadCoinAdminData();
     } catch (err) {
-      fail(getErrorMessage(err, 'Nao foi possivel inicializar as carteiras WDD Coins.'));
+      fail(getErrorMessage(err, 'Não foi possível inicializar as carteiras WDD Coins.'));
     } finally {
       setWalletInitializing(false);
     }
@@ -530,7 +533,7 @@ export function AdminPage() {
       notify('Ajuste WDD Coins registrado com sucesso.');
       await loadCoinAdminData();
     } catch (err) {
-      fail(getErrorMessage(err, 'Nao foi possivel ajustar a carteira WDD Coins.'));
+      fail(getErrorMessage(err, 'Não foi possível ajustar a carteira WDD Coins.'));
     } finally {
       setAdjustingWallet(false);
     }
@@ -544,10 +547,10 @@ export function AdminPage() {
       const { data: rewards, error: rpcError } = await supabaseClient.rpc('process_round_coin_rewards', { p_round_id: selectedRewardRoundId, p_season_key: coins.seasonKey });
       if (rpcError) throw rpcError;
       const total = ((rewards || []) as Array<{ reward_amount?: number | string }>).reduce((sum, row) => sum + Number(row.reward_amount || 0), 0);
-      notify(`Rodada processada: ${(rewards || []).length} lancamentos e ${total} WDD Coins creditadas.`);
+      notify(`Rodada processada: ${(rewards || []).length} lançamentos e ${total} WDD Coins creditadas.`);
       await loadCoinAdminData();
     } catch (err) {
-      fail(getErrorMessage(err, 'Nao foi possivel processar a rodada.'));
+      fail(getErrorMessage(err, 'Não foi possível processar a rodada.'));
     } finally {
       setProcessing(false);
     }
@@ -560,7 +563,7 @@ export function AdminPage() {
       // Admin ve todas as apostas da temporada (paginado, sem limite de 1000 linhas)
       allBets = await storage.getVisibleBets();
     } catch (err) {
-      return fail(getErrorMessage(err, 'Nao foi possivel carregar as apostas para o backup.'));
+      return fail(getErrorMessage(err, 'Não foi possível carregar as apostas para o backup.'));
     }
     const backup = { exportedAt: new Date().toISOString(), ...data, bets: allBets };
     const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
@@ -575,12 +578,12 @@ export function AdminPage() {
   return (
     <section className="admin-page">
       <div className="admin-hero">
-        <div><span className="eyebrow">Administracao</span><h1>Painel admin</h1><p>Controle jogos, placares, pontuacao, classificacao e WDD Coins no novo modelo React.</p></div>
+        <div><span className="eyebrow">Administração</span><h1>Painel admin</h1><p>Jogos, placares, pontuação, tabela do campeonato e WDD Coins.</p></div>
         <div className="hero-actions"><button type="button" onClick={refresh} disabled={bolaoData.loading}>Atualizar</button><button type="button" onClick={exportBackup}>Exportar JSON</button></div>
       </div>
 
       <nav className="admin-tabs">
-        {([['jogos', 'Jogos'], ['pontuacao', 'Pontuacao'], ['classificacao', 'Classificacao'], ['coins', 'WDD Coins']] as Array<[AdminTab, string]>).map(([id, label]) => (
+        {([['jogos', 'Jogos'], ['pontuacao', 'Pontuação'], ['classificacao', 'Classificação'], ['coins', 'WDD Coins']] as Array<[AdminTab, string]>).map(([id, label]) => (
           <button key={id} type="button" className={activeTab === id ? 'is-active' : ''} onClick={() => setActiveTab(id)}>{label}</button>
         ))}
       </nav>
@@ -597,19 +600,19 @@ export function AdminPage() {
           </section>
 
           <section className="admin-panel">
-            <header><div><h2>{matchForm.id ? 'Editar jogo' : 'Novo jogo'}</h2><p>Times, data, horario e rodada.</p></div></header>
+            <header><div><h2>{matchForm.id ? 'Editar jogo' : 'Novo jogo'}</h2><p>Times, data, horário e rodada.</p></div></header>
             <form className="admin-fields-grid admin-fields-grid--match" onSubmit={handleSaveMatch}>
               <label className="admin-field"><span>Rodada</span><select value={matchForm.roundId} onChange={(event) => setMatchForm({ ...matchForm, roundId: event.target.value })} required><option value="">Selecione</option>{rounds.map((round) => <option key={round.id} value={round.id}>{round.name}</option>)}</select></label>
               <label className="admin-field"><span>Data</span><input type="date" value={matchForm.date} onChange={(event) => setMatchForm({ ...matchForm, date: event.target.value })} required /></label>
-              <label className="admin-field"><span>Horario</span><input type="time" value={matchForm.time} onChange={(event) => setMatchForm({ ...matchForm, time: event.target.value })} required /></label>
+              <label className="admin-field"><span>Horário</span><input type="time" value={matchForm.time} onChange={(event) => setMatchForm({ ...matchForm, time: event.target.value })} required /></label>
               <label className="admin-field"><span>Time casa</span><input value={matchForm.homeTeam} onChange={(event) => setMatchForm({ ...matchForm, homeTeam: event.target.value })} required /></label>
               <label className="admin-field"><span>Time visitante</span><input value={matchForm.awayTeam} onChange={(event) => setMatchForm({ ...matchForm, awayTeam: event.target.value })} required /></label>
-              <div className="admin-panel__actions"><button type="submit">{matchForm.id ? 'Salvar alteracoes' : 'Cadastrar jogo'}</button>{matchForm.id ? <button type="button" onClick={() => setMatchForm(emptyMatchForm(matchForm.roundId))}>Cancelar</button> : null}</div>
+              <div className="admin-panel__actions"><button type="submit">{matchForm.id ? 'Salvar alterações' : 'Cadastrar jogo'}</button>{matchForm.id ? <button type="button" onClick={() => setMatchForm(emptyMatchForm(matchForm.roundId))}>Cancelar</button> : null}</div>
             </form>
           </section>
 
           <section className="admin-panel admin-panel--wide">
-            <header><div><h2>Jogos cadastrados</h2><p>Edite placares, bonus e dados dos jogos.</p></div><div className="admin-panel__actions"><select value={filterRoundId} onChange={(event) => setFilterRoundId(event.target.value)}><option value="all">Todas as rodadas</option>{rounds.map((round) => <option key={round.id} value={round.id}>{round.name}</option>)}</select><button type="button" onClick={randomBonus}>Sortear bonus</button></div></header>
+            <header><div><h2>Jogos cadastrados</h2><p>Edite placares, bônus e dados dos jogos.</p></div><div className="admin-panel__actions"><select value={filterRoundId} onChange={(event) => setFilterRoundId(event.target.value)}><option value="all">Todas as rodadas</option>{rounds.map((round) => <option key={round.id} value={round.id}>{round.name}</option>)}</select><button type="button" onClick={randomBonus}>Sortear bônus</button></div></header>
             <div className="admin-match-list">{selectedRoundMatches.length === 0 ? <div className="empty-row">Nenhum jogo cadastrado.</div> : selectedRoundMatches.map((match) => {
               const round = rounds.find((item) => item.id === match.roundId);
               return <AdminMatchRow key={match.id} match={match} roundName={round?.name || 'Rodada'} onEdit={() => setMatchForm({ id: match.id, roundId: match.roundId, date: match.date, time: match.time, homeTeam: match.homeTeam, awayTeam: match.awayTeam })} onDelete={() => handleDeleteMatch(match.id)} onScore={saveScore} onClear={clearScore} onBonus={() => setRoundBonus(match.roundId, match.isBonus ? null : match.id)} />;
@@ -632,15 +635,15 @@ function NumberField({ label, value, onChange, help, min = 0, step = '1' }: { la
 function AdminMatchRow({ match, roundName, onEdit, onDelete, onScore, onClear, onBonus }: { match: BolaoMatch; roundName: string; onEdit(): void; onDelete(): void; onScore(match: BolaoMatch, home: string, away: string): void; onClear(match: BolaoMatch): void; onBonus(): void }) {
   const [home, setHome] = useState(match.score?.home?.toString() || '');
   const [away, setAway] = useState(match.score?.away?.toString() || '');
-  return <article className={`admin-match-row ${match.isBonus ? 'is-bonus' : ''}`}><div><strong>{match.homeTeam} x {match.awayTeam}</strong><span>{roundName} | {match.date} {match.time}</span></div><div className="score-editor"><input value={home} onChange={(event) => setHome(event.target.value)} type="number" min="0" /><span>x</span><input value={away} onChange={(event) => setAway(event.target.value)} type="number" min="0" /></div><div className="admin-row-actions"><button type="button" onClick={() => onScore(match, home, away)}>Salvar placar</button><button type="button" onClick={() => onClear(match)}>Limpar</button><button type="button" onClick={onBonus}>{match.isBonus ? 'Remover bonus' : 'Marcar bonus'}</button><button type="button" onClick={onEdit}>Editar</button><button type="button" onClick={onDelete}>Excluir</button></div></article>;
+  return <article className={`admin-match-row ${match.isBonus ? 'is-bonus' : ''}`}><div><strong>{match.homeTeam} x {match.awayTeam}</strong><span>{roundName} | {formatMatchDateTime(match)}</span></div><div className="score-editor"><input value={home} onChange={(event) => setHome(event.target.value)} type="number" min="0" /><span>x</span><input value={away} onChange={(event) => setAway(event.target.value)} type="number" min="0" /></div><div className="admin-row-actions"><button type="button" onClick={() => onScore(match, home, away)}>Salvar placar</button><button type="button" onClick={() => onClear(match)}>Limpar</button><button type="button" onClick={onBonus}>{match.isBonus ? 'Remover bônus' : 'Marcar bônus'}</button><button type="button" onClick={onEdit}>Editar</button><button type="button" onClick={onDelete}>Excluir</button></div></article>;
 }
 
 function ScoringAdmin({ scoring, onChange, onSave }: { scoring: BolaoScoringSettings; onChange(value: BolaoScoringSettings): void; onSave(): void }) {
-  return <section className="admin-panel"><header><div><h2>Pontuacao do bolao</h2><p>Valores usados no ranking de pontos.</p></div><div className="admin-panel__actions"><button type="button" onClick={onSave}>Salvar pontuacao</button></div></header><div className="admin-fields-grid"><NumberField label="Placar exato" value={scoring.exactScorePoints} onChange={(value) => onChange({ ...scoring, exactScorePoints: value })} step="0.01" /><NumberField label="Na trave" value={scoring.nearMissPoints} onChange={(value) => onChange({ ...scoring, nearMissPoints: value })} step="0.01" /><NumberField label="Erro" value={scoring.wrongPoints} onChange={(value) => onChange({ ...scoring, wrongPoints: value })} step="0.01" /><NumberField label="Multiplicador bonus" value={scoring.bonusMultiplier} onChange={(value) => onChange({ ...scoring, bonusMultiplier: value })} min={1} step="0.1" /><label className="admin-field"><span>Jogo bonus</span><select value={scoring.bonusEnabled ? 'on' : 'off'} onChange={(event) => onChange({ ...scoring, bonusEnabled: event.target.value === 'on' })}><option value="on">Ativo</option><option value="off">Inativo</option></select><small>Controla multiplicador de pontos no ranking.</small></label></div></section>;
+  return <section className="admin-panel"><header><div><h2>Pontuação do bolão</h2><p>Valores usados no ranking de pontos.</p></div><div className="admin-panel__actions"><button type="button" onClick={onSave}>Salvar pontuação</button></div></header><div className="admin-fields-grid"><NumberField label="Placar exato" value={scoring.exactScorePoints} onChange={(value) => onChange({ ...scoring, exactScorePoints: value })} step="0.01" /><NumberField label="Na trave" value={scoring.nearMissPoints} onChange={(value) => onChange({ ...scoring, nearMissPoints: value })} step="0.01" /><NumberField label="Erro" value={scoring.wrongPoints} onChange={(value) => onChange({ ...scoring, wrongPoints: value })} step="0.01" /><NumberField label="Multiplicador bônus" value={scoring.bonusMultiplier} onChange={(value) => onChange({ ...scoring, bonusMultiplier: value })} min={1} step="0.1" /><label className="admin-field"><span>Jogo bônus</span><select value={scoring.bonusEnabled ? 'on' : 'off'} onChange={(event) => onChange({ ...scoring, bonusEnabled: event.target.value === 'on' })}><option value="on">Ativo</option><option value="off">Inativo</option></select><small>Controla multiplicador de pontos no ranking.</small></label></div></section>;
 }
 
 function StandingsAdmin({ standingForm, setStandingForm, onSave, csvText, setCsvText, csvPreview, previewCsv, saveCsv, standings, deleteStanding }: { standingForm: BolaoStanding; setStandingForm(value: BolaoStanding): void; onSave(event: FormEvent): void; csvText: string; setCsvText(value: string): void; csvPreview: Omit<BolaoStanding, 'id'>[]; previewCsv(): void; saveCsv(): void; standings: BolaoStanding[]; deleteStanding(id: string): void }) {
-  return <div className="page-stack"><section className="admin-panel"><header><div><h2>{standingForm.id ? 'Editar classificacao' : 'Nova linha da classificacao'}</h2><p>Atualizacao individual da tabela.</p></div></header><form className="admin-fields-grid" onSubmit={onSave}><NumberField label="Posicao" value={standingForm.position} onChange={(value) => setStandingForm({ ...standingForm, position: value })} min={1} /><label className="admin-field"><span>Time</span><input value={standingForm.team} onChange={(event) => setStandingForm({ ...standingForm, team: event.target.value })} required /></label><NumberField label="Pontos" value={standingForm.points} onChange={(value) => setStandingForm({ ...standingForm, points: value })} /><NumberField label="Jogos" value={standingForm.played} onChange={(value) => setStandingForm({ ...standingForm, played: value })} /><NumberField label="Vitorias" value={standingForm.wins} onChange={(value) => setStandingForm({ ...standingForm, wins: value })} /><NumberField label="Empates" value={standingForm.draws} onChange={(value) => setStandingForm({ ...standingForm, draws: value })} /><NumberField label="Derrotas" value={standingForm.losses} onChange={(value) => setStandingForm({ ...standingForm, losses: value })} /><NumberField label="GP" value={standingForm.goalsFor} onChange={(value) => setStandingForm({ ...standingForm, goalsFor: value, goalDiff: getGoalDiff(value, standingForm.goalsAgainst) })} /><NumberField label="GC" value={standingForm.goalsAgainst} onChange={(value) => setStandingForm({ ...standingForm, goalsAgainst: value, goalDiff: getGoalDiff(standingForm.goalsFor, value) })} /><label className="admin-field"><span>SG</span><input value={getGoalDiff(standingForm.goalsFor, standingForm.goalsAgainst)} readOnly /></label><div className="admin-panel__actions"><button type="submit">Salvar classificacao</button>{standingForm.id ? <button type="button" onClick={() => setStandingForm(emptyStandingForm())}>Cancelar</button> : null}</div></form></section><section className="admin-panel"><header><div><h2>Atualizacao via CSV</h2><p>Cole a classificacao completa e salve em lote.</p></div><div className="admin-panel__actions"><button type="button" onClick={() => setCsvText(csvSample)}>Usar modelo</button></div></header><div className="csv-editor"><textarea value={csvText} onChange={(event) => setCsvText(event.target.value)} placeholder="position;team;points;played;wins;draws;losses;goals_for;goals_against;goal_diff" /><div className="admin-panel__actions"><button type="button" onClick={previewCsv}>Pre-visualizar CSV</button><button type="button" onClick={saveCsv} disabled={!csvPreview.length}>Salvar classificacao em lote</button></div></div>{csvPreview.length ? <StandingsTable standings={csvPreview.map((row) => ({ id: row.team, ...row }))} emptyText="Sem previa." /> : null}</section><section className="table-card"><header><h2>Classificacao atual</h2></header><StandingsLegend /><StandingsTable standings={standings} /><div className="admin-list">{[...standings].sort((a, b) => a.position - b.position).map((standing) => <div key={standing.id} className="admin-list-row"><strong>{standing.position}. {standing.team}</strong><span>{standing.points} pts</span><button type="button" onClick={() => setStandingForm(standing)}>Editar</button><button type="button" onClick={() => deleteStanding(standing.id)}>Excluir</button></div>)}</div></section></div>;
+  return <div className="page-stack"><section className="admin-panel"><header><div><h2>{standingForm.id ? 'Editar classificação' : 'Nova linha da classificação'}</h2><p>Atualização individual da tabela.</p></div></header><form className="admin-fields-grid" onSubmit={onSave}><NumberField label="Posição" value={standingForm.position} onChange={(value) => setStandingForm({ ...standingForm, position: value })} min={1} /><label className="admin-field"><span>Time</span><input value={standingForm.team} onChange={(event) => setStandingForm({ ...standingForm, team: event.target.value })} required /></label><NumberField label="Pontos" value={standingForm.points} onChange={(value) => setStandingForm({ ...standingForm, points: value })} /><NumberField label="Jogos" value={standingForm.played} onChange={(value) => setStandingForm({ ...standingForm, played: value })} /><NumberField label="Vitórias" value={standingForm.wins} onChange={(value) => setStandingForm({ ...standingForm, wins: value })} /><NumberField label="Empates" value={standingForm.draws} onChange={(value) => setStandingForm({ ...standingForm, draws: value })} /><NumberField label="Derrotas" value={standingForm.losses} onChange={(value) => setStandingForm({ ...standingForm, losses: value })} /><NumberField label="GP" value={standingForm.goalsFor} onChange={(value) => setStandingForm({ ...standingForm, goalsFor: value, goalDiff: getGoalDiff(value, standingForm.goalsAgainst) })} /><NumberField label="GC" value={standingForm.goalsAgainst} onChange={(value) => setStandingForm({ ...standingForm, goalsAgainst: value, goalDiff: getGoalDiff(standingForm.goalsFor, value) })} /><label className="admin-field"><span>SG</span><input value={getGoalDiff(standingForm.goalsFor, standingForm.goalsAgainst)} readOnly /></label><div className="admin-panel__actions"><button type="submit">Salvar classificação</button>{standingForm.id ? <button type="button" onClick={() => setStandingForm(emptyStandingForm())}>Cancelar</button> : null}</div></form></section><section className="admin-panel"><header><div><h2>Atualização via CSV</h2><p>Cole a classificação completa e salve em lote.</p></div><div className="admin-panel__actions"><button type="button" onClick={() => setCsvText(csvSample)}>Usar modelo</button></div></header><div className="csv-editor"><textarea value={csvText} onChange={(event) => setCsvText(event.target.value)} placeholder="position;team;points;played;wins;draws;losses;goals_for;goals_against;goal_diff" /><div className="admin-panel__actions"><button type="button" onClick={previewCsv}>Pré-visualizar CSV</button><button type="button" onClick={saveCsv} disabled={!csvPreview.length}>Salvar classificação em lote</button></div></div>{csvPreview.length ? <StandingsTable standings={csvPreview.map((row) => ({ id: row.team, ...row }))} emptyText="Sem prévia." /> : null}</section><section className="table-card"><header><h2>Classificação atual</h2></header><StandingsLegend /><StandingsTable standings={standings} /><div className="admin-list">{[...standings].sort((a, b) => a.position - b.position).map((standing) => <div key={standing.id} className="admin-list-row"><strong>{standing.position}. {standing.team}</strong><span>{standing.points} pts</span><button type="button" onClick={() => setStandingForm(standing)}>Editar</button><button type="button" onClick={() => deleteStanding(standing.id)}>Excluir</button></div>)}</div></section></div>;
 }
 
 function CoinsAdmin({ coins, setCoinDraft, saveCoinSettings, saving, finishedRounds, selectedRewardRoundId, setSelectedRewardRoundId, processRoundRewards, processing, coinProcesses, coinTransactions, coinWallets, coinStoreItems, coinUserItems, users, rounds, loadCoinAdminData, coinAdminLoading, coinAdminLoaded, initializeCoinWallets, walletInitializing, adjustmentUserId, setAdjustmentUserId, adjustmentAmount, setAdjustmentAmount, adjustmentDescription, setAdjustmentDescription, adjustCoinWallet, adjustingWallet }: { coins: CoinSettings; setCoinDraft(value: CoinSettings): void; saveCoinSettings(): void; saving: boolean; finishedRounds: BolaoRound[]; selectedRewardRoundId: string; setSelectedRewardRoundId(value: string): void; processRoundRewards(): void; processing: boolean; coinProcesses: CoinRoundProcess[]; coinTransactions: AdminCoinTransaction[]; coinWallets: AdminCoinWallet[]; coinStoreItems: AdminStoreItem[]; coinUserItems: AdminUserStoreItem[]; users: BolaoUser[]; rounds: BolaoRound[]; loadCoinAdminData(): void; coinAdminLoading: boolean; coinAdminLoaded: boolean; initializeCoinWallets(): void; walletInitializing: boolean; adjustmentUserId: string; setAdjustmentUserId(value: string): void; adjustmentAmount: string; setAdjustmentAmount(value: string): void; adjustmentDescription: string; setAdjustmentDescription(value: string): void; adjustCoinWallet(event: FormEvent): void; adjustingWallet: boolean }) {
@@ -676,7 +679,7 @@ function CoinsAdmin({ coins, setCoinDraft, saveCoinSettings, saving, finishedRou
 
       <section className="admin-panel">
         <header>
-          <div><h2>Ajuste manual</h2><p>Registra credito ou estorno com motivo no extrato do participante.</p></div>
+          <div><h2>Ajuste manual</h2><p>Registra crédito ou estorno com motivo no extrato do participante.</p></div>
           <div className="admin-panel__actions"><button type="submit" form="coin-adjustment-form" disabled={adjustingWallet}>{adjustingWallet ? 'Ajustando...' : 'Registrar ajuste'}</button></div>
         </header>
         <form id="coin-adjustment-form" className="admin-fields-grid" onSubmit={adjustCoinWallet}>
@@ -690,18 +693,18 @@ function CoinsAdmin({ coins, setCoinDraft, saveCoinSettings, saving, finishedRou
           <label className="admin-field">
             <span>Valor</span>
             <input type="number" step="1" value={adjustmentAmount} onChange={(event) => setAdjustmentAmount(event.target.value)} placeholder="Ex: 50 ou -20" required />
-            <small>Use valor positivo para credito e negativo para estorno.</small>
+            <small>Use valor positivo para crédito e negativo para estorno.</small>
           </label>
           <label className="admin-field admin-field--wide">
             <span>Motivo</span>
-            <input value={adjustmentDescription} onChange={(event) => setAdjustmentDescription(event.target.value)} placeholder="Ex: Correcao de premiacao" required />
+            <input value={adjustmentDescription} onChange={(event) => setAdjustmentDescription(event.target.value)} placeholder="Ex: Correção de premiação" required />
           </label>
         </form>
       </section>
 
       <section className="admin-panel">
         <header>
-          <div><h2>Processar rodada</h2><p>Credita moedas por placares, bonus, ranking e participacao completa.</p></div>
+          <div><h2>Processar rodada</h2><p>Credita moedas por placares, bônus, ranking e participação completa.</p></div>
           <div className="admin-panel__actions"><button type="button" onClick={processRoundRewards} disabled={processing || !selectedRewardRoundId}>{processing ? 'Processando...' : 'Processar recompensas'}</button></div>
         </header>
         <div className="admin-fields-grid admin-fields-grid--compact"><label className="admin-field admin-field--wide"><span>Rodada finalizada</span><select value={selectedRewardRoundId} onChange={(event) => setSelectedRewardRoundId(event.target.value)}><option value="">Selecione</option>{finishedRounds.map((round) => <option key={round.id} value={round.id}>{round.name}</option>)}</select><small>Somente rodadas com todos os jogos finalizados aparecem aqui.</small></label></div>
@@ -709,17 +712,17 @@ function CoinsAdmin({ coins, setCoinDraft, saveCoinSettings, saving, finishedRou
 
       <section className="admin-panel">
         <header>
-          <div><h2>Historico de recompensas</h2><p>Consulta manual para conferir rodadas processadas e ultimos lancamentos.</p></div>
-          <div className="admin-panel__actions"><button type="button" onClick={loadCoinAdminData} disabled={coinAdminLoading}>{coinAdminLoading ? 'Carregando...' : 'Carregar historico'}</button></div>
+          <div><h2>Histórico de recompensas</h2><p>Consulta manual para conferir rodadas processadas e últimos lançamentos.</p></div>
+          <div className="admin-panel__actions"><button type="button" onClick={loadCoinAdminData} disabled={coinAdminLoading}>{coinAdminLoading ? 'Carregando...' : 'Carregar histórico'}</button></div>
         </header>
-        {!coinAdminLoaded ? <div className="empty-row">Clique em carregar historico para consultar os dados.</div> : null}
+        {!coinAdminLoaded ? <div className="empty-row">Clique em carregar histórico para consultar os dados.</div> : null}
         {coinAdminLoaded ? (
           <>
             <div className="admin-metric-grid">
               <article><span>Carteiras</span><strong>{coinWallets.length.toLocaleString('pt-BR')}</strong></article>
-              <article><span>Saldo disponivel</span><strong>{totalAvailableBalance.toLocaleString('pt-BR')}</strong></article>
+              <article><span>Saldo disponível</span><strong>{totalAvailableBalance.toLocaleString('pt-BR')}</strong></article>
               <article><span>Saldo bloqueado</span><strong>{totalLockedBalance.toLocaleString('pt-BR')}</strong></article>
-              <article><span>Total processado</span><strong>{totalProcessedAmount.toLocaleString('pt-BR')}</strong><small>{totalRecentCredits.toLocaleString('pt-BR')} nos ultimos lancamentos</small></article>
+              <article><span>Total processado</span><strong>{totalProcessedAmount.toLocaleString('pt-BR')}</strong><small>{totalRecentCredits.toLocaleString('pt-BR')} nos últimos lançamentos</small></article>
               <article><span>Itens da loja</span><strong>{coinStoreItems.length.toLocaleString('pt-BR')}</strong><small>{coinUserItems.length.toLocaleString('pt-BR')} compras registradas</small></article>
             </div>
             <div className="admin-filter-row">
@@ -728,10 +731,10 @@ function CoinsAdmin({ coins, setCoinDraft, saveCoinSettings, saving, finishedRou
                 <input value={walletSearch} onChange={(event) => setWalletSearch(event.target.value)} placeholder="Nome do participante" />
               </label>
               <label>
-                <span>Filtrar lancamentos</span>
+                <span>Filtrar lançamentos</span>
                 <select value={transactionFilter} onChange={(event) => setTransactionFilter(event.target.value as 'all' | 'credit' | 'debit')}>
                   <option value="all">Todos</option>
-                  <option value="credit">Creditos</option>
+                  <option value="credit">Créditos</option>
                   <option value="debit">Debitos</option>
                 </select>
               </label>
@@ -743,7 +746,7 @@ function CoinsAdmin({ coins, setCoinDraft, saveCoinSettings, saving, finishedRou
                   {coinProcesses.length === 0 ? <div className="empty-row">Nenhuma rodada processada.</div> : coinProcesses.map((process) => (
                     <div key={process.id} className="admin-list-row">
                       <strong>{roundNameById.get(process.roundId) || process.roundId}</strong>
-                      <span>{process.transactionsCount} lancamentos | {process.totalAmount.toLocaleString('pt-BR')} coins</span>
+                      <span>{process.transactionsCount} lançamentos | {process.totalAmount.toLocaleString('pt-BR')} coins</span>
                     </div>
                   ))}
                 </div>
@@ -753,30 +756,30 @@ function CoinsAdmin({ coins, setCoinDraft, saveCoinSettings, saving, finishedRou
                 <div className="admin-list">
                   {filteredWallets.length === 0 ? <div className="empty-row">Nenhuma carteira encontrada.</div> : filteredWallets.map((wallet) => (
                     <div key={wallet.id} className="admin-list-row">
-                      <strong>{wallet.userName || userNameById.get(wallet.userId) || 'Usuario'}</strong>
+                      <strong>{wallet.userName || userNameById.get(wallet.userId) || 'Usuário'}</strong>
                       <span>{wallet.availableBalance.toLocaleString('pt-BR')} disp. | {wallet.lockedBalance.toLocaleString('pt-BR')} bloq. | {wallet.totalBalance.toLocaleString('pt-BR')} total</span>
                     </div>
                   ))}
                 </div>
               </div>
               <div>
-                <h3>Ultimos lancamentos</h3>
+                <h3>Últimos lançamentos</h3>
                 <div className="admin-list">
-                  {filteredTransactions.length === 0 ? <div className="empty-row">Nenhum lancamento encontrado.</div> : filteredTransactions.map((transaction) => (
+                  {filteredTransactions.length === 0 ? <div className="empty-row">Nenhum lançamento encontrado.</div> : filteredTransactions.map((transaction) => (
                     <div key={transaction.id} className="admin-list-row">
-                      <strong>{userNameById.get(transaction.userId) || 'Usuario'}</strong>
+                      <strong>{userNameById.get(transaction.userId) || 'Usuário'}</strong>
                       <span>{transaction.amount.toLocaleString('pt-BR')} coins | {transaction.description}</span>
                     </div>
                   ))}
                 </div>
               </div>
               <div>
-                <h3>Loja e inventario</h3>
+                <h3>Loja e inventário</h3>
                 <div className="admin-list">
                   {coinStoreItems.length === 0 ? <div className="empty-row">Nenhum item cadastrado.</div> : coinStoreItems.map((item) => (
                     <div key={item.id} className="admin-list-row">
                       <strong>{item.name}</strong>
-                      <span>{item.price.toLocaleString('pt-BR')} coins | {item.rarity} | {item.isActive ? 'ativo' : 'inativo'}</span>
+                      <span>{item.price.toLocaleString('pt-BR')} coins | {getRarityLabel(item.rarity)} | {item.isActive ? 'ativo' : 'inativo'}</span>
                     </div>
                   ))}
                 </div>
@@ -784,7 +787,7 @@ function CoinsAdmin({ coins, setCoinDraft, saveCoinSettings, saving, finishedRou
                 <div className="admin-list">
                   {coinUserItems.length === 0 ? <div className="empty-row">Nenhuma compra registrada.</div> : coinUserItems.map((item) => (
                     <div key={item.id} className="admin-list-row">
-                      <strong>{userNameById.get(item.userId) || 'Usuario'}</strong>
+                      <strong>{userNameById.get(item.userId) || 'Usuário'}</strong>
                       <span>{itemNameById.get(item.itemId) || 'Item'} | {item.purchasedAt ? new Date(item.purchasedAt).toLocaleString('pt-BR') : '-'}</span>
                     </div>
                   ))}

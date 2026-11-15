@@ -14,6 +14,14 @@ export function getLatestRoundId(rounds: BolaoRound[]): string {
   return sorted[0]?.id || 'all';
 }
 
+/** Rodada "atual": a primeira (por numero) com jogo sem resultado; senao, a ultima. */
+export function getCurrentRoundId(rounds: BolaoRound[], matches: BolaoMatch[]): string {
+  if (!rounds.length) return '';
+  const ordered = [...rounds].sort((a, b) => getRoundNumber(a) - getRoundNumber(b));
+  const pending = ordered.find((round) => matches.some((match) => match.roundId === round.id && !match.result));
+  return (pending || ordered[ordered.length - 1]).id;
+}
+
 export function isMatchFinished(match: BolaoMatch): boolean {
   return match.result !== null && match.result !== undefined;
 }

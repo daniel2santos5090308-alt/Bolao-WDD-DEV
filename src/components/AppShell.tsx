@@ -42,12 +42,15 @@ export function AppShell({ children, currentUser, activeRoute, coinBalance, coin
         </nav>
 
         <div className="topbar__right">
-          <button type="button" className="coin-pill" onClick={() => onNavigate('coins')} aria-label="Saldo WDD Coins">
-            <i className="bi bi-coin" aria-hidden="true" />
-            <strong>{coinLoading ? '…' : coinBalance.toLocaleString('pt-BR')}</strong>
-          </button>
+          {/* Admin nao participa do bolao: sem carteira, sem saldo no topo. */}
+          {!isAdmin ? (
+            <button type="button" className="coin-pill" onClick={() => onNavigate('coins')} aria-label={coinLoading ? 'Saldo de WDD Coins: carregando' : `Saldo de WDD Coins: ${coinBalance.toLocaleString('pt-BR')}`}>
+              <i className="bi bi-coin" aria-hidden="true" />
+              <strong>{coinLoading ? '…' : coinBalance.toLocaleString('pt-BR')}</strong>
+            </button>
+          ) : null}
           <span className="topbar__user">{currentUser.name}</span>
-          <button type="button" className="ghost-button" onClick={onLogout}>
+          <button type="button" className="ghost-button" onClick={onLogout} aria-label="Sair">
             <i className="bi bi-box-arrow-right" aria-hidden="true" />
             <span>Sair</span>
           </button>

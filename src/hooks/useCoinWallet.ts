@@ -48,7 +48,7 @@ export function useCoinWallet(userId: string, seasonKey = '2027'): CoinWalletSta
       setLockedBalance(readNumber(data?.locked_balance));
     } catch (err) {
       console.error('Erro ao carregar WDD Coins:', err);
-      setError('Nao foi possivel carregar WDD Coins.');
+      setError('Não foi possível carregar WDD Coins.');
       setAvailableBalance(0);
       setLockedBalance(0);
     } finally {

@@ -6,10 +6,11 @@ import { MatchRow, type BetDraft } from '../components/MatchRow';
 import { RankingPanel } from '../components/RankingPanel';
 import { useBolaoData } from '../hooks/useBolaoData';
 import { useRanking } from '../hooks/useRanking';
-import { getRoundNumber } from '../services/matches';
+import { getCurrentRoundId, getRoundNumber } from '../services/matches';
 import { formatCountdown, formatDayLabel, formatShortDate, getKickoff, getMatchStatus, useNow } from '../services/matchTime';
 import { calculateMatchPoints, formatPoints, getScoringSettings } from '../services/scoring';
 import * as storage from '../services/storage';
+import { setUnsavedCount, unsavedMessage } from '../services/unsavedChanges';
 
 interface DashboardPageProps {
   currentUser: BolaoUser;
@@ -18,13 +19,6 @@ interface DashboardPageProps {
 
 function sortByKickoff(a: BolaoMatch, b: BolaoMatch) {
   return `${a.date}T${a.time}`.localeCompare(`${b.date}T${b.time}`);
-}
-
-/** Rodada "atual": a primeira com jogo nao finalizado; senao, a ultima. */
-function getCurrentRoundId(rounds: BolaoRound[], matches: BolaoMatch[]): string {
-  if (!rounds.length) return '';
-  const pending = rounds.find((round) => matches.some((match) => match.roundId === round.id && !match.result));
-  return (pending || rounds[rounds.length - 1]).id;
 }
 
 function draftFromBet(bet: BolaoBet | null | undefined): BetDraft {
@@ -103,7 +97,8 @@ export function DashboardPage({ currentUser, onNavigate }: DashboardPageProps) {
     return draft.home !== '' && draft.away !== '' && (draft.home !== saved.home || draft.away !== saved.away);
   }
 
-  const dirtyMatches = roundMatches.filter((match) => {
+  // Todas as rodadas: trocar de rodada nao pode esconder palpite digitado.
+  const dirtyMatches = matches.filter((match) => {
     const status = getMatchStatus(match, now);
     return (status === 'open' || status === 'closing') && isDirty(match);
   });
@@ -111,6 +106,21 @@ export function DashboardPage({ currentUser, onNavigate }: DashboardPageProps) {
     const draft = drafts[match.id];
     return draft && (draft.home === '') !== (draft.away === '');
   }).length;
+  const dirtyElsewhere = dirtyMatches.filter((match) => match.roundId !== selectedRoundId).length;
+  const unsaved = dirtyMatches.length;
+
+  useEffect(() => {
+    setUnsavedCount(unsaved);
+    if (!unsaved) return;
+    function warn(event: BeforeUnloadEvent) {
+      event.preventDefault();
+      event.returnValue = unsavedMessage(unsaved);
+    }
+    window.addEventListener('beforeunload', warn);
+    return () => window.removeEventListener('beforeunload', warn);
+  }, [unsaved]);
+
+  useEffect(() => () => setUnsavedCount(0), []);
 
   async function saveAll() {
     if (!dirtyMatches.length) return;
@@ -155,8 +165,8 @@ export function DashboardPage({ currentUser, onNavigate }: DashboardPageProps) {
     }
   }
 
-  const { ranking: generalRanking } = useRanking(null, data?.version);
-  const { ranking: roundRanking } = useRanking(selectedRoundId || null, data?.version);
+  const { ranking: generalRanking, loading: generalLoading } = useRanking(null, data?.version);
+  const { ranking: roundRanking, loading: roundLoading } = useRanking(selectedRoundId || null, data?.version);
   const roundLeaders = roundRanking.filter((item) => item.position === 1 && item.points > 0);
 
   // Agrupa por dia
@@ -266,6 +276,7 @@ export function DashboardPage({ currentUser, onNavigate }: DashboardPageProps) {
             <div className="save-bar">
               <span>
                 {dirtyMatches.length ? `${dirtyMatches.length} ${dirtyMatches.length === 1 ? 'palpite não salvo' : 'palpites não salvos'}` : ''}
+                {dirtyElsewhere ? ` (${dirtyElsewhere} em ${dirtyElsewhere === 1 ? 'outra rodada' : 'outras rodadas'})` : ''}
                 {incompleteDrafts ? `${dirtyMatches.length ? ' · ' : ''}${incompleteDrafts} incompleto${incompleteDrafts > 1 ? 's' : ''}` : ''}
               </span>
               <button type="button" className="primary-button" onClick={saveAll} disabled={saving || !dirtyMatches.length}>
@@ -280,6 +291,7 @@ export function DashboardPage({ currentUser, onNavigate }: DashboardPageProps) {
             title="Ranking da rodada"
             tone="round"
             ranking={roundRanking}
+            loading={roundLoading || (loading && !data)}
             currentUserId={currentUser.id}
             summary={roundLeaders.length
               ? `${roundLeaders.length > 1 ? 'Melhores' : 'Melhor'} da rodada: ${roundLeaders.map((item) => item.name).join(', ')} (${formatPoints(roundLeaders[0].points)} pts)`
@@ -290,6 +302,7 @@ export function DashboardPage({ currentUser, onNavigate }: DashboardPageProps) {
             title="Ranking geral"
             tone="general"
             ranking={generalRanking}
+            loading={generalLoading || (loading && !data)}
             currentUserId={currentUser.id}
             onDetails={setDetailsUser}
             onSeeAll={() => onNavigate('ranking')}

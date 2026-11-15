@@ -67,6 +67,18 @@ export function DetailsModal({ user, data, roundId, onClose }: DetailsModalProps
     };
   }, [user, data, roundId]);
 
+  // Trava a rolagem do fundo e devolve o foco a quem abriu o extrato.
+  useEffect(() => {
+    if (!user) return;
+    const opener = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      opener?.focus();
+    };
+  }, [user]);
+
   useEffect(() => {
     if (!user) return;
     function handleKey(event: KeyboardEvent) {
@@ -93,7 +105,7 @@ export function DetailsModal({ user, data, roundId, onClose }: DetailsModalProps
           <span><strong>{user.bonusHits}</strong> bônus</span>
         </div>
         <div className="details-list">
-          {loading ? <div className="details-item"><span>Carregando extrato...</span></div> : null}
+          {loading ? <div className="details-item"><span>Carregando extrato…</span></div> : null}
           {error ? <div className="details-item"><span>{error}</span></div> : null}
           {!loading && !error && rows.length === 0 ? <div className="details-item"><span>Nenhum palpite registrado.</span></div> : null}
           {rows.map(({ match, bet, result }) => {

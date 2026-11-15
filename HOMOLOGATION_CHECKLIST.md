@@ -7,7 +7,7 @@ Use este checklist antes de considerar o ambiente DEV pronto para publicação.
 - Confirmar backup recente do banco atual.
 - Confirmar que o ambiente em teste é o Supabase DEV `BolaoWDDDEV`.
 - Confirmar que a pasta publicada será somente `public/`.
-- Confirmar que `.env.e2e`, backups JSON e arquivos SQL não serão publicados.
+- Confirmar que backups JSON e arquivos SQL não serão publicados (o Netlify publica só `dist/`).
 
 ## Validação Técnica
 
@@ -17,26 +17,16 @@ npm run validate
 
 Resultado esperado:
 
-- 9 testes unitários/estáticos passando.
+- Todos os testes unitários passando (`npm test`).
 - `npm audit` com 0 vulnerabilidades.
 
 ## Validação E2E
-
-Criar `.env.e2e` a partir de `.env.e2e.example` e preencher as senhas locais.
 
 ```bash
 npm run test:e2e
 ```
 
-Resultado esperado:
-
-- Login admin realizado.
-- Rodada de teste criada.
-- Jogo de teste criado e editado.
-- Login de usuário realizado.
-- Aposta registrada.
-- Placar salvo pelo admin.
-- Jogo e rodada de teste excluídos.
+Resultado esperado: todos os testes passando nos projetos `desktop` e `celular`. Usa Supabase simulado, então não altera dados do DEV.
 
 Para assistir ao navegador:
 

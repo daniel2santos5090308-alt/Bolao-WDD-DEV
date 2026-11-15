@@ -69,7 +69,7 @@ export function useCoinTransactions(userId: string, seasonKey = '2027', pageSize
       setHasLoaded(true);
     } catch (err) {
       console.error('Erro ao carregar extrato WDD Coins:', err);
-      setError('Nao foi possivel carregar o extrato.');
+      setError('Não foi possível carregar o extrato.');
     } finally {
       setLoading(false);
     }

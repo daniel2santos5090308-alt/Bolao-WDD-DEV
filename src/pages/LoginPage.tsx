@@ -8,6 +8,7 @@ interface LoginPageProps {
 export function LoginPage({ onLogin }: LoginPageProps) {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
@@ -54,22 +55,33 @@ export function LoginPage({ onLogin }: LoginPageProps) {
           />
         </label>
 
-        <label className="admin-field">
-          <span>Senha</span>
-          <input
-            id="password"
-            type="password"
-            autoComplete="current-password"
-            value={password}
-            onChange={(event) => setPassword(event.target.value)}
-            required
-          />
-        </label>
+        <div className="admin-field">
+          <label htmlFor="password"><span>Senha</span></label>
+          <div className="password-field">
+            <input
+              id="password"
+              type={showPassword ? 'text' : 'password'}
+              autoComplete="current-password"
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+              required
+            />
+            <button
+              type="button"
+              className="password-field__toggle"
+              onClick={() => setShowPassword((value) => !value)}
+              aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
+              aria-pressed={showPassword}
+            >
+              <i className={`bi ${showPassword ? 'bi-eye-slash' : 'bi-eye'}`} aria-hidden="true" />
+            </button>
+          </div>
+        </div>
 
         {error ? <div id="loginError" className="error-banner" role="alert">{error}</div> : null}
 
         <button type="submit" className="primary-button" disabled={submitting}>
-          {submitting ? 'Entrando...' : 'Entrar'}
+          {submitting ? 'Entrando…' : 'Entrar'}
         </button>
       </form>
     </main>

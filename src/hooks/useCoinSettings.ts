@@ -81,8 +81,8 @@ export function useCoinSettings(seasonKey = '2027') {
 
       setSettings(mapSettings(data));
     } catch (err) {
-      console.error('Erro ao carregar configuracoes WDD Coins:', err);
-      setError('Nao foi possivel carregar as configuracoes.');
+      console.error('Erro ao carregar configurações WDD Coins:', err);
+      setError('Não foi possível carregar as configurações.');
     } finally {
       setLoading(false);
     }
@@ -98,7 +98,7 @@ export function useCoinSettings(seasonKey = '2027') {
 
       const values = Object.values(nextSettings).filter((value) => typeof value === 'number');
       if (values.some((value) => Number(value) < 0)) {
-        throw new Error('Os valores nao podem ser negativos.');
+        throw new Error('Os valores não podem ser negativos.');
       }
 
       const { error: saveError } = await supabaseClient
@@ -108,11 +108,11 @@ export function useCoinSettings(seasonKey = '2027') {
       if (saveError) throw saveError;
 
       setSettings(nextSettings);
-      setSavedMessage('Configuracoes salvas.');
+      setSavedMessage('Configurações salvas.');
       return true;
     } catch (err) {
-      console.error('Erro ao salvar configuracoes WDD Coins:', err);
-      setError(err instanceof Error ? err.message : 'Nao foi possivel salvar as configuracoes.');
+      console.error('Erro ao salvar configurações WDD Coins:', err);
+      setError(err instanceof Error ? err.message : 'Não foi possível salvar as configurações.');
       return false;
     } finally {
       setSaving(false);
