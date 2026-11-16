@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import type { FormEvent } from 'react';
 import type { CoinSettings } from '../hooks/useCoinSettings';
+import { SeasonsAdmin } from '../components/SeasonsAdmin';
 import { StandingsLegend, StandingsTable } from '../components/StandingsTable';
 import { useBolaoData } from '../hooks/useBolaoData';
 import { useCoinSettings } from '../hooks/useCoinSettings';
@@ -10,7 +11,7 @@ import * as storage from '../services/storage';
 import { requireSupabase } from '../services/supabase';
 import { generateId } from '../services/utils';
 
-type AdminTab = 'jogos' | 'pontuacao' | 'classificacao' | 'coins';
+type AdminTab = 'jogos' | 'pontuacao' | 'classificacao' | 'coins' | 'temporadas';
 
 interface CoinRoundProcess {
   id: string;
@@ -167,8 +168,8 @@ function emptyStandingForm(): BolaoStanding {
 
 export function AdminPage() {
   const bolaoData = useBolaoData();
-  const coinSettings = useCoinSettings('2027');
   const data = bolaoData.data;
+  const coinSettings = useCoinSettings(data?.season?.key || '');
 
   const [activeTab, setActiveTab] = useState<AdminTab>('jogos');
   const [message, setMessage] = useState('');
@@ -578,12 +579,12 @@ export function AdminPage() {
   return (
     <section className="admin-page">
       <div className="admin-hero">
-        <div><span className="eyebrow">Administração</span><h1>Painel admin</h1><p>Jogos, placares, pontuação, tabela do campeonato e WDD Coins.</p></div>
+        <div><span className="eyebrow">Administração</span><h1>Painel admin</h1><p>Jogos, placares, pontuação, tabela do campeonato, WDD Coins e temporadas.</p></div>
         <div className="hero-actions"><button type="button" onClick={refresh} disabled={bolaoData.loading}>Atualizar</button><button type="button" onClick={exportBackup}>Exportar JSON</button></div>
       </div>
 
       <nav className="admin-tabs">
-        {([['jogos', 'Jogos'], ['pontuacao', 'Pontuação'], ['classificacao', 'Classificação'], ['coins', 'WDD Coins']] as Array<[AdminTab, string]>).map(([id, label]) => (
+        {([['jogos', 'Jogos'], ['pontuacao', 'Pontuação'], ['classificacao', 'Classificação'], ['coins', 'WDD Coins'], ['temporadas', 'Temporadas']] as Array<[AdminTab, string]>).map(([id, label]) => (
           <button key={id} type="button" className={activeTab === id ? 'is-active' : ''} onClick={() => setActiveTab(id)}>{label}</button>
         ))}
       </nav>
@@ -623,6 +624,7 @@ export function AdminPage() {
 
       {activeTab === 'pontuacao' ? <ScoringAdmin scoring={scoring} onChange={setScoringDraft} onSave={saveScoring} /> : null}
       {activeTab === 'classificacao' ? <StandingsAdmin standingForm={standingForm} setStandingForm={setStandingForm} onSave={handleSaveStanding} csvText={csvText} setCsvText={setCsvText} csvPreview={csvPreview} previewCsv={previewCsv} saveCsv={saveCsv} standings={standings} deleteStanding={deleteStanding} /> : null}
+      {activeTab === 'temporadas' ? <SeasonsAdmin onNotify={notify} onFail={fail} /> : null}
       {activeTab === 'coins' ? <CoinsAdmin coins={coins} setCoinDraft={setCoinDraft} saveCoinSettings={saveCoinSettings} saving={coinSettings.saving} finishedRounds={finishedRounds} selectedRewardRoundId={selectedRewardRoundId} setSelectedRewardRoundId={setSelectedRewardRoundId} processRoundRewards={processRoundRewards} processing={processing} coinProcesses={coinProcesses} coinTransactions={coinTransactions} coinWallets={coinWallets} coinStoreItems={coinStoreItems} coinUserItems={coinUserItems} users={data?.users || []} rounds={rounds} loadCoinAdminData={loadCoinAdminData} coinAdminLoading={coinAdminLoading} coinAdminLoaded={coinAdminLoaded} initializeCoinWallets={initializeCoinWallets} walletInitializing={walletInitializing} adjustmentUserId={adjustmentUserId} setAdjustmentUserId={setAdjustmentUserId} adjustmentAmount={adjustmentAmount} setAdjustmentAmount={setAdjustmentAmount} adjustmentDescription={adjustmentDescription} setAdjustmentDescription={setAdjustmentDescription} adjustCoinWallet={adjustCoinWallet} adjustingWallet={adjustingWallet} /> : null}
     </section>
   );

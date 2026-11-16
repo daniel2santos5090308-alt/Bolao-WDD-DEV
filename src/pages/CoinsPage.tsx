@@ -9,6 +9,7 @@ import { getItemTypeLabel, getRarityLabel } from '../services/coinLabels';
 
 interface CoinsPageProps {
   currentUser: BolaoUser;
+  seasonKey: string;
   availableBalance: number;
   lockedBalance: number;
   walletLoading: boolean;
@@ -105,14 +106,15 @@ function StoreItemCard({ item, owned, availableBalance, purchasing, onPurchase }
 
 export function CoinsPage({
   currentUser,
+  seasonKey,
   availableBalance,
   lockedBalance,
   walletLoading,
   walletError,
   onWalletRefresh
 }: CoinsPageProps) {
-  const transactions = useCoinTransactions(currentUser.id, '2027');
-  const store = useCoinStore(currentUser.id, '2027');
+  const transactions = useCoinTransactions(currentUser.id, seasonKey);
+  const store = useCoinStore(currentUser.id, seasonKey);
   const [transactionFilter, setTransactionFilter] = useState<'all' | 'credit' | 'debit'>('all');
   const totalBalance = availableBalance + lockedBalance;
   const loadedTransactions = transactions.transactions;

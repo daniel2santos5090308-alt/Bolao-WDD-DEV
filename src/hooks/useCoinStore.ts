@@ -50,7 +50,7 @@ function mapUserItem(row: Record<string, unknown>): CoinUserItem {
   };
 }
 
-export function useCoinStore(userId: string, seasonKey = '2027') {
+export function useCoinStore(userId: string, seasonKey: string) {
   const [items, setItems] = useState<CoinStoreItem[]>([]);
   const [inventory, setInventory] = useState<CoinUserItem[]>([]);
   const [loading, setLoading] = useState(false);
@@ -66,6 +66,7 @@ export function useCoinStore(userId: string, seasonKey = '2027') {
       setHasLoaded(true);
       return;
     }
+    if (!seasonKey) return;
 
     setLoading(true);
     setError('');

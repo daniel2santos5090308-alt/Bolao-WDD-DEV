@@ -4,6 +4,8 @@ import { appRoutes, type AppRoute } from '../app/routes';
 interface AppShellProps {
   children: ReactNode;
   currentUser: BolaoUser;
+  /** Nome da temporada ativa, por exemplo "Brasileirão 2027". */
+  seasonName: string;
   activeRoute: AppRoute;
   coinBalance: number;
   coinLoading?: boolean;
@@ -11,7 +13,7 @@ interface AppShellProps {
   onLogout(): void | Promise<void>;
 }
 
-export function AppShell({ children, currentUser, activeRoute, coinBalance, coinLoading = false, onNavigate, onLogout }: AppShellProps) {
+export function AppShell({ children, currentUser, seasonName, activeRoute, coinBalance, coinLoading = false, onNavigate, onLogout }: AppShellProps) {
   const isAdmin = currentUser.role === 'admin';
   const visibleRoutes = appRoutes.filter((route) => !route.adminOnly || isAdmin);
 
@@ -22,7 +24,7 @@ export function AppShell({ children, currentUser, activeRoute, coinBalance, coin
           <span className="brand__mark">WDD</span>
           <span className="brand__text">
             <strong>Bolão WDD</strong>
-            <small>Série A 2027</small>
+            <small>{seasonName || 'Brasileirão'}</small>
           </span>
         </button>
 

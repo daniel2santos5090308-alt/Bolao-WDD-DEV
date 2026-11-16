@@ -57,14 +57,19 @@ function createState() {
   return {
     matches: buildMatches(),
     savedBets: [],
-    calls: []
+    calls: [],
+    seasons: [
+      { key: '2026', name: 'Brasileirão 2026', starts_on: null, ends_on: '2026-12-06', is_active: false },
+      { key: '2027', name: 'Brasileirão 2027', starts_on: '2027-01-27', ends_on: null, is_active: true }
+    ]
   };
 }
 
 function snapshotFor(state, userId) {
+  const active = state.seasons.find((season) => season.is_active);
   return {
     version: 1,
-    season: { key: '2027', name: 'Brasileirão 2027' },
+    season: active ? { key: active.key, name: active.name } : null,
     profiles: users,
     rounds: ['r1', 'r2', 'r3', 'r4'].map((id, index) => ({ id, name: `Rodada ${index + 1}`, number: index + 1, season_key: '2027' })),
     matches: state.matches,
@@ -172,6 +177,24 @@ async function installMockSupabase(context, options = {}) {
     if (path === '/rest/v1/rpc/get_app_snapshot') return json(snapshotFor(state, currentUserId));
     if (path === '/rest/v1/rpc/get_ranking') return json(ranking);
     if (path === '/rest/v1/rpc/get_ranking_history') return json([]);
+    if (path === '/rest/v1/rpc/create_season') {
+      if (state.seasons.some((season) => season.key === body.p_key)) {
+        return json({ code: 'P0001', message: `A temporada ${body.p_key} já existe` }, 400);
+      }
+      const created = { key: body.p_key, name: body.p_name || `Brasileirão ${body.p_key}`, starts_on: body.p_starts_on, ends_on: null, is_active: false };
+      state.seasons.push(created);
+      return json(created);
+    }
+    if (path === '/rest/v1/rpc/activate_season') {
+      const target = state.seasons.find((season) => season.key === body.p_key);
+      if (!target) return json({ code: 'P0001', message: 'Temporada não encontrada' }, 400);
+      state.seasons.forEach((season) => {
+        if (season.is_active && season !== target) season.ends_on = season.ends_on || '2027-12-08';
+        season.is_active = season === target;
+      });
+      target.ends_on = null;
+      return json(target);
+    }
     if (path === '/rest/v1/rpc/get_season_bets') return json(state.savedBets.filter((bet) => !body?.p_user_id || bet.user_id === body.p_user_id));
 
     const table = path.replace('/rest/v1/', '');
@@ -187,6 +210,7 @@ async function installMockSupabase(context, options = {}) {
 
     const tables = {
       app_meta: [{ id: 1, version: 1 }],
+      seasons: state.seasons,
       profiles: users,
       coin_wallet_summary: users.filter((user) => user.role !== 'admin').map((user) => ({
         id: `w-${user.id}`, user_id: user.id, user_name: user.name, season_key: '2027', available_balance: 130, locked_balance: 0, total_balance: 130

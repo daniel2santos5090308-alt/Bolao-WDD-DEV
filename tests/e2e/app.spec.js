@@ -35,6 +35,7 @@ test.describe('login', () => {
 
     await expect(page.getByRole('heading', { name: 'Rodada 3' })).toBeVisible();
     await expect(page.getByRole('button', { name: /^Saldo de WDD Coins/ })).toBeVisible();
+    await expect(page.locator('.brand__text small')).toHaveText('Brasileirão 2027');
   });
 
   test('admin entra direto no painel e não tem carteira', async ({ page, context }) => {
@@ -145,6 +146,43 @@ test.describe('participante', () => {
 });
 
 test.describe('admin', () => {
+  test('cria e ativa a temporada seguinte', async ({ page, context }) => {
+    const state = await installMockSupabase(context, { loggedInAs: 'admin' });
+    await page.goto('/#/admin');
+    await expect(page.getByText('Brasileirão 2027').first()).toBeVisible();
+
+    await page.getByRole('button', { name: 'Temporadas' }).click();
+    const list = page.locator('.admin-panel', { has: page.getByRole('heading', { name: 'Temporadas' }) });
+    await expect(list.locator('.season-row')).toHaveCount(2);
+    await expect(list.locator('.season-row', { hasText: 'Brasileirão 2027' }).getByText('Ativa')).toBeVisible();
+
+    await page.getByLabel('Ano', { exact: true }).fill('2028');
+    await page.getByRole('button', { name: 'Criar temporada' }).click();
+    await expect(page.getByText('Temporada Brasileirão 2028 criada.')).toBeVisible();
+    const row2028 = list.locator('.season-row', { hasText: 'Brasileirão 2028' });
+    await expect(row2028).toBeVisible();
+
+    page.once('dialog', (dialog) => {
+      expect(dialog.message()).toContain('Brasileirão 2027 será encerrada hoje');
+      return dialog.accept();
+    });
+    await row2028.getByRole('button', { name: 'Ativar' }).click();
+
+    // Recarrega e passa a mostrar 2028
+    await expect(page.locator('.brand__text small')).toHaveText('Brasileirão 2028');
+    expect(state.seasons.find((season) => season.is_active).key).toBe('2028');
+  });
+
+  test('ano inválido não chega ao banco', async ({ page, context }) => {
+    const state = await installMockSupabase(context, { loggedInAs: 'admin' });
+    await page.goto('/#/admin');
+    await page.getByRole('button', { name: 'Temporadas' }).click();
+    await page.getByLabel('Ano', { exact: true }).fill('2027');
+    await page.getByRole('button', { name: 'Criar temporada' }).click();
+    await expect(page.getByText('A temporada 2027 já existe.')).toBeVisible();
+    expect(state.calls.filter((call) => call.endsWith('/rpc/create_season'))).toHaveLength(0);
+  });
+
   test('lista de jogos abre na rodada atual', async ({ page, context }) => {
     await installMockSupabase(context, { loggedInAs: 'admin' });
     await page.goto('/#/admin');

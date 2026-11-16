@@ -354,3 +354,25 @@ test('unsavedChanges: pergunta só com palpite pendente e zera ao confirmar', as
   assert.match(unsavedMessage(1), /1 palpite não salvo\. .*esse palpite\?/);
   assert.match(unsavedMessage(3), /3 palpites não salvos\. .*esses palpites\?/);
 });
+
+test('seasons: valida o ano, nome padrao, datas e ordem', async () => {
+  const { validateSeasonKey, defaultSeasonName, formatIsoDate, describeSeasonPeriod, sortSeasons } = await import('../src/services/seasons.ts');
+  const existing = [
+    { key: '2026', name: 'Brasileirão 2026', startsOn: null, endsOn: '2026-12-06', isActive: false },
+    { key: '2027', name: 'Brasileirão 2027', startsOn: '2027-01-27', endsOn: null, isActive: true }
+  ];
+
+  assert.equal(validateSeasonKey('2028', existing), '');
+  assert.equal(validateSeasonKey(' 2028 ', existing), '');
+  assert.match(validateSeasonKey('28', existing), /4 dígitos/);
+  assert.match(validateSeasonKey('abcd', existing), /4 dígitos/);
+  assert.equal(validateSeasonKey('2027', existing), 'A temporada 2027 já existe.');
+
+  assert.equal(defaultSeasonName('2028'), 'Brasileirão 2028');
+  assert.equal(formatIsoDate('2027-01-27'), '27/01/2027');
+  assert.equal(formatIsoDate(null), '');
+  assert.equal(describeSeasonPeriod(existing[0]), 'Encerrada em 06/12/2026');
+  assert.equal(describeSeasonPeriod(existing[1]), 'Desde 27/01/2027');
+  assert.equal(describeSeasonPeriod({ ...existing[1], endsOn: '2027-12-08' }), '27/01/2027 a 08/12/2027');
+  assert.deepEqual(sortSeasons(existing).map((season) => season.key), ['2027', '2026']);
+});

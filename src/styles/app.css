@@ -2095,3 +2095,10 @@ textarea {
     font-size: 1.4rem;
   }
 }
+
+/* ---------- Admin: temporadas ---------- */
+.season-row__info {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
