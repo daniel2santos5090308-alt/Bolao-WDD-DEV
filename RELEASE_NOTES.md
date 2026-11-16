@@ -1,5 +1,30 @@
 # Release Notes
 
+## v3.5.0-dev - 2026-11-16
+
+Fase 5: temporadas sem ano fixo no código. Somente DEV; produção recebe na janela de 23–24/01/2027, já como instalação limpa da temporada 2027.
+
+### Temporadas
+
+- Nova aba **Temporadas** no admin: lista as temporadas (ativa, período), cria a do próximo ano e ativa.
+- Criar copia as premiações de WDD Coins e o catálogo da loja da temporada ativa; saldos e itens comprados não são copiados. A temporada nasce desativada.
+- Ativar encerra a anterior com a data de hoje, prepara as carteiras dos participantes e recarrega o app; todos passam a ver a nova temporada em Jogos, Ranking, Tabela e WDD Coins.
+- WDD Coins (saldo do topo, loja, extrato e premiações do admin) e o nome no topo agora seguem a temporada ativa. Não há mais `2027` fixo no app.
+
+### Banco de dados
+
+- `20261118100000_season_admin.sql` (pendente no DEV): funções `create_season` e `activate_season`, só para admin.
+- Teste `supabase/tests/fase5_check.sql` (15 verificações, não grava nada).
+
+### CI
+
+- Novo job **Banco do zero**: sobe um Supabase local vazio, aplica todas as migrations em ordem e roda os testes SQL das Fases 0, 1, 2 e 5. Qualquer migration quebrada ou teste com FALHOU reprova o PR.
+
+### Testes
+
+- E2E: 14 fluxos × desktop e celular (28 testes). Novos: criar e ativar a temporada seguinte; ano repetido não chega ao banco; nome da temporada no topo.
+- 18 testes unitários (novo: regras de temporada).
+
 ## v3.4.0-dev - 2026-11-15
 
 Fase 4 (UX), segunda parte: telas do participante (Jogos, Ranking, Tabela e Login). Somente DEV; produção recebe na janela de 23–24/01/2027. Sem migration nova.
