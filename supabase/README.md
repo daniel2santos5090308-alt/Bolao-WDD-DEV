@@ -13,12 +13,12 @@ Fonte oficial do schema a partir de 2026-11. A pasta `Querys/` fica só como his
 
 | Migration | O que faz | DEV | PROD |
 |---|---|---|---|
-| `20261101000000_baseline.sql` | Tabelas principais, `is_admin`, RLS | já existia | já existia |
-| `20261101000100_coins_schema.sql` | Carteira, extrato, configurações de Coins | já existia | — |
-| `20261101000200_coins_wallet_init.sql` | Inicialização de carteiras | já existia | — |
-| `20261101000300_coins_admin_adjustment.sql` | Ajuste manual auditado | já existia | — |
-| `20261101000400_coins_round_rewards.sql` | Prêmios por rodada (versão antiga) | já existia | — |
-| `20261101000500_coins_store.sql` | Loja e inventário | já existia | — |
+| `20261101000000_baseline.sql` | Tabelas principais, `is_admin`, RLS | já existia | jan/2027 (reinstalação) |
+| `20261101000100_coins_schema.sql` | Carteira, extrato, configurações de Coins | já existia | jan/2027 |
+| `20261101000200_coins_wallet_init.sql` | Inicialização de carteiras | já existia | jan/2027 |
+| `20261101000300_coins_admin_adjustment.sql` | Ajuste manual auditado | já existia | jan/2027 |
+| `20261101000400_coins_round_rewards.sql` | Prêmios por rodada (versão antiga) | já existia | jan/2027 |
+| `20261101000500_coins_store.sql` | Loja e inventário | já existia | jan/2027 |
 | `20261114120000_fix_get_visible_bets.sql` | Fase 0: fuso horário + bloqueio anon | ✅ 2026-11-14 | jan/2027 |
 | `20261115100000_fix_bets_rls_is_admin.sql` | Fase 1: remove leitura direta de bets em UTC, `is_admin` definer, índices | ✅ 2026-11-15 | jan/2027 |
 | `20261115110000_seasons.sql` | Fase 1: temporadas; dados atuais = 2026, ativa = 2027 | ✅ 2026-11-15 | jan/2027 |
@@ -28,8 +28,9 @@ Fonte oficial do schema a partir de 2026-11. A pasta `Querys/` fica só como his
 | `20261116110000_ranking_history.sql` | Visual novo: histórico do ranking (setas, últimas rodadas, corrida pelo título) | ✅ 2026-11-16 | jan/2027 |
 | `20261116120000_season_names.sql` | Nome das temporadas com acento | ✅ 2026-11-16 | jan/2027 |
 | `20261117100000_coin_texts_accents.sql` | Fase 4: textos de WDD Coins com acento (extrato, erros, item da loja) | ✅ 2026-11-15 | jan/2027 |
+| `20261118100000_season_admin.sql` | Fase 5: admin cria e ativa temporadas (`create_season`, `activate_season`) | pendente | jan/2027 |
 
-Banco novo do zero: rode todas na ordem acima.
+Banco novo do zero: rode todas na ordem acima. É assim que a produção será instalada em jan/2027 (instalação limpa, sem o histórico de 2026). O CI confere isso em todo PR: o job **Banco do zero** sobe um Supabase local vazio, aplica todas as migrations e roda os testes abaixo.
 
 > A partir da Fase 2, o front depende de `get_app_snapshot`, `get_ranking`, `get_season_bets` e `app_meta`. Publicar o front novo **só depois** de aplicar as migrations no mesmo ambiente.
 
@@ -40,6 +41,9 @@ Banco novo do zero: rode todas na ordem acima.
 | `tests/fase0_get_visible_bets_check.sql` | Depois da Fase 0 |
 | `tests/fase1_check.sql` | Depois das 4 migrations da Fase 1 |
 | `tests/fase2_check.sql` | Depois da migration da Fase 2 |
+| `tests/fase5_check.sql` | Depois da migration da Fase 5 |
+
+`tests/ci_seed.sql` é só do CI (cria 2 participantes fictícios num banco vazio). Nunca rode no DEV nem no PROD.
 
 ## Consumo (Supabase Free)
 
