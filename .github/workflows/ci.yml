@@ -32,6 +32,20 @@ jobs:
       - run: npm audit --audit-level=high
       - run: npx vite build
 
+  banco:
+    name: Banco do zero (migrations + testes SQL)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      # Sobe um Postgres local vazio e aplica supabase/migrations em ordem:
+      # se alguma migration falhar, o job para aqui.
+      - run: supabase db start
+      - run: bash scripts/ci-db-check.sh
+
   e2e:
     name: E2E (desktop e celular)
     needs: validar
