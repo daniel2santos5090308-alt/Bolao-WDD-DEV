@@ -1,5 +1,31 @@
 # Release Notes
 
+## v3.8.0-dev - 2026-11-16
+
+Fase 8: app instalável (PWA). Somente DEV; sem migration. Fecha o Bloco A de desenvolvimento antes da publicação (Fase 9).
+
+### Instalar no celular
+
+- Ícone WDD na tela inicial, abre em tela cheia, com a cor do app na barra do sistema.
+- Android (Chrome): Perfil → **App no celular** → **Instalar app**. iPhone: o mesmo cartão mostra o caminho no Safari (Compartilhar → Adicionar à Tela de Início). Com o app instalado, o cartão confirma "Você está usando o app instalado".
+- Ícones 192, 512 e "maskable" (recorte do Android) e ícone do iPhone, gerados por `scripts/generate-icons.mjs` a partir da marca do topo.
+
+### Rápido e sem internet
+
+- Service worker: a página vem da rede quando há conexão e, sem conexão, da última cópia; arquivos do app (com hash no nome) vêm do cache. Sem internet, o app abre e mostra os últimos dados carregados.
+- Nunca guarda dados: Supabase, fontes, `runtime-config.js` e `version.json` sempre vão para a rede. Cada deploy tem seu cache; o anterior é apagado.
+
+### Nova versão
+
+- Cada build gera um identificador (`/version.json`). O app confere ao abrir, a cada 10 minutos e ao voltar para a tela; se houver deploy novo, mostra **"Nova versão do Bolão WDD disponível"** com o botão **Atualizar o app**. A verificação é um arquivo de poucos bytes no Netlify, não consome o Supabase.
+- `netlify.toml`: `sw.js`, `version.json`, manifesto e `runtime-config.js` sem cache; `/assets` com cache de 1 ano (nomes com hash).
+
+### Testes
+
+- `scripts/test-pwa.mjs` (13 verificações no build de produção): manifesto e ícones, critério de instalação do Chrome, service worker no controle, abertura sem internet, nada do Supabase no cache e o aviso de nova versão. Roda também no CI (job E2E).
+- E2E: 36 testes; 26 testes unitários (novo: regras de versão e de iPhone).
+- Checklist de homologação ganhou os passos das Fases 5 a 8, incluindo instalar num Android e num iPhone de verdade.
+
 ## v3.7.0-dev - 2026-11-16
 
 Fase 7: participantes gerenciados pelo app, sem entrar no painel do Supabase. Somente DEV; produção recebe na janela de 23–24/01/2027.
