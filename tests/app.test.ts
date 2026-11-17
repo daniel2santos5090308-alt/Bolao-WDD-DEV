@@ -530,3 +530,19 @@ test('participants: usuario sugerido, validacoes e senha provisoria', async () =
   ]);
   assert.deepEqual(sorted.map((item) => item.id), ['a', 'b', 'c']);
 });
+
+/* ---------- Fase 8: app instalavel ---------- */
+
+test('pwa: aviso de nova versao so com build diferente e fora do modo dev', async () => {
+  const { isNewBuild, isIos } = await import('../src/pwa/pwa.ts');
+  assert.equal(isNewBuild('abc', 'def'), true);
+  assert.equal(isNewBuild('abc', 'abc'), false);
+  assert.equal(isNewBuild('abc', null), false);
+  assert.equal(isNewBuild('abc', ''), false);
+  assert.equal(isNewBuild('dev', 'def'), false);
+
+  assert.equal(isIos('Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X)', 5), true);
+  assert.equal(isIos('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)', 5), true);
+  assert.equal(isIos('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)', 0), false);
+  assert.equal(isIos('Mozilla/5.0 (Linux; Android 15; Pixel 7)', 5), false);
+});

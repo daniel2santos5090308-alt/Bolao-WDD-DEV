@@ -2203,3 +2203,32 @@ textarea {
 .participant-row__reset {
   flex-basis: 100%;
 }
+
+/* ---------- App instalavel: nova versao e instalacao ---------- */
+.update-banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 10px 14px;
+  border-bottom: 1px solid rgba(242, 193, 78, 0.35);
+  background: var(--gold-soft);
+  padding: 8px var(--gutter);
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.update-banner .bi {
+  color: var(--gold);
+}
+
+.install-card p {
+  margin: 0;
+  color: var(--text-2);
+}
+
+.install-card ol {
+  margin: 0;
+  padding-left: 20px;
+  color: var(--text-2);
+}

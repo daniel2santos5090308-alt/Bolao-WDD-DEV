@@ -61,6 +61,9 @@ jobs:
       - run: npm ci
       - run: npx playwright install --with-deps chromium
       - run: npx playwright test
+      # App instalavel (Fase 8): manifesto, service worker, abertura sem internet e aviso de nova versao, no build de producao
+      - run: npx vite build
+      - run: node scripts/test-pwa.mjs
       - uses: actions/upload-artifact@v4
         if: failure()
         with:

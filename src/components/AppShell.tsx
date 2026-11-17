@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { appRoutes, type AppRoute } from '../app/routes';
+import { useAppUpdate } from '../hooks/useAppUpdate';
 
 interface AppShellProps {
   children: ReactNode;
@@ -16,6 +17,7 @@ interface AppShellProps {
 export function AppShell({ children, currentUser, seasonName, activeRoute, coinBalance, coinLoading = false, onNavigate, onLogout }: AppShellProps) {
   const isAdmin = currentUser.role === 'admin';
   const visibleRoutes = appRoutes.filter((route) => !route.adminOnly || isAdmin);
+  const updateAvailable = useAppUpdate();
 
   return (
     <div className="app-shell">
@@ -58,6 +60,13 @@ export function AppShell({ children, currentUser, seasonName, activeRoute, coinB
           </button>
         </div>
       </header>
+
+      {updateAvailable ? (
+        <div className="update-banner" role="status">
+          <span><i className="bi bi-arrow-repeat" aria-hidden="true" /> Nova versão do Bolão WDD disponível.</span>
+          <button type="button" className="primary-button" onClick={() => window.location.reload()}>Atualizar o app</button>
+        </div>
+      ) : null}
 
       <main className="app-main">{children}</main>
 
