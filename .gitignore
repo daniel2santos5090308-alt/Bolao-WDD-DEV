@@ -90,3 +90,4 @@ firestore.indexes.json
 
 # Supabase CLI (banco local)
 supabase/.temp/
+supabase/.branches/

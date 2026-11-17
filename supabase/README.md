@@ -29,6 +29,7 @@ Fonte oficial do schema a partir de 2026-11. A pasta `Querys/` fica só como his
 | `20261116120000_season_names.sql` | Nome das temporadas com acento | ✅ 2026-11-16 | jan/2027 |
 | `20261117100000_coin_texts_accents.sql` | Fase 4: textos de WDD Coins com acento (extrato, erros, item da loja) | ✅ 2026-11-15 | jan/2027 |
 | `20261118100000_season_admin.sql` | Fase 5: admin cria e ativa temporadas (`create_season`, `activate_season`) | pendente | jan/2027 |
+| `20261119100000_participants.sql` | Fase 7: `profiles.active` (conta desativada pelo admin) | pendente | jan/2027 |
 
 Banco novo do zero: rode todas na ordem acima. É assim que a produção será instalada em jan/2027 (instalação limpa, sem o histórico de 2026). O CI confere isso em todo PR: o job **Banco do zero** sobe um Supabase local vazio, aplica todas as migrations e roda os testes abaixo.
 
@@ -42,6 +43,7 @@ Banco novo do zero: rode todas na ordem acima. É assim que a produção será i
 | `tests/fase1_check.sql` | Depois das 4 migrations da Fase 1 |
 | `tests/fase2_check.sql` | Depois da migration da Fase 2 |
 | `tests/fase5_check.sql` | Depois da migration da Fase 5 |
+| `tests/fase7_check.sql` | Depois da migration da Fase 7 |
 
 `tests/ci_seed.sql` é só do CI (cria 2 participantes fictícios num banco vazio). Nunca rode no DEV nem no PROD.
 
@@ -57,6 +59,26 @@ npx supabase@3.2.0 stop --no-backup  # desliga e apaga o banco local
 ```
 
 Na primeira vez o Docker baixa as imagens do Supabase (alguns minutos).
+
+## Edge Functions
+
+| Função | O que faz | DEV | PROD |
+|---|---|---|---|
+| `functions/admin-users` | Fase 7: admin cria participante, redefine senha e desativa/reativa conta | pendente | jan/2027 |
+
+Usa a chave de serviço que o próprio Supabase injeta na função (`SUPABASE_SERVICE_ROLE_KEY`): nada de chave no navegador, no `.env` ou no repositório. Só responde a admin.
+
+**Publicar pelo painel** (sem instalar nada): Supabase → **Edge Functions** → **Deploy a new function** → **Via Editor** → nome `admin-users` → apague o exemplo, cole o conteúdo de `functions/admin-users/index.ts` → **Deploy function**. Deixe ligada a opção **Verify JWT** (padrão).
+
+**Publicar pelo CLI** (alternativa): `npx supabase@3.2.0 login` e depois `npx supabase@3.2.0 functions deploy admin-users --project-ref <ref do projeto>`.
+
+**Testar na sua máquina** (Docker, nunca contra DEV/PROD): suba o Supabase local completo e rode o roteiro de 18 verificações:
+
+```bash
+npx supabase@3.2.0 start -x studio,imgproxy,inbucket,mailpit,realtime,storage-api,logflare,vector,supavisor,postgres-meta
+eval "$(npx supabase@3.2.0 status -o env)" && API_URL=$API_URL ANON_KEY=$ANON_KEY SERVICE_ROLE_KEY=$SERVICE_ROLE_KEY node scripts/test-admin-users.mjs
+npx supabase@3.2.0 stop --no-backup
+```
 
 ## Consumo (Supabase Free)
 
