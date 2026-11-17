@@ -498,3 +498,35 @@ test('teams: isSameTeam e isKnownTeam usam os apelidos', async () => {
   assert.equal(isKnownTeam('Sao Paulo'), true);
   assert.equal(isKnownTeam('Novo Clube FC'), false);
 });
+
+/* ---------- Fase 7: participantes ---------- */
+
+test('participants: usuario sugerido, validacoes e senha provisoria', async () => {
+  const { suggestUsername, validateUsername, validatePassword, generateTemporaryPassword, sortParticipants } = await import('../src/services/participants.ts');
+  const existing = [
+    { id: '1', username: 'ana', name: 'Ana', role: 'user', active: true },
+    { id: '2', username: 'admin', name: 'Admin', role: 'admin', active: true }
+  ];
+
+  assert.equal(suggestUsername('Ana Paula'), 'ana.paula');
+  assert.equal(suggestUsername('  João  da Silva!  '), 'joao.da.silva');
+  assert.equal(validateUsername('ana.paula', existing), '');
+  assert.equal(validateUsername('ANA', existing), 'O usuário ana já existe.');
+  assert.match(validateUsername('ab', existing), /3 a 30 caracteres/);
+  assert.match(validateUsername('ana paula', existing), /3 a 30 caracteres/);
+  assert.match(validateUsername('.ana', existing), /3 a 30 caracteres/);
+  assert.equal(validatePassword('123456'), '');
+  assert.match(validatePassword('12345'), /pelo menos 6/);
+
+  const password = generateTemporaryPassword();
+  assert.equal(password.length, 8);
+  assert.match(password, /^[a-hjkmnp-z2-9]+$/);
+  assert.notEqual(generateTemporaryPassword(), generateTemporaryPassword());
+
+  const sorted = sortParticipants([
+    { id: 'c', username: 'carla', name: 'Carla', role: 'user', active: false },
+    { id: 'b', username: 'bruno', name: 'Bruno', role: 'user', active: true },
+    { id: 'a', username: 'ana', name: 'Ana', role: 'user', active: true }
+  ]);
+  assert.deepEqual(sorted.map((item) => item.id), ['a', 'b', 'c']);
+});

@@ -59,6 +59,8 @@ function createState() {
     rounds: ['r1', 'r2', 'r3', 'r4'].map((id, index) => ({ id, name: `Rodada ${index + 1}`, number: index + 1, season_key: '2027' })),
     savedBets: [],
     calls: [],
+    users: users.map((user) => ({ ...user, active: true })),
+    passwordResets: [],
     seasons: [
       { key: '2026', name: 'Brasileirão 2026', starts_on: null, ends_on: '2026-12-06', is_active: false },
       { key: '2027', name: 'Brasileirão 2027', starts_on: '2027-01-27', ends_on: null, is_active: true }
@@ -71,7 +73,7 @@ function snapshotFor(state, userId) {
   return {
     version: 1,
     season: active ? { key: active.key, name: active.name } : null,
-    profiles: users,
+    profiles: state.users,
     rounds: state.rounds,
     matches: state.matches,
     standings: TEAMS.map((team, index) => ({
@@ -166,7 +168,10 @@ async function installMockSupabase(context, options = {}) {
     state.calls.push(`${method} ${path}`);
 
     if (path === '/auth/v1/token') {
-      const user = users.find((entry) => `${entry.username}@bolao.local` === body?.email);
+      const user = state.users.find((entry) => `${entry.username}@bolao.local` === body?.email);
+      if (user && user.active === false) {
+        return json({ code: 400, error_code: 'user_banned', msg: 'User is banned' }, 400);
+      }
       if (!user || body?.password !== PASSWORD) {
         return json({ error: 'invalid_grant', error_description: 'Invalid login credentials' }, 400);
       }
@@ -174,6 +179,28 @@ async function installMockSupabase(context, options = {}) {
       return json(fakeSession(user));
     }
     if (path.startsWith('/auth/v1/')) return json({});
+
+    // Edge Function admin-users (Fase 7)
+    if (path === '/functions/v1/admin-users') {
+      if (body?.action === 'create') {
+        if (state.users.some((user) => user.username === body.username)) return json({ error: `O usuário ${body.username} já existe.` }, 409);
+        const created = { id: `new-${body.username}`, legacy_id: body.username, username: body.username, name: body.name, role: 'user', active: true };
+        state.users.push(created);
+        return json({ user: created });
+      }
+      const target = state.users.find((user) => user.id === body?.userId);
+      if (!target) return json({ error: 'Participante não encontrado.' }, 404);
+      if (body.action === 'reset_password') {
+        state.passwordResets.push({ userId: target.id, password: body.password });
+        return json({ ok: true });
+      }
+      if (body.action === 'set_active') {
+        target.active = body.active === true;
+        return json({ ok: true, active: target.active });
+      }
+      return json({ error: 'Ação desconhecida.' }, 400);
+    }
+    if (path === '/rest/v1/rpc/initialize_coin_wallets_for_season') return json([]);
 
     if (path === '/rest/v1/rpc/get_app_snapshot') return json(snapshotFor(state, currentUserId));
     if (path === '/rest/v1/rpc/get_ranking') return json(ranking);
@@ -223,8 +250,8 @@ async function installMockSupabase(context, options = {}) {
     const tables = {
       app_meta: [{ id: 1, version: 1 }],
       seasons: state.seasons,
-      profiles: users,
-      coin_wallet_summary: users.filter((user) => user.role !== 'admin').map((user) => ({
+      profiles: state.users,
+      coin_wallet_summary: state.users.filter((user) => user.role !== 'admin').map((user) => ({
         id: `w-${user.id}`, user_id: user.id, user_name: user.name, season_key: '2027', available_balance: 130, locked_balance: 0, total_balance: 130
       })),
       coin_settings: [{ season_key: '2027', initial_balance: 100, first_place_reward: 50, second_place_reward: 30, third_place_reward: 15, exact_score_reward: 5, bonus_exact_score_reward: 10, full_round_participation_reward: 5 }],

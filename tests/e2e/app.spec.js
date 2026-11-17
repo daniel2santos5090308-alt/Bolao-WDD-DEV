@@ -14,6 +14,16 @@ test.describe('login', () => {
     await expect(page.getByRole('alert')).toHaveText('Usuário ou senha incorretos.');
   });
 
+  test('conta desativada mostra o motivo no login', async ({ page, context }) => {
+    const state = await installMockSupabase(context);
+    state.users.find((user) => user.id === 'u1').active = false;
+    await page.goto('/');
+    await page.locator('#username').fill('ana');
+    await page.locator('#password').fill(PASSWORD);
+    await page.getByRole('button', { name: 'Entrar' }).click();
+    await expect(page.getByRole('alert')).toHaveText('Conta desativada. Fale com o administrador do bolão.');
+  });
+
   test('botão mostra e oculta a senha', async ({ page, context }) => {
     await installMockSupabase(context);
     await page.goto('/');
@@ -212,6 +222,47 @@ test.describe('admin', () => {
     expect(state.rounds.find((round) => round.number === 5)).toMatchObject({ name: 'Rodada 5', season_key: '2027' });
     expect(state.matches.find((match) => match.id === 'r4m0')).toMatchObject({ match_date: brasiliaDate(10), match_time: '20:00', home_team: 'São Paulo' });
     expect(state.matches.filter((match) => match.home_team === 'Flamengo' && match.away_team === 'Vasco')).toHaveLength(1);
+  });
+
+  test('cria participante com usuário sugerido e senha provisória', async ({ page, context }) => {
+    const state = await installMockSupabase(context, { loggedInAs: 'admin' });
+    await page.goto('/#/admin');
+    await page.getByRole('button', { name: 'Participantes' }).click();
+    const list = page.locator('.admin-panel', { has: page.getByRole('heading', { name: 'Participantes', exact: true }) });
+    await expect(list.locator('.participant-row')).toHaveCount(4);
+
+    await page.getByLabel('Nome', { exact: true }).fill('Diego Souza');
+    await expect(page.getByRole('textbox', { name: /^Usuário/ })).toHaveValue('diego.souza');
+    const password = await page.getByLabel('Senha provisória').inputValue();
+    expect(password).toHaveLength(8);
+
+    await page.getByRole('button', { name: 'Criar participante' }).click();
+    await expect(page.getByText(`usuário "diego.souza" e senha "${password}"`)).toBeVisible();
+    await expect(list.locator('.participant-row', { hasText: 'Diego Souza' })).toBeVisible();
+    expect(state.users.find((user) => user.username === 'diego.souza')).toMatchObject({ name: 'Diego Souza', role: 'user' });
+    expect(state.calls).toContain('POST /rest/v1/rpc/initialize_coin_wallets_for_season');
+  });
+
+  test('troca a senha e desativa um participante', async ({ page, context }) => {
+    const state = await installMockSupabase(context, { loggedInAs: 'admin' });
+    await page.goto('/#/admin');
+    await page.getByRole('button', { name: 'Participantes' }).click();
+    const ana = page.locator('.participant-row', { hasText: '@ana' });
+
+    await ana.getByRole('button', { name: 'Nova senha' }).click();
+    const newPassword = await page.getByLabel('Nova senha de Ana').inputValue();
+    await ana.getByRole('button', { name: 'Salvar senha' }).click();
+    await expect(page.getByText(`Nova senha de Ana: "${newPassword}"`)).toBeVisible();
+    expect(state.passwordResets).toEqual([{ userId: 'u1', password: newPassword }]);
+
+    page.once('dialog', (dialog) => {
+      expect(dialog.message()).toContain('Desativar Ana?');
+      return dialog.accept();
+    });
+    await ana.getByRole('button', { name: 'Desativar' }).click();
+    await expect(ana.getByText('Desativado')).toBeVisible();
+    await expect(ana.getByRole('button', { name: 'Reativar' })).toBeVisible();
+    expect(state.users.find((user) => user.id === 'u1').active).toBe(false);
   });
 
   test('lista de jogos abre na rodada atual', async ({ page, context }) => {

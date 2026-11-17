@@ -7,11 +7,27 @@ import { getLoginEmail } from './utils.ts';
 
 export { getCurrentUser };
 
-/** Entra com usuario (ou e-mail) e senha. Retorna o perfil, ou null se recusado. */
+/** Conta desativada pelo admin (Fase 7): login bloqueado no Auth ou perfil inativo. */
+export class AccountDisabledError extends Error {
+  constructor() {
+    super('Conta desativada.');
+    this.name = 'AccountDisabledError';
+  }
+}
+
+function isBannedError(error: { code?: string; message?: string } | null): boolean {
+  return Boolean(error && (error.code === 'user_banned' || /banned/i.test(error.message || '')));
+}
+
+/**
+ * Entra com usuario (ou e-mail) e senha. Retorna o perfil, ou null se recusado.
+ * Lanca AccountDisabledError se o admin desativou a conta.
+ */
 export async function login(username: string, password: string): Promise<BolaoUser | null> {
   const client = requireSupabase();
   const { data, error } = await client.auth.signInWithPassword({ email: getLoginEmail(username), password });
   if (error || !data.user) {
+    if (isBannedError(error)) throw new AccountDisabledError();
     if (error) console.error('Erro no login:', error);
     return null;
   }
@@ -21,6 +37,11 @@ export async function login(username: string, password: string): Promise<BolaoUs
     console.error('Perfil não encontrado para o usuário autenticado:', profileError);
     await client.auth.signOut();
     return null;
+  }
+
+  if (profile.active === false) {
+    await client.auth.signOut();
+    throw new AccountDisabledError();
   }
 
   // Outro usuario no mesmo navegador: nao reaproveita o cache do anterior

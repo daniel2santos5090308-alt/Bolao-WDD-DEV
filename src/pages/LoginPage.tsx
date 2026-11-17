@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react';
-import { login } from '../services/auth';
+import { AccountDisabledError, login } from '../services/auth';
 
 interface LoginPageProps {
   onLogin(user: BolaoUser): void;
@@ -25,6 +25,10 @@ export function LoginPage({ onLogin }: LoginPageProps) {
       }
       onLogin(user);
     } catch (err) {
+      if (err instanceof AccountDisabledError) {
+        setError('Conta desativada. Fale com o administrador do bolão.');
+        return;
+      }
       console.error('Erro no login:', err);
       setError('Não foi possível conectar. Verifique sua internet e tente de novo.');
     } finally {

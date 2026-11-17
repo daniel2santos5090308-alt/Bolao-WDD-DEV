@@ -2181,3 +2181,25 @@ textarea {
 .import-list li + li {
   margin-top: 2px;
 }
+
+/* ---------- Admin: participantes ---------- */
+.participant-row__info {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.participant-row__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.participant-row.is-inactive .participant-row__info strong {
+  color: var(--muted);
+}
+
+.participant-row__reset {
+  flex-basis: 100%;
+}

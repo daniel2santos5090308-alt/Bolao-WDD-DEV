@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import type { FormEvent } from 'react';
 import type { CoinSettings } from '../hooks/useCoinSettings';
+import { ParticipantsAdmin } from '../components/ParticipantsAdmin';
 import { ScheduleImport } from '../components/ScheduleImport';
 import { SeasonsAdmin } from '../components/SeasonsAdmin';
 import { getCanonicalTeamName } from '../services/teams';
@@ -13,7 +14,7 @@ import * as storage from '../services/storage';
 import { requireSupabase } from '../services/supabase';
 import { generateId } from '../services/utils';
 
-type AdminTab = 'jogos' | 'importar' | 'pontuacao' | 'classificacao' | 'coins' | 'temporadas';
+type AdminTab = 'jogos' | 'importar' | 'pontuacao' | 'classificacao' | 'coins' | 'participantes' | 'temporadas';
 
 interface CoinRoundProcess {
   id: string;
@@ -582,12 +583,12 @@ export function AdminPage() {
   return (
     <section className="admin-page">
       <div className="admin-hero">
-        <div><span className="eyebrow">Administração</span><h1>Painel admin</h1><p>Jogos, placares, pontuação, tabela do campeonato, WDD Coins e temporadas.</p></div>
+        <div><span className="eyebrow">Administração</span><h1>Painel admin</h1><p>Jogos, placares, pontuação, tabela do campeonato, WDD Coins, participantes e temporadas.</p></div>
         <div className="hero-actions"><button type="button" onClick={refresh} disabled={bolaoData.loading}>Atualizar</button><button type="button" onClick={exportBackup}>Exportar JSON</button></div>
       </div>
 
       <nav className="admin-tabs">
-        {([['jogos', 'Jogos'], ['importar', 'Importar jogos'], ['pontuacao', 'Pontuação'], ['classificacao', 'Classificação'], ['coins', 'WDD Coins'], ['temporadas', 'Temporadas']] as Array<[AdminTab, string]>).map(([id, label]) => (
+        {([['jogos', 'Jogos'], ['importar', 'Importar jogos'], ['pontuacao', 'Pontuação'], ['classificacao', 'Classificação'], ['coins', 'WDD Coins'], ['participantes', 'Participantes'], ['temporadas', 'Temporadas']] as Array<[AdminTab, string]>).map(([id, label]) => (
           <button key={id} type="button" className={activeTab === id ? 'is-active' : ''} onClick={() => setActiveTab(id)}>{label}</button>
         ))}
       </nav>
@@ -628,6 +629,7 @@ export function AdminPage() {
       {activeTab === 'pontuacao' ? <ScoringAdmin scoring={scoring} onChange={setScoringDraft} onSave={saveScoring} /> : null}
       {activeTab === 'classificacao' ? <StandingsAdmin standingForm={standingForm} setStandingForm={setStandingForm} onSave={handleSaveStanding} csvText={csvText} setCsvText={setCsvText} csvPreview={csvPreview} previewCsv={previewCsv} saveCsv={saveCsv} standings={standings} deleteStanding={deleteStanding} /> : null}
       {activeTab === 'importar' ? <ScheduleImport seasonName={data?.season?.name || 'temporada ativa'} rounds={rounds} matches={matches} onNotify={notify} onFail={fail} onImported={syncAfterWrite} /> : null}
+      {activeTab === 'participantes' ? <ParticipantsAdmin seasonKey={data?.season?.key || ''} onNotify={notify} onFail={fail} onChanged={bolaoData.refresh} /> : null}
       {activeTab === 'temporadas' ? <SeasonsAdmin onNotify={notify} onFail={fail} /> : null}
       {activeTab === 'coins' ? <CoinsAdmin coins={coins} setCoinDraft={setCoinDraft} saveCoinSettings={saveCoinSettings} saving={coinSettings.saving} finishedRounds={finishedRounds} selectedRewardRoundId={selectedRewardRoundId} setSelectedRewardRoundId={setSelectedRewardRoundId} processRoundRewards={processRoundRewards} processing={processing} coinProcesses={coinProcesses} coinTransactions={coinTransactions} coinWallets={coinWallets} coinStoreItems={coinStoreItems} coinUserItems={coinUserItems} users={data?.users || []} rounds={rounds} loadCoinAdminData={loadCoinAdminData} coinAdminLoading={coinAdminLoading} coinAdminLoaded={coinAdminLoaded} initializeCoinWallets={initializeCoinWallets} walletInitializing={walletInitializing} adjustmentUserId={adjustmentUserId} setAdjustmentUserId={setAdjustmentUserId} adjustmentAmount={adjustmentAmount} setAdjustmentAmount={setAdjustmentAmount} adjustmentDescription={adjustmentDescription} setAdjustmentDescription={setAdjustmentDescription} adjustCoinWallet={adjustCoinWallet} adjustingWallet={adjustingWallet} /> : null}
     </section>
