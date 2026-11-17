@@ -70,7 +70,7 @@ export function SeasonsAdmin({ onNotify, onFail }: SeasonsAdminProps) {
   async function handleActivate(season: SeasonInfo) {
     const previous = active ? ` A temporada ${active.name} será encerrada hoje.` : '';
     const ok = window.confirm(
-      `Ativar ${season.name}?${previous} Jogos, Ranking, Tabela e WDD Coins passam a mostrar ${season.key} para todos os participantes.`
+      `Ativar ${season.name}?${previous} Jogos, Ranking, Tabela e WDD Coins passam a mostrar ${season.key} para todos, e os saldos de WDD Coins são levados para ela.`
     );
     if (!ok) return;
 
@@ -118,7 +118,7 @@ export function SeasonsAdmin({ onNotify, onFail }: SeasonsAdminProps) {
         <header>
           <div>
             <h2>Nova temporada</h2>
-            <p>Copia as premiações de WDD Coins e o catálogo da loja da temporada ativa. Saldos e itens comprados não são copiados.</p>
+            <p>Copia as premiações de WDD Coins e o catálogo da loja da temporada ativa. Ao ativar, os saldos de WDD Coins passam para ela; itens comprados continuam de cada participante.</p>
           </div>
         </header>
         <form className="admin-fields-grid" onSubmit={handleCreate}>

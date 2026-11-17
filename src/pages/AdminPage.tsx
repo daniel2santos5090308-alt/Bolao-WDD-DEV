@@ -59,7 +59,7 @@ interface AdminUserStoreItem {
 }
 
 const coinFields: Array<{ key: keyof Omit<CoinSettings, 'seasonKey'>; label: string; help: string }> = [
-  { key: 'initialBalance', label: 'Saldo inicial', help: 'Crédito único ao criar a carteira.' },
+  { key: 'initialBalance', label: 'Bônus de boas-vindas', help: 'Pago uma única vez, na primeira carteira do participante. As Coins não zeram entre temporadas.' },
   { key: 'firstPlaceReward', label: '1º lugar da rodada', help: 'Prêmio por melhor pontuação da rodada.' },
   { key: 'secondPlaceReward', label: '2º lugar da rodada', help: 'Prêmio por segunda melhor pontuação.' },
   { key: 'thirdPlaceReward', label: '3º lugar da rodada', help: 'Prêmio por terceira melhor pontuação.' },

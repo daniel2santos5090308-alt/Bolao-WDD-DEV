@@ -4,6 +4,7 @@ import type { CoinTransaction } from '../hooks/useCoinTransactions';
 import { useCoinTransactions } from '../hooks/useCoinTransactions';
 import type { CoinStoreItem } from '../hooks/useCoinStore';
 import { useCoinStore } from '../hooks/useCoinStore';
+import { getOwnedItemCodes } from '../services/coinInventory';
 import type { AppRoute } from '../app/routes';
 import { getItemTypeLabel, getRarityLabel } from '../services/coinLabels';
 
@@ -39,7 +40,7 @@ function formatAmount(value: number): string {
 
 function getTransactionTypeLabel(type: string): string {
   const labels: Record<string, string> = {
-    initial_balance: 'Saldo inicial',
+    initial_balance: 'Bônus de boas-vindas',
     round_reward: 'Recompensa da rodada',
     bonus_reward: 'Bônus',
     full_round_reward: 'Participação completa',
@@ -48,7 +49,9 @@ function getTransactionTypeLabel(type: string): string {
     challenge_lock: 'Desafio bloqueado',
     challenge_release: 'Desafio liberado',
     challenge_reward: 'Desafio ganho',
-    reversal: 'Estorno'
+    reversal: 'Estorno',
+    season_carry_in: 'Saldo trazido da temporada anterior',
+    season_carry_out: 'Saldo levado para a nova temporada'
   };
 
   return labels[type] || type || 'Movimentação';
@@ -118,7 +121,8 @@ export function CoinsPage({
   const [transactionFilter, setTransactionFilter] = useState<'all' | 'credit' | 'debit'>('all');
   const totalBalance = availableBalance + lockedBalance;
   const loadedTransactions = transactions.transactions;
-  const ownedItemIds = useMemo(() => new Set(store.inventory.map((item) => item.itemId)), [store.inventory]);
+  // Itens permanentes (Fase 10): comprado em qualquer temporada conta como adquirido.
+  const ownedItemCodes = useMemo(() => getOwnedItemCodes(store.inventory, store.items), [store.inventory, store.items]);
   const creditTotal = useMemo(() => loadedTransactions.filter((transaction) => transaction.amount > 0).reduce((sum, transaction) => sum + transaction.amount, 0), [loadedTransactions]);
   const debitTotal = useMemo(() => loadedTransactions.filter((transaction) => transaction.amount < 0).reduce((sum, transaction) => sum + Math.abs(transaction.amount), 0), [loadedTransactions]);
   const filteredTransactions = useMemo(() => {
@@ -201,7 +205,7 @@ export function CoinsPage({
                     <StoreItemCard
                       key={item.id}
                       item={item}
-                      owned={ownedItemIds.has(item.id)}
+                      owned={ownedItemCodes.has(item.code)}
                       availableBalance={availableBalance}
                       purchasing={store.purchasingItemId === item.id}
                       onPurchase={handlePurchase}
