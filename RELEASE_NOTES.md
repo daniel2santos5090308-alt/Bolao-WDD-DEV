@@ -1,5 +1,31 @@
 # Release Notes
 
+## v3.9.0-dev - 2026-11-17
+
+Fase 10: WDD Coins contínuas e itens permanentes (decisão de 16/11). Primeira fase do Bloco B, que prepara os desafios entre participantes. Somente DEV; produção recebe na janela de 23–24/01/2027.
+
+### WDD Coins não zeram mais
+
+- Ao ativar uma temporada, o saldo disponível de cada participante passa para ela. O extrato da temporada anterior mostra "Saldo levado para a temporada X" e o da nova, "Saldo trazido da temporada Y".
+- O antigo "saldo inicial" virou **bônus de boas-vindas**, pago uma única vez, na primeira carteira do participante. Quem já recebeu não recebe de novo nas temporadas seguintes.
+- Ativar a temporada anterior por engano e depois a nova de novo leva o saldo de volta, sem duplicar nem perder Coins.
+
+### Itens permanentes
+
+- Item comprado é do participante para sempre: a loja mostra **Adquirido** mesmo para itens comprados em outra temporada, e a compra recusa um item que ele já tem ("Você já tem este item").
+- O participante continua enxergando os itens que possui mesmo depois que saem da loja.
+- Mensagens da compra e da carteira com acento.
+
+### Banco de dados
+
+- `20261120100000_coins_continuous.sql` (pendente no DEV): tipos de lançamento `season_carry_out`/`season_carry_in`, bônus de boas-vindas único, transporte de saldo em `activate_season`, compra sem repetir item, leitura dos itens possuídos.
+- Teste `supabase/tests/fase10_check.sql` (13 verificações): bônus uma vez, transporte, ida e volta sem duplicar, item permanente, permissões.
+
+### Testes
+
+- Banco do zero (local, Docker): 18 migrations e 65 testes SQL (Fases 0, 1, 2, 5, 7 e 10).
+- E2E: 42 testes (novo: item comprado em outra temporada aparece como adquirido). 28 testes unitários.
+
 ## v3.8.0-dev - 2026-11-16
 
 Fase 8: app instalável (PWA). Somente DEV; sem migration. Fecha o Bloco A de desenvolvimento antes da publicação (Fase 9).
