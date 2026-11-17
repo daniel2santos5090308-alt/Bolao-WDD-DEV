@@ -65,16 +65,33 @@ export function sortParticipants(list: ParticipantInfo[]): ParticipantInfo[] {
   return [...list].sort((a, b) => Number(b.active) - Number(a.active) || a.name.localeCompare(b.name, 'pt-BR'));
 }
 
+export const FUNCTION_NOT_DEPLOYED =
+  'A função admin-users não está publicada neste ambiente do Supabase. Publique-a seguindo o supabase/README.md (Edge Functions).';
+
+/** Traduz a resposta de erro da Edge Function (ou do Supabase na frente dela). */
+export function describeFunctionError(status: number | null, body: unknown, fallback: string): string {
+  const data = (body && typeof body === 'object' ? body : {}) as { error?: unknown; code?: unknown; message?: unknown };
+  if (typeof data.error === 'string' && data.error) return data.error;
+  if (status === 404 || data.code === 'NOT_FOUND') return FUNCTION_NOT_DEPLOYED;
+  if (status === 401) return 'Sessão expirada. Saia e entre de novo.';
+  return fallback;
+}
+
 async function readFunctionError(error: unknown, fallback: string): Promise<string> {
-  // FunctionsHttpError traz a resposta da funcao em error.context
+  const name = error && typeof error === 'object' && 'name' in error ? String((error as { name: unknown }).name) : '';
+  if (name === 'FunctionsFetchError') return 'Não foi possível falar com o servidor. Verifique a conexão e tente de novo.';
+
+  // FunctionsHttpError traz a resposta em error.context
   const context = error && typeof error === 'object' && 'context' in error ? (error as { context: unknown }).context : null;
   if (context && typeof (context as Response).json === 'function') {
+    const response = context as Response;
+    let body: unknown = null;
     try {
-      const body = await (context as Response).json();
-      if (body && typeof body.error === 'string') return body.error;
+      body = await response.json();
     } catch {
-      // segue para o fallback
+      // corpo vazio ou nao-JSON
     }
+    return describeFunctionError(typeof response.status === 'number' ? response.status : null, body, fallback);
   }
   return fallback;
 }

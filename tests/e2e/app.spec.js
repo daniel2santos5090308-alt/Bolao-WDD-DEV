@@ -243,6 +243,22 @@ test.describe('admin', () => {
     expect(state.calls).toContain('POST /rest/v1/rpc/initialize_coin_wallets_for_season');
   });
 
+  test('função admin-users não publicada mostra o que fazer', async ({ page, context }) => {
+    await installMockSupabase(context, { loggedInAs: 'admin' });
+    // Rota mais recente tem prioridade: simula o Supabase sem a Edge Function
+    await context.route('**/functions/v1/admin-users', (route) => route.fulfill({
+      status: 404,
+      contentType: 'application/json',
+      headers: { 'access-control-allow-origin': '*' },
+      body: JSON.stringify({ code: 'NOT_FOUND', message: 'Requested function was not found' })
+    }));
+    await page.goto('/#/admin');
+    await page.getByRole('button', { name: 'Participantes' }).click();
+    await page.getByLabel('Nome', { exact: true }).fill('Diego Souza');
+    await page.getByRole('button', { name: 'Criar participante' }).click();
+    await expect(page.getByText('A função admin-users não está publicada neste ambiente do Supabase.', { exact: false })).toBeVisible();
+  });
+
   test('troca a senha e desativa um participante', async ({ page, context }) => {
     const state = await installMockSupabase(context, { loggedInAs: 'admin' });
     await page.goto('/#/admin');
