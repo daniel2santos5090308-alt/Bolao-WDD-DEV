@@ -170,6 +170,12 @@ textarea {
   color: #ffc9c9;
 }
 
+.banner--warn {
+  border: 1px solid rgba(250, 178, 25, 0.35);
+  background: var(--warn-soft);
+  color: var(--text);
+}
+
 .banner--ok,
 .inline-feedback {
   border: 1px solid rgba(63, 207, 127, 0.35);
@@ -414,6 +420,11 @@ textarea {
 
 .chip--locked {
   background: var(--surface-3);
+  color: var(--text-2);
+}
+
+.chip--postponed {
+  background: var(--warn-soft);
   color: var(--text-2);
 }
 
@@ -2101,4 +2112,72 @@ textarea {
   display: grid;
   gap: 2px;
   min-width: 0;
+}
+
+/* ---------- Admin: importar jogos ---------- */
+.file-button {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  background: var(--surface-3);
+  color: var(--text);
+  padding: 8px 12px;
+  font-weight: 600;
+  font-size: 0.88rem;
+}
+
+.file-button:hover {
+  border-color: var(--gold);
+}
+
+.file-button:focus-within {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+}
+
+.file-button input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.import-preview {
+  display: grid;
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.import-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 8px;
+}
+
+.import-summary span {
+  display: grid;
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+  padding: 8px 10px;
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+.import-summary strong {
+  color: var(--text);
+  font-family: var(--font-display);
+  font-size: 1.4rem;
+}
+
+.import-list ul {
+  margin: 6px 0 0;
+  padding-left: 18px;
+  font-weight: 400;
+}
+
+.import-list li + li {
+  margin-top: 2px;
 }

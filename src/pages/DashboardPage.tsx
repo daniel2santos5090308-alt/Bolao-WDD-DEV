@@ -6,7 +6,7 @@ import { MatchRow, type BetDraft } from '../components/MatchRow';
 import { RankingPanel } from '../components/RankingPanel';
 import { useBolaoData } from '../hooks/useBolaoData';
 import { useRanking } from '../hooks/useRanking';
-import { getCurrentRoundId, getRoundNumber } from '../services/matches';
+import { getCurrentRoundId, getRoundNumber, isPostponedMatch } from '../services/matches';
 import { formatCountdown, formatDayLabel, formatShortDate, getKickoff, getMatchStatus, useNow } from '../services/matchTime';
 import { calculateMatchPoints, formatPoints, getScoringSettings } from '../services/scoring';
 import * as storage from '../services/storage';
@@ -82,8 +82,14 @@ export function DashboardPage({ currentUser, onNavigate }: DashboardPageProps) {
     .map((match) => getKickoff(match).getTime())
     .filter((time) => time > now)
     .sort((a, b) => a - b)[0];
-  const firstDate = roundMatches[0]?.date;
-  const lastDate = roundMatches[roundMatches.length - 1]?.date;
+  // Jogos adiados (marcados bem depois da rodada) nao esticam o periodo do cabecalho.
+  const postponedIds = useMemo(
+    () => new Set(roundMatches.filter((match) => isPostponedMatch(match, roundMatches)).map((match) => match.id)),
+    [roundMatches]
+  );
+  const regularMatches = roundMatches.filter((match) => !postponedIds.has(match.id));
+  const firstDate = regularMatches[0]?.date;
+  const lastDate = regularMatches[regularMatches.length - 1]?.date;
 
   // Rascunhos de palpite
   function getDraft(match: BolaoMatch): BetDraft {
@@ -258,6 +264,7 @@ export function DashboardPage({ currentUser, onNavigate }: DashboardPageProps) {
                     savedBet={savedBet}
                     draft={getDraft(match)}
                     dirty={isDirty(match)}
+                    postponed={postponedIds.has(match.id)}
                     bonusMultiplier={bonusMultiplier}
                     pointResult={pointResult}
                     onDraftChange={(next) => {
