@@ -1,5 +1,30 @@
 # Release Notes
 
+## v3.7.0-dev - 2026-11-16
+
+Fase 7: participantes gerenciados pelo app, sem entrar no painel do Supabase. Somente DEV; produção recebe na janela de 23–24/01/2027.
+
+### Participantes (admin)
+
+- Nova aba **Participantes**: lista todos (ativos primeiro), cria participante, gera nova senha e desativa/reativa.
+- Criar: nome, usuário (sugerido a partir do nome, ex.: "Ana Paula" → `ana.paula`) e senha provisória gerada (8 caracteres, sem letras parecidas). A mensagem final mostra usuário e senha para passar ao participante; ele troca a senha depois em Perfil. A carteira de WDD Coins da temporada ativa é preparada na hora.
+- Nova senha: gera uma senha provisória; a antiga deixa de valer.
+- Desativar bloqueia o login e mantém palpites, ranking e WDD Coins no histórico. Reativar devolve o acesso com o mesmo usuário e senha. Admins não podem ser desativados nem ter a senha trocada por aqui.
+- Login de conta desativada mostra "Conta desativada. Fale com o administrador do bolão." em vez de "Usuário ou senha incorretos".
+
+### Banco de dados e Supabase
+
+- `20261119100000_participants.sql` (pendente no DEV): coluna `profiles.active`.
+- Edge Function `admin-users` (pendente no DEV): cria login + perfil, troca senha e bloqueia/libera o login. Usa a chave de serviço do próprio Supabase; só admin chama. Publicação pelo painel em `supabase/README.md`.
+- Teste `supabase/tests/fase7_check.sql` (6 verificações) e `scripts/test-admin-users.mjs` (18 verificações da Edge Function contra o Supabase local).
+
+### Testes
+
+- Edge Function testada de ponta a ponta num Supabase local completo (Docker): 18/18, incluindo bloqueio de login (`user_banned`), recusa para participante (403) e sem login (401).
+- Banco do zero: 17 migrations e 52 testes SQL (Fases 0, 1, 2, 5 e 7).
+- E2E: 18 fluxos × desktop e celular (36 testes). Novos: criar participante, nova senha e desativar, login de conta desativada.
+- 25 testes unitários (novo: regras de participante).
+
 ## v3.6.0-dev - 2026-11-16
 
 Fase 6: importação da tabela de jogos e rodada atual com jogos adiados. Somente DEV; sem migration nova.
