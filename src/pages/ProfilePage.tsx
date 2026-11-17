@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useInstallPrompt } from '../hooks/useInstallPrompt';
 import type { FormEvent } from 'react';
 import { updatePasswordWithCurrent } from '../services/auth';
 
@@ -68,6 +69,8 @@ export function ProfilePage({ currentUser }: ProfilePageProps) {
           </div>
         </section>
 
+        <InstallCard />
+
         <section className="admin-panel">
           <header>
             <div>
@@ -96,6 +99,39 @@ export function ProfilePage({ currentUser }: ProfilePageProps) {
           </form>
         </section>
       </div>
+    </section>
+  );
+}
+
+/** App no celular (Fase 8): instalar pelo Chrome/Android ou instrucoes do iPhone. */
+function InstallCard() {
+  const { canInstall, installed, ios, install } = useInstallPrompt();
+
+  return (
+    <section className="admin-panel install-card">
+      <header>
+        <div>
+          <h2>App no celular</h2>
+          <p>Ícone na tela inicial, abre em tela cheia e rápido.</p>
+        </div>
+      </header>
+      {installed ? (
+        <p><i className="bi bi-check2-circle" aria-hidden="true" /> Você está usando o app instalado.</p>
+      ) : canInstall ? (
+        <div className="admin-panel__actions">
+          <button type="button" className="primary-button" onClick={() => void install()}>
+            <i className="bi bi-download" aria-hidden="true" /> Instalar app
+          </button>
+        </div>
+      ) : ios ? (
+        <ol>
+          <li>Abra o Bolão WDD no <strong>Safari</strong>.</li>
+          <li>Toque em <strong>Compartilhar</strong> <i className="bi bi-box-arrow-up" aria-label="(ícone de compartilhar)" />.</li>
+          <li>Escolha <strong>Adicionar à Tela de Início</strong>.</li>
+        </ol>
+      ) : (
+        <p>No celular, abra o Bolão WDD no Chrome e toque em <strong>Instalar app</strong> no menu <i className="bi bi-three-dots-vertical" aria-label="(menu)" />.</p>
+      )}
     </section>
   );
 }

@@ -354,3 +354,195 @@ test('unsavedChanges: pergunta só com palpite pendente e zera ao confirmar', as
   assert.match(unsavedMessage(1), /1 palpite não salvo\. .*esse palpite\?/);
   assert.match(unsavedMessage(3), /3 palpites não salvos\. .*esses palpites\?/);
 });
+
+test('seasons: valida o ano, nome padrao, datas e ordem', async () => {
+  const { validateSeasonKey, defaultSeasonName, formatIsoDate, describeSeasonPeriod, sortSeasons } = await import('../src/services/seasons.ts');
+  const existing = [
+    { key: '2026', name: 'Brasileirão 2026', startsOn: null, endsOn: '2026-12-06', isActive: false },
+    { key: '2027', name: 'Brasileirão 2027', startsOn: '2027-01-27', endsOn: null, isActive: true }
+  ];
+
+  assert.equal(validateSeasonKey('2028', existing), '');
+  assert.equal(validateSeasonKey(' 2028 ', existing), '');
+  assert.match(validateSeasonKey('28', existing), /4 dígitos/);
+  assert.match(validateSeasonKey('abcd', existing), /4 dígitos/);
+  assert.equal(validateSeasonKey('2027', existing), 'A temporada 2027 já existe.');
+
+  assert.equal(defaultSeasonName('2028'), 'Brasileirão 2028');
+  assert.equal(formatIsoDate('2027-01-27'), '27/01/2027');
+  assert.equal(formatIsoDate(null), '');
+  assert.equal(describeSeasonPeriod(existing[0]), 'Encerrada em 06/12/2026');
+  assert.equal(describeSeasonPeriod(existing[1]), 'Desde 27/01/2027');
+  assert.equal(describeSeasonPeriod({ ...existing[1], endsOn: '2027-12-08' }), '27/01/2027 a 08/12/2027');
+  assert.deepEqual(sortSeasons(existing).map((season) => season.key), ['2027', '2026']);
+});
+
+/* ---------- Fase 6: rodada atual com jogos adiados e importacao da tabela ---------- */
+
+function f6Match(id: string, roundId: string, date: string, result: string | null = null, home = `${id}-casa`, away = `${id}-fora`, time = '19:00'): BolaoMatch {
+  return { id, roundId, date, time, homeTeam: home, awayTeam: away, result };
+}
+
+test('getCurrentRoundId ignora jogo adiado de rodada antiga (caso real de 2026)', async () => {
+  const { getCurrentRoundId, isPostponedMatch } = await import('../src/services/matches.ts');
+  const rounds = [{ id: 'r21', name: 'Rodada 21', number: 2 }, { id: 'r35', name: 'Rodada 35', number: 16 }];
+  const r21 = [
+    f6Match('a', 'r21', '2026-07-29', 'home'), f6Match('b', 'r21', '2026-07-29', 'draw'),
+    f6Match('c', 'r21', '2026-07-30', 'away'), f6Match('d', 'r21', '2026-09-16', 'home'),
+    f6Match('e', 'r21', '2026-11-14') // Chapecoense x Vasco, adiado e ainda sem resultado
+  ];
+  const r35 = [f6Match('f', 'r35', '2026-11-14', 'draw'), f6Match('g', 'r35', '2026-11-18'), f6Match('h', 'r35', '2026-11-19')];
+
+  assert.equal(isPostponedMatch(r21[4], r21), true);
+  assert.equal(isPostponedMatch(r21[3], r21), true);
+  assert.equal(isPostponedMatch(r21[0], r21), false);
+  assert.equal(getCurrentRoundId(rounds, [...r21, ...r35]), 'r35');
+
+  // So sobrou o adiado: abre na rodada dele
+  const r35Done = r35.map((match) => ({ ...match, result: 'home' }));
+  assert.equal(getCurrentRoundId(rounds, [...r21, ...r35Done]), 'r21');
+});
+
+test('jogo de segunda-feira numa rodada de fim de semana nao e adiado', async () => {
+  const { getCurrentRoundId, isPostponedMatch } = await import('../src/services/matches.ts');
+  const rounds = [{ id: 'r1', name: 'Rodada 1', number: 1 }, { id: 'r2', name: 'Rodada 2', number: 2 }];
+  const r1 = [
+    f6Match('a', 'r1', '2027-02-06', 'home'), f6Match('b', 'r1', '2027-02-07', 'home'),
+    f6Match('c', 'r1', '2027-02-07', 'draw'), f6Match('d', 'r1', '2027-02-08')
+  ];
+  assert.equal(isPostponedMatch(r1[3], r1), false);
+  assert.equal(getCurrentRoundId(rounds, [...r1, f6Match('e', 'r2', '2027-02-11')]), 'r1');
+});
+
+test('parseCsvDate e parseCsvTime aceitam os formatos da CBF', async () => {
+  const { parseCsvDate, parseCsvTime } = await import('../src/services/scheduleImport.ts');
+  assert.equal(parseCsvDate('27/01/2027'), '2027-01-27');
+  assert.equal(parseCsvDate('7/2/27'), '2027-02-07');
+  assert.equal(parseCsvDate('2027-01-27'), '2027-01-27');
+  assert.equal(parseCsvDate('31/02/2027'), '');
+  assert.equal(parseCsvDate('amanha'), '');
+  assert.equal(parseCsvTime('19:00'), '19:00');
+  assert.equal(parseCsvTime('9:30'), '09:30');
+  assert.equal(parseCsvTime('16h'), '16:00');
+  assert.equal(parseCsvTime('21h30'), '21:30');
+  assert.equal(parseCsvTime('25:00'), '');
+  assert.equal(parseCsvTime('a definir'), '');
+});
+
+test('parseScheduleCsv: cabecalho opcional, separadores, nomes oficiais e erros por linha', async () => {
+  const { parseScheduleCsv } = await import('../src/services/scheduleImport.ts');
+
+  const ok = parseScheduleCsv('rodada;data;hora;mandante;visitante\n1;27/01/2027;19:00;Vasco da Gama;Atletico Mineiro\n\nRodada 2;31/01/2027;16h;Gremio;Inter-RS');
+  assert.deepEqual(ok.errors, []);
+  assert.equal(ok.rows.length, 2);
+  assert.deepEqual(ok.rows[0], { line: 2, roundNumber: 1, date: '2027-01-27', time: '19:00', homeTeam: 'Vasco', awayTeam: 'Atlético-MG' });
+  assert.equal(ok.rows[1].roundNumber, 2);
+  assert.equal(ok.rows[1].homeTeam, 'Grêmio');
+
+  const comma = parseScheduleCsv('3,2027-02-10,21:30,Bahia,Vitoria');
+  assert.equal(comma.rows[0].awayTeam, 'Vitória');
+
+  const bad = parseScheduleCsv('rodada;data;hora;mandante;visitante\n1;31/02/2027;19:00;Bahia;Bahia\n2;01/02/2027\nx;01/02/2027;a definir;Santos;Remo');
+  assert.equal(bad.rows.length, 0);
+  assert.equal(bad.errors.length, 3);
+  assert.match(bad.errors[0], /Linha 2: data "31\/02\/2027" inválida.*Bahia contra ele mesmo/);
+  assert.match(bad.errors[1], /Linha 3: esperava 5 colunas/);
+  assert.match(bad.errors[2], /Linha 4: rodada "x" inválida.*hora "a definir" inválida/);
+
+  assert.deepEqual(parseScheduleCsv('   ').errors, ['Cole ou carregue o CSV com os jogos.']);
+});
+
+test('planScheduleImport: cria, remarca, nao mexe em resultado e avisa', async () => {
+  const { parseScheduleCsv, planScheduleImport } = await import('../src/services/scheduleImport.ts');
+  const rounds = [{ id: 'r1', name: 'Rodada 1', number: 1 }];
+  const matches = [
+    f6Match('m1', 'r1', '2027-01-27', null, 'Vasco', 'Flamengo', '19:00'),
+    f6Match('m2', 'r1', '2027-01-27', null, 'Palmeiras', 'Santos', '21:30'),
+    f6Match('m3', 'r1', '2027-01-26', 'home', 'Bahia', 'Grêmio', '16:00')
+  ];
+  const csv = [
+    'rodada;data;hora;mandante;visitante',
+    '1;27/01/2027;19:00;Vasco da Gama;Flamengo',
+    '1;28/01/2027;20:00;Palmeiras;Santos',
+    '1;30/01/2027;16:00;Bahia;Gremio',
+    '2;03/02/2027;19:00;Flamengo;Novo Clube FC',
+    '2;03/02/2027;21:00;Flamengo;Santos',
+    '2;03/02/2027;19:00;Flamengo;Novo Clube FC'
+  ].join('\n');
+
+  const parsed = parseScheduleCsv(csv);
+  assert.deepEqual(parsed.errors, []);
+  const plan = planScheduleImport(parsed.rows, rounds, matches);
+
+  assert.deepEqual(plan.newRounds, [{ number: 2, name: 'Rodada 2' }]);
+  assert.deepEqual(plan.creates.map((row) => `${row.roundNumber}:${row.homeTeam}x${row.awayTeam}`), ['2:FlamengoxNovo Clube FC', '2:FlamengoxSantos']);
+  assert.equal(plan.updates.length, 1);
+  assert.deepEqual(plan.updates[0].from, { date: '2027-01-27', time: '21:30' });
+  assert.equal(plan.updates[0].match.id, 'm2');
+  assert.equal(plan.updates[0].match.date, '2027-01-28');
+  assert.equal(plan.unchanged, 2);
+  assert.deepEqual(plan.unknownTeams, ['Novo Clube FC']);
+  assert.equal(plan.errors.length, 1);
+  assert.match(plan.errors[0], /Linha 7: .*repete a linha 5/);
+  assert.ok(plan.warnings.some((text) => /Bahia x Grêmio já tem resultado/.test(text)));
+  assert.ok(plan.warnings.some((text) => /Rodada 2: Flamengo aparece em mais de um jogo/.test(text)));
+  assert.ok(plan.warnings.some((text) => /Rodada 1 ficará com 3 jogos/.test(text)));
+});
+
+test('teams: isSameTeam e isKnownTeam usam os apelidos', async () => {
+  const { isSameTeam, isKnownTeam } = await import('../src/services/teams.ts');
+  assert.equal(isSameTeam('Vasco', 'Vasco da Gama'), true);
+  assert.equal(isSameTeam('Atlético MG', 'Atletico-MG'), true);
+  assert.equal(isSameTeam('Bragantino', 'Red Bull Bragantino'), true);
+  assert.equal(isSameTeam('Santos', 'São Paulo'), false);
+  assert.equal(isKnownTeam('Sao Paulo'), true);
+  assert.equal(isKnownTeam('Novo Clube FC'), false);
+});
+
+/* ---------- Fase 7: participantes ---------- */
+
+test('participants: usuario sugerido, validacoes e senha provisoria', async () => {
+  const { suggestUsername, validateUsername, validatePassword, generateTemporaryPassword, sortParticipants } = await import('../src/services/participants.ts');
+  const existing = [
+    { id: '1', username: 'ana', name: 'Ana', role: 'user', active: true },
+    { id: '2', username: 'admin', name: 'Admin', role: 'admin', active: true }
+  ];
+
+  assert.equal(suggestUsername('Ana Paula'), 'ana.paula');
+  assert.equal(suggestUsername('  João  da Silva!  '), 'joao.da.silva');
+  assert.equal(validateUsername('ana.paula', existing), '');
+  assert.equal(validateUsername('ANA', existing), 'O usuário ana já existe.');
+  assert.match(validateUsername('ab', existing), /3 a 30 caracteres/);
+  assert.match(validateUsername('ana paula', existing), /3 a 30 caracteres/);
+  assert.match(validateUsername('.ana', existing), /3 a 30 caracteres/);
+  assert.equal(validatePassword('123456'), '');
+  assert.match(validatePassword('12345'), /pelo menos 6/);
+
+  const password = generateTemporaryPassword();
+  assert.equal(password.length, 8);
+  assert.match(password, /^[a-hjkmnp-z2-9]+$/);
+  assert.notEqual(generateTemporaryPassword(), generateTemporaryPassword());
+
+  const sorted = sortParticipants([
+    { id: 'c', username: 'carla', name: 'Carla', role: 'user', active: false },
+    { id: 'b', username: 'bruno', name: 'Bruno', role: 'user', active: true },
+    { id: 'a', username: 'ana', name: 'Ana', role: 'user', active: true }
+  ]);
+  assert.deepEqual(sorted.map((item) => item.id), ['a', 'b', 'c']);
+});
+
+/* ---------- Fase 8: app instalavel ---------- */
+
+test('pwa: aviso de nova versao so com build diferente e fora do modo dev', async () => {
+  const { isNewBuild, isIos } = await import('../src/pwa/pwa.ts');
+  assert.equal(isNewBuild('abc', 'def'), true);
+  assert.equal(isNewBuild('abc', 'abc'), false);
+  assert.equal(isNewBuild('abc', null), false);
+  assert.equal(isNewBuild('abc', ''), false);
+  assert.equal(isNewBuild('dev', 'def'), false);
+
+  assert.equal(isIos('Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X)', 5), true);
+  assert.equal(isIos('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)', 5), true);
+  assert.equal(isIos('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)', 0), false);
+  assert.equal(isIos('Mozilla/5.0 (Linux; Android 15; Pixel 7)', 5), false);
+});

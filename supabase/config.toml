@@ -1,0 +1,8 @@
+# Supabase CLI: usado so pelo CI (job "Banco do zero") para subir um Postgres
+# local vazio e aplicar supabase/migrations em ordem. Nao aponta para DEV nem PROD.
+project_id = "bolao-wdd"
+
+[db]
+port = 54322
+shadow_port = 54320
+major_version = 17

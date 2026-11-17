@@ -1,5 +1,8 @@
 /// <reference types="vite/client" />
 
+/** Identificador do build (vite.config.js); 'dev' no servidor de desenvolvimento. */
+declare const __APP_BUILD__: string;
+
 interface BolaoRuntimeConfig {
   SUPABASE_URL?: string;
   SUPABASE_ANON_KEY?: string;

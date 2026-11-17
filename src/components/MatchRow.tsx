@@ -14,6 +14,8 @@ interface MatchRowProps {
   savedBet: BolaoBet | null;
   draft: BetDraft;
   dirty: boolean;
+  /** Jogo adiado: disputado bem depois das outras partidas da rodada. */
+  postponed?: boolean;
   bonusMultiplier: number;
   pointResult: MatchPointResult | null;
   onDraftChange(next: BetDraft): void;
@@ -58,7 +60,7 @@ function ScoreStepper({ value, label, onChange }: { value: string; label: string
   );
 }
 
-export function MatchRow({ match, status, now, savedBet, draft, dirty, bonusMultiplier, pointResult, onDraftChange }: MatchRowProps) {
+export function MatchRow({ match, status, now, savedBet, draft, dirty, postponed = false, bonusMultiplier, pointResult, onDraftChange }: MatchRowProps) {
   const editable = status === 'open' || status === 'closing';
   const hasScore = match.score && match.score.home !== null && match.score.away !== null;
   const savedText = savedBet && savedBet.scoreHome !== null && savedBet.scoreAway !== null
@@ -76,6 +78,7 @@ export function MatchRow({ match, status, now, savedBet, draft, dirty, bonusMult
       <div className="match-row__meta">
         <strong className="match-row__time">{(match.time || '').slice(0, 5)}</strong>
         <StatusChip status={status} match={match} now={now} />
+        {postponed ? <span className="chip chip--postponed" title="Jogo adiado: disputado depois das outras partidas da rodada">Adiado</span> : null}
       </div>
 
       <div className="match-row__teams">

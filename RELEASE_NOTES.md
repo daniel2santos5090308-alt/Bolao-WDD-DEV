@@ -1,5 +1,108 @@
 # Release Notes
 
+## v3.8.0-dev - 2026-11-16
+
+Fase 8: app instalável (PWA). Somente DEV; sem migration. Fecha o Bloco A de desenvolvimento antes da publicação (Fase 9).
+
+### Instalar no celular
+
+- Ícone WDD na tela inicial, abre em tela cheia, com a cor do app na barra do sistema.
+- Android (Chrome): Perfil → **App no celular** → **Instalar app**. iPhone: o mesmo cartão mostra o caminho no Safari (Compartilhar → Adicionar à Tela de Início). Com o app instalado, o cartão confirma "Você está usando o app instalado".
+- Ícones 192, 512 e "maskable" (recorte do Android) e ícone do iPhone, gerados por `scripts/generate-icons.mjs` a partir da marca do topo.
+
+### Rápido e sem internet
+
+- Service worker: a página vem da rede quando há conexão e, sem conexão, da última cópia; arquivos do app (com hash no nome) vêm do cache. Sem internet, o app abre e mostra os últimos dados carregados.
+- Nunca guarda dados: Supabase, fontes, `runtime-config.js` e `version.json` sempre vão para a rede. Cada deploy tem seu cache; o anterior é apagado.
+
+### Nova versão
+
+- Cada build gera um identificador (`/version.json`). O app confere ao abrir, a cada 10 minutos e ao voltar para a tela; se houver deploy novo, mostra **"Nova versão do Bolão WDD disponível"** com o botão **Atualizar o app**. A verificação é um arquivo de poucos bytes no Netlify, não consome o Supabase.
+- `netlify.toml`: `sw.js`, `version.json`, manifesto e `runtime-config.js` sem cache; `/assets` com cache de 1 ano (nomes com hash).
+
+### Testes
+
+- `scripts/test-pwa.mjs` (13 verificações no build de produção): manifesto e ícones, critério de instalação do Chrome, service worker no controle, abertura sem internet, nada do Supabase no cache e o aviso de nova versão. Roda também no CI (job E2E).
+- E2E: 36 testes; 26 testes unitários (novo: regras de versão e de iPhone).
+- Checklist de homologação ganhou os passos das Fases 5 a 8, incluindo instalar num Android e num iPhone de verdade.
+
+## v3.7.0-dev - 2026-11-16
+
+Fase 7: participantes gerenciados pelo app, sem entrar no painel do Supabase. Somente DEV; produção recebe na janela de 23–24/01/2027.
+
+### Participantes (admin)
+
+- Nova aba **Participantes**: lista todos (ativos primeiro), cria participante, gera nova senha e desativa/reativa.
+- Criar: nome, usuário (sugerido a partir do nome, ex.: "Ana Paula" → `ana.paula`) e senha provisória gerada (8 caracteres, sem letras parecidas). A mensagem final mostra usuário e senha para passar ao participante; ele troca a senha depois em Perfil. A carteira de WDD Coins da temporada ativa é preparada na hora.
+- Nova senha: gera uma senha provisória; a antiga deixa de valer.
+- Desativar bloqueia o login e mantém palpites, ranking e WDD Coins no histórico. Reativar devolve o acesso com o mesmo usuário e senha. Admins não podem ser desativados nem ter a senha trocada por aqui.
+- Login de conta desativada mostra "Conta desativada. Fale com o administrador do bolão." em vez de "Usuário ou senha incorretos".
+
+### Banco de dados e Supabase
+
+- `20261119100000_participants.sql` (pendente no DEV): coluna `profiles.active`.
+- Edge Function `admin-users` (pendente no DEV): cria login + perfil, troca senha e bloqueia/libera o login. Usa a chave de serviço do próprio Supabase; só admin chama. Publicação pelo painel em `supabase/README.md`.
+- Teste `supabase/tests/fase7_check.sql` (6 verificações) e `scripts/test-admin-users.mjs` (18 verificações da Edge Function contra o Supabase local).
+
+### Testes
+
+- Edge Function testada de ponta a ponta num Supabase local completo (Docker): 18/18, incluindo bloqueio de login (`user_banned`), recusa para participante (403) e sem login (401).
+- Banco do zero: 17 migrations e 52 testes SQL (Fases 0, 1, 2, 5 e 7).
+- E2E: 18 fluxos × desktop e celular (36 testes). Novos: criar participante, nova senha e desativar, login de conta desativada.
+- 25 testes unitários (novo: regras de participante).
+
+## v3.6.0-dev - 2026-11-16
+
+Fase 6: importação da tabela de jogos e rodada atual com jogos adiados. Somente DEV; sem migration nova.
+
+### Importar jogos (admin)
+
+- Nova aba **Importar jogos**: a tabela da CBF entra por CSV (`rodada;data;hora;mandante;visitante`), colada ou carregada de arquivo. Aceita `;`, `,` ou tab, datas dd/mm/aaaa ou aaaa-mm-dd e horas 19:00 ou 19h30.
+- Prévia antes de gravar: rodadas novas, jogos novos, remarcações (data antiga → nova) e jogos sem mudança. Erros por linha bloqueiam; avisos (time em dois jogos da mesma rodada, rodada sem 10 jogos, time fora da lista oficial) não bloqueiam.
+- Reimportar o mesmo CSV com datas novas remarca os jogos. Resultados nunca mudam e nada é apagado.
+- Gravação em 2 chamadas (rodadas e jogos), na temporada ativa.
+
+### Nomes dos times
+
+- Os nomes são padronizados na gravação: "Vasco da Gama" e "Vasco", "Atletico Mineiro" e "Atlético-MG" viram o mesmo time. Vale para a importação, o cadastro manual de jogo e a classificação (manual e CSV).
+
+### Rodada atual com jogos adiados
+
+- Jogo marcado mais de 4 dias depois da data típica da rodada conta como adiado. Ele não puxa mais a "rodada atual" para trás: antes, um jogo adiado da Rodada 21 sem resultado fazia o app abrir na Rodada 21 em vez da 35.
+- Jogos adiados ganham a etiqueta **Adiado** e não esticam o período no cabeçalho da rodada.
+
+### Testes
+
+- E2E: 15 fluxos × desktop e celular (30 testes). Novo: importação com prévia, remarcação e rodada nova.
+- 24 testes unitários (novos: rodada atual com adiados, leitura do CSV, plano de importação, apelidos de times).
+
+## v3.5.0-dev - 2026-11-16
+
+Fase 5: temporadas sem ano fixo no código. Somente DEV; produção recebe na janela de 23–24/01/2027, já como instalação limpa da temporada 2027.
+
+### Temporadas
+
+- Nova aba **Temporadas** no admin: lista as temporadas (ativa, período), cria a do próximo ano e ativa.
+- Criar copia as premiações de WDD Coins e o catálogo da loja da temporada ativa; saldos e itens comprados não são copiados. A temporada nasce desativada.
+- Ativar encerra a anterior com a data de hoje, prepara as carteiras dos participantes e recarrega o app; todos passam a ver a nova temporada em Jogos, Ranking, Tabela e WDD Coins.
+- WDD Coins (saldo do topo, loja, extrato e premiações do admin) e o nome no topo agora seguem a temporada ativa. Não há mais `2027` fixo no app.
+
+### Banco de dados
+
+- `20261118100000_season_admin.sql` (pendente no DEV): funções `create_season` e `activate_season`, só para admin.
+- Teste `supabase/tests/fase5_check.sql` (15 verificações, não grava nada).
+- `fase1_check.sql` corrigido: desde a Fase 4 a mensagem de recusa tem acento ("à temporada") e o teste só aceitava a versão sem acento.
+- Primeira instalação completa do zero: as 16 migrations aplicam sem erro num banco vazio e os 46 testes SQL passam (Fases 0, 1, 2 e 5).
+
+### CI
+
+- Novo job **Banco do zero**: sobe um Supabase local vazio, aplica todas as migrations em ordem e roda os testes SQL das Fases 0, 1, 2 e 5. Qualquer migration quebrada ou teste com FALHOU reprova o PR.
+
+### Testes
+
+- E2E: 14 fluxos × desktop e celular (28 testes). Novos: criar e ativar a temporada seguinte; ano repetido não chega ao banco; nome da temporada no topo.
+- 18 testes unitários (novo: regras de temporada).
+
 ## v3.4.0-dev - 2026-11-15
 
 Fase 4 (UX), segunda parte: telas do participante (Jogos, Ranking, Tabela e Login). Somente DEV; produção recebe na janela de 23–24/01/2027. Sem migration nova.

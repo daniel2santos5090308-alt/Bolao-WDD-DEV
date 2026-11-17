@@ -358,6 +358,32 @@ export async function updateMatch(match: BolaoMatch): Promise<boolean> {
   return !error;
 }
 
+/**
+ * Importacao da tabela (Fase 6): 1 chamada para as rodadas novas e 1 para
+ * todos os jogos novos e remarcados. Rodadas entram na temporada ativa
+ * (padrao do banco). Para no primeiro erro e diz em qual etapa.
+ */
+export async function importSchedule(newRounds: BolaoRound[], matches: BolaoMatch[]): Promise<{ ok: boolean; step?: 'rodadas' | 'jogos' }> {
+  const client = requireSupabase();
+  if (newRounds.length) {
+    const { error } = await client.from('rounds').upsert(newRounds);
+    if (error) {
+      console.error('Erro ao importar rodadas:', error);
+      return { ok: false, step: 'rodadas' };
+    }
+    newRounds.forEach((round) => upsertCachedItem('rounds', round));
+  }
+  if (matches.length) {
+    const { error } = await client.from('matches').upsert(matches.map(fromMatch));
+    if (error) {
+      console.error('Erro ao importar jogos:', error);
+      return { ok: false, step: 'jogos' };
+    }
+    matches.forEach((match) => upsertCachedItem('matches', match));
+  }
+  return { ok: true };
+}
+
 /** Atualiza varios jogos numa unica chamada (ex.: troca do jogo bonus). */
 export async function updateMatches(matches: BolaoMatch[]): Promise<boolean> {
   if (!matches.length) return true;

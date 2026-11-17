@@ -14,7 +14,7 @@ function readNumber(value: unknown): number {
   return Number.isFinite(parsed) ? parsed : 0;
 }
 
-export function useCoinWallet(userId: string, seasonKey = '2027'): CoinWalletState {
+export function useCoinWallet(userId: string, seasonKey: string): CoinWalletState {
   const [availableBalance, setAvailableBalance] = useState(0);
   const [lockedBalance, setLockedBalance] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -26,6 +26,11 @@ export function useCoinWallet(userId: string, seasonKey = '2027'): CoinWalletSta
       setLockedBalance(0);
       setLoading(false);
       setError('');
+      return;
+    }
+    // Temporada ainda carregando: mantem o indicador de carregamento.
+    if (!seasonKey) {
+      setLoading(true);
       return;
     }
 

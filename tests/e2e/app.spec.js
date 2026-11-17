@@ -1,6 +1,6 @@
 // Fluxos principais do app contra o Supabase simulado (tests/e2e/support/mockSupabase.js).
 const { test, expect } = require('@playwright/test');
-const { installMockSupabase, PASSWORD } = require('./support/mockSupabase');
+const { installMockSupabase, PASSWORD, brasiliaDate } = require('./support/mockSupabase');
 
 test.describe('login', () => {
   test('senha errada mostra erro em português', async ({ page, context }) => {
@@ -12,6 +12,16 @@ test.describe('login', () => {
     await page.getByRole('button', { name: 'Entrar' }).click();
 
     await expect(page.getByRole('alert')).toHaveText('Usuário ou senha incorretos.');
+  });
+
+  test('conta desativada mostra o motivo no login', async ({ page, context }) => {
+    const state = await installMockSupabase(context);
+    state.users.find((user) => user.id === 'u1').active = false;
+    await page.goto('/');
+    await page.locator('#username').fill('ana');
+    await page.locator('#password').fill(PASSWORD);
+    await page.getByRole('button', { name: 'Entrar' }).click();
+    await expect(page.getByRole('alert')).toHaveText('Conta desativada. Fale com o administrador do bolão.');
   });
 
   test('botão mostra e oculta a senha', async ({ page, context }) => {
@@ -35,6 +45,7 @@ test.describe('login', () => {
 
     await expect(page.getByRole('heading', { name: 'Rodada 3' })).toBeVisible();
     await expect(page.getByRole('button', { name: /^Saldo de WDD Coins/ })).toBeVisible();
+    await expect(page.locator('.brand__text small')).toHaveText('Brasileirão 2027');
   });
 
   test('admin entra direto no painel e não tem carteira', async ({ page, context }) => {
@@ -145,6 +156,115 @@ test.describe('participante', () => {
 });
 
 test.describe('admin', () => {
+  test('cria e ativa a temporada seguinte', async ({ page, context }) => {
+    const state = await installMockSupabase(context, { loggedInAs: 'admin' });
+    await page.goto('/#/admin');
+    await expect(page.getByText('Brasileirão 2027').first()).toBeVisible();
+
+    await page.getByRole('button', { name: 'Temporadas' }).click();
+    const list = page.locator('.admin-panel', { has: page.getByRole('heading', { name: 'Temporadas' }) });
+    await expect(list.locator('.season-row')).toHaveCount(2);
+    await expect(list.locator('.season-row', { hasText: 'Brasileirão 2027' }).getByText('Ativa')).toBeVisible();
+
+    await page.getByLabel('Ano', { exact: true }).fill('2028');
+    await page.getByRole('button', { name: 'Criar temporada' }).click();
+    await expect(page.getByText('Temporada Brasileirão 2028 criada.')).toBeVisible();
+    const row2028 = list.locator('.season-row', { hasText: 'Brasileirão 2028' });
+    await expect(row2028).toBeVisible();
+
+    page.once('dialog', (dialog) => {
+      expect(dialog.message()).toContain('Brasileirão 2027 será encerrada hoje');
+      return dialog.accept();
+    });
+    await row2028.getByRole('button', { name: 'Ativar' }).click();
+
+    // Recarrega e passa a mostrar 2028
+    await expect(page.locator('.brand__text small')).toHaveText('Brasileirão 2028');
+    expect(state.seasons.find((season) => season.is_active).key).toBe('2028');
+  });
+
+  test('ano inválido não chega ao banco', async ({ page, context }) => {
+    const state = await installMockSupabase(context, { loggedInAs: 'admin' });
+    await page.goto('/#/admin');
+    await page.getByRole('button', { name: 'Temporadas' }).click();
+    await page.getByLabel('Ano', { exact: true }).fill('2027');
+    await page.getByRole('button', { name: 'Criar temporada' }).click();
+    await expect(page.getByText('A temporada 2027 já existe.')).toBeVisible();
+    expect(state.calls.filter((call) => call.endsWith('/rpc/create_season'))).toHaveLength(0);
+  });
+
+  test('importa a tabela por CSV com prévia, remarcação e rodada nova', async ({ page, context }) => {
+    const state = await installMockSupabase(context, { loggedInAs: 'admin' });
+    await page.goto('/#/admin');
+    await page.getByRole('button', { name: 'Importar jogos' }).click();
+
+    const br = (offset) => { const iso = brasiliaDate(offset); return `${iso.slice(8)}/${iso.slice(5, 7)}/${iso.slice(0, 4)}`; };
+    const csv = [
+      'rodada;data;hora;mandante;visitante',
+      `4;${br(10)};20:00;Sao Paulo;Gremio`,
+      `5;${br(16)};19:00;Flamengo;Vasco da Gama`,
+      `5;${br(16)};21:30;Santos;Novo Clube FC`
+    ].join('\n');
+    await page.getByLabel('CSV da tabela de jogos').fill(csv);
+    await page.getByRole('button', { name: 'Pré-visualizar' }).click();
+
+    const preview = page.getByLabel('Prévia da importação');
+    await expect(preview).toContainText('1 rodada nova');
+    await expect(preview).toContainText('2 jogos novos');
+    await expect(preview).toContainText('1 remarcação');
+    await expect(preview).toContainText('São Paulo x Grêmio');
+    await expect(preview).toContainText('Novo Clube FC');
+
+    page.once('dialog', (dialog) => dialog.accept());
+    await page.getByRole('button', { name: 'Importar', exact: true }).click();
+    await expect(page.getByText('Importação concluída: 1 rodada nova, 2 jogos novos, 1 remarcação.')).toBeVisible();
+
+    expect(state.rounds.find((round) => round.number === 5)).toMatchObject({ name: 'Rodada 5', season_key: '2027' });
+    expect(state.matches.find((match) => match.id === 'r4m0')).toMatchObject({ match_date: brasiliaDate(10), match_time: '20:00', home_team: 'São Paulo' });
+    expect(state.matches.filter((match) => match.home_team === 'Flamengo' && match.away_team === 'Vasco')).toHaveLength(1);
+  });
+
+  test('cria participante com usuário sugerido e senha provisória', async ({ page, context }) => {
+    const state = await installMockSupabase(context, { loggedInAs: 'admin' });
+    await page.goto('/#/admin');
+    await page.getByRole('button', { name: 'Participantes' }).click();
+    const list = page.locator('.admin-panel', { has: page.getByRole('heading', { name: 'Participantes', exact: true }) });
+    await expect(list.locator('.participant-row')).toHaveCount(4);
+
+    await page.getByLabel('Nome', { exact: true }).fill('Diego Souza');
+    await expect(page.getByRole('textbox', { name: /^Usuário/ })).toHaveValue('diego.souza');
+    const password = await page.getByLabel('Senha provisória').inputValue();
+    expect(password).toHaveLength(8);
+
+    await page.getByRole('button', { name: 'Criar participante' }).click();
+    await expect(page.getByText(`usuário "diego.souza" e senha "${password}"`)).toBeVisible();
+    await expect(list.locator('.participant-row', { hasText: 'Diego Souza' })).toBeVisible();
+    expect(state.users.find((user) => user.username === 'diego.souza')).toMatchObject({ name: 'Diego Souza', role: 'user' });
+    expect(state.calls).toContain('POST /rest/v1/rpc/initialize_coin_wallets_for_season');
+  });
+
+  test('troca a senha e desativa um participante', async ({ page, context }) => {
+    const state = await installMockSupabase(context, { loggedInAs: 'admin' });
+    await page.goto('/#/admin');
+    await page.getByRole('button', { name: 'Participantes' }).click();
+    const ana = page.locator('.participant-row', { hasText: '@ana' });
+
+    await ana.getByRole('button', { name: 'Nova senha' }).click();
+    const newPassword = await page.getByLabel('Nova senha de Ana').inputValue();
+    await ana.getByRole('button', { name: 'Salvar senha' }).click();
+    await expect(page.getByText(`Nova senha de Ana: "${newPassword}"`)).toBeVisible();
+    expect(state.passwordResets).toEqual([{ userId: 'u1', password: newPassword }]);
+
+    page.once('dialog', (dialog) => {
+      expect(dialog.message()).toContain('Desativar Ana?');
+      return dialog.accept();
+    });
+    await ana.getByRole('button', { name: 'Desativar' }).click();
+    await expect(ana.getByText('Desativado')).toBeVisible();
+    await expect(ana.getByRole('button', { name: 'Reativar' })).toBeVisible();
+    expect(state.users.find((user) => user.id === 'u1').active).toBe(false);
+  });
+
   test('lista de jogos abre na rodada atual', async ({ page, context }) => {
     await installMockSupabase(context, { loggedInAs: 'admin' });
     await page.goto('/#/admin');

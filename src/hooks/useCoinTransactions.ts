@@ -36,7 +36,7 @@ function mapTransaction(row: Record<string, unknown>): CoinTransaction {
   };
 }
 
-export function useCoinTransactions(userId: string, seasonKey = '2027', pageSize = 20): CoinTransactionsState {
+export function useCoinTransactions(userId: string, seasonKey: string, pageSize = 20): CoinTransactionsState {
   const [transactions, setTransactions] = useState<CoinTransaction[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -48,6 +48,7 @@ export function useCoinTransactions(userId: string, seasonKey = '2027', pageSize
       setHasLoaded(true);
       return;
     }
+    if (!seasonKey) return;
 
     setLoading(true);
     setError('');

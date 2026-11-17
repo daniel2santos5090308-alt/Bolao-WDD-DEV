@@ -13,7 +13,7 @@ export interface CoinSettings {
 }
 
 const defaultSettings: CoinSettings = {
-  seasonKey: '2027',
+  seasonKey: '',
   initialBalance: 0,
   firstPlaceReward: 1000,
   secondPlaceReward: 750,
@@ -28,11 +28,11 @@ function readNumber(value: unknown, fallback: number): number {
   return Number.isFinite(parsed) ? parsed : fallback;
 }
 
-function mapSettings(row: Record<string, unknown> | null): CoinSettings {
-  if (!row) return defaultSettings;
+function mapSettings(row: Record<string, unknown> | null, seasonKey: string): CoinSettings {
+  if (!row) return { ...defaultSettings, seasonKey };
 
   return {
-    seasonKey: String(row.season_key || defaultSettings.seasonKey),
+    seasonKey: String(row.season_key || seasonKey),
     initialBalance: readNumber(row.initial_balance, defaultSettings.initialBalance),
     firstPlaceReward: readNumber(row.first_place_reward, defaultSettings.firstPlaceReward),
     secondPlaceReward: readNumber(row.second_place_reward, defaultSettings.secondPlaceReward),
@@ -57,7 +57,7 @@ function toRow(settings: CoinSettings): Record<string, unknown> {
   };
 }
 
-export function useCoinSettings(seasonKey = '2027') {
+export function useCoinSettings(seasonKey: string) {
   const [settings, setSettings] = useState<CoinSettings>(defaultSettings);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -65,6 +65,8 @@ export function useCoinSettings(seasonKey = '2027') {
   const [savedMessage, setSavedMessage] = useState('');
 
   const load = useCallback(async () => {
+    // Temporada ainda carregando
+    if (!seasonKey) return;
     setLoading(true);
     setError('');
 
@@ -79,7 +81,7 @@ export function useCoinSettings(seasonKey = '2027') {
 
       if (queryError) throw queryError;
 
-      setSettings(mapSettings(data));
+      setSettings(mapSettings(data, seasonKey));
     } catch (err) {
       console.error('Erro ao carregar configurações WDD Coins:', err);
       setError('Não foi possível carregar as configurações.');
@@ -97,6 +99,9 @@ export function useCoinSettings(seasonKey = '2027') {
       const supabaseClient = requireSupabase();
 
       const values = Object.values(nextSettings).filter((value) => typeof value === 'number');
+      if (!nextSettings.seasonKey) {
+        throw new Error('Temporada ativa não carregada.');
+      }
       if (values.some((value) => Number(value) < 0)) {
         throw new Error('Os valores não podem ser negativos.');
       }

@@ -50,12 +50,25 @@ npm run test:e2e:headed
 - Excluir jogo não quebra ranking nem tela de usuário.
 - Logout redireciona para login.
 
+### Fases 5 a 8
+
+- Admin → Temporadas: criar a temporada seguinte (copia premiações e loja) e ativar; o topo passa a mostrar o novo nome.
+- Admin → Importar jogos: pré-visualizar e importar um CSV de teste; reimportar com uma data mudada mostra 1 remarcação.
+- Jogo adiado (data bem depois da rodada) aparece com a etiqueta **Adiado** e não puxa a rodada atual para trás.
+- Admin → Participantes: criar participante, entrar com a senha provisória, gerar nova senha, desativar (login mostra "Conta desativada") e reativar.
+- Android (Chrome): Perfil → **Instalar app**; o ícone WDD aparece na tela inicial e abre em tela cheia.
+- iPhone (Safari): Compartilhar → **Adicionar à Tela de Início**; o ícone WDD aparece e abre em tela cheia.
+- Com o app instalado, publicar um deploy novo: ao voltar para o app aparece "Nova versão do Bolão WDD disponível" e **Atualizar o app** carrega a versão nova.
+- Modo avião: o app instalado abre e mostra os últimos dados carregados.
+
 ## Segurança
 
 - Acesso anônimo não lista dados nas tabelas `profiles`, `rounds`, `matches`, `bets` e `standings`.
 - Cadastro público não aparece no front-end.
 - Firebase não aparece nas páginas públicas.
 - Chave `service_role` não existe no front-end.
+- Edge Function `admin-users` recusa participante comum (403) e quem não está logado (401).
+- Service worker não guarda nada do Supabase (`node scripts/test-pwa.mjs` confere).
 - Arquivo `supabase_import_data.sql` permanece fora do GitHub.
 
 ## Critério de Aceite

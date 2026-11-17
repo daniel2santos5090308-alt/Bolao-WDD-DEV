@@ -8,6 +8,7 @@ import { LoginPage } from '../pages/LoginPage';
 import { ProfilePage } from '../pages/ProfilePage';
 import { RankingPage } from '../pages/RankingPage';
 import { StandingsPage } from '../pages/StandingsPage';
+import { useActiveSeason } from '../hooks/useActiveSeason';
 import { useCoinWallet } from '../hooks/useCoinWallet';
 import { getCurrentUser, hasSupabaseAuthSession, logout } from '../services/auth';
 import { confirmDiscardUnsaved } from '../services/unsavedChanges';
@@ -19,7 +20,9 @@ export function App() {
   const activeRouteRef = useRef(activeRoute);
   activeRouteRef.current = activeRoute;
   // Admin nao tem carteira: userId vazio = nenhuma consulta.
-  const coinWallet = useCoinWallet(isAdmin ? '' : currentUser?.id || '', '2027');
+  const season = useActiveSeason(Boolean(currentUser));
+  const seasonKey = season?.key || '';
+  const coinWallet = useCoinWallet(isAdmin ? '' : currentUser?.id || '', seasonKey);
 
   // Perfil salvo, mas a sessao do Supabase expirou: volta para o login.
   useEffect(() => {
@@ -83,6 +86,7 @@ export function App() {
   return (
     <AppShell
       currentUser={currentUser}
+      seasonName={season?.name || ''}
       activeRoute={activeRoute}
       coinBalance={coinWallet.availableBalance}
       coinLoading={coinWallet.loading}
@@ -98,6 +102,7 @@ export function App() {
       ) : activeRoute === 'coins' ? (
         <CoinsPage
           currentUser={currentUser}
+          seasonKey={seasonKey}
           availableBalance={coinWallet.availableBalance}
           lockedBalance={coinWallet.lockedBalance}
           walletLoading={coinWallet.loading}
