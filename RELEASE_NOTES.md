@@ -1,5 +1,30 @@
 # Release Notes
 
+## v3.6.0-dev - 2026-11-16
+
+Fase 6: importação da tabela de jogos e rodada atual com jogos adiados. Somente DEV; sem migration nova.
+
+### Importar jogos (admin)
+
+- Nova aba **Importar jogos**: a tabela da CBF entra por CSV (`rodada;data;hora;mandante;visitante`), colada ou carregada de arquivo. Aceita `;`, `,` ou tab, datas dd/mm/aaaa ou aaaa-mm-dd e horas 19:00 ou 19h30.
+- Prévia antes de gravar: rodadas novas, jogos novos, remarcações (data antiga → nova) e jogos sem mudança. Erros por linha bloqueiam; avisos (time em dois jogos da mesma rodada, rodada sem 10 jogos, time fora da lista oficial) não bloqueiam.
+- Reimportar o mesmo CSV com datas novas remarca os jogos. Resultados nunca mudam e nada é apagado.
+- Gravação em 2 chamadas (rodadas e jogos), na temporada ativa.
+
+### Nomes dos times
+
+- Os nomes são padronizados na gravação: "Vasco da Gama" e "Vasco", "Atletico Mineiro" e "Atlético-MG" viram o mesmo time. Vale para a importação, o cadastro manual de jogo e a classificação (manual e CSV).
+
+### Rodada atual com jogos adiados
+
+- Jogo marcado mais de 4 dias depois da data típica da rodada conta como adiado. Ele não puxa mais a "rodada atual" para trás: antes, um jogo adiado da Rodada 21 sem resultado fazia o app abrir na Rodada 21 em vez da 35.
+- Jogos adiados ganham a etiqueta **Adiado** e não esticam o período no cabeçalho da rodada.
+
+### Testes
+
+- E2E: 15 fluxos × desktop e celular (30 testes). Novo: importação com prévia, remarcação e rodada nova.
+- 24 testes unitários (novos: rodada atual com adiados, leitura do CSV, plano de importação, apelidos de times).
+
 ## v3.5.0-dev - 2026-11-16
 
 Fase 5: temporadas sem ano fixo no código. Somente DEV; produção recebe na janela de 23–24/01/2027, já como instalação limpa da temporada 2027.
