@@ -114,7 +114,7 @@ begin
             perform * from public.process_round_coin_rewards('f1_r1', '2027');
             v_txt := 'aceitou (errado)';
         exception when others then
-            v_txt := case when sqlerrm like '%pertence a temporada%' then 'recusada' else 'erro: ' || sqlerrm end;
+            v_txt := case when sqlerrm like '%pertence _ temporada%' then 'recusada' else 'erro: ' || sqlerrm end;
         end;
         r := r || jsonb_build_array(jsonb_build_object('o', 5, 't', 'Coins: recusa rodada de outra temporada', 'e', 'recusada', 'g', v_txt));
 

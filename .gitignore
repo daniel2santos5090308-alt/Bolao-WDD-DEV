@@ -87,3 +87,6 @@ firestore.indexes.json
 
 # dataconnect generated files
 .dataconnect
+
+# Supabase CLI (banco local)
+supabase/.temp/

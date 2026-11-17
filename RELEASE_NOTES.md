@@ -15,6 +15,8 @@ Fase 5: temporadas sem ano fixo no código. Somente DEV; produção recebe na ja
 
 - `20261118100000_season_admin.sql` (pendente no DEV): funções `create_season` e `activate_season`, só para admin.
 - Teste `supabase/tests/fase5_check.sql` (15 verificações, não grava nada).
+- `fase1_check.sql` corrigido: desde a Fase 4 a mensagem de recusa tem acento ("à temporada") e o teste só aceitava a versão sem acento.
+- Primeira instalação completa do zero: as 16 migrations aplicam sem erro num banco vazio e os 46 testes SQL passam (Fases 0, 1, 2 e 5).
 
 ### CI
 

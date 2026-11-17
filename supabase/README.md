@@ -45,6 +45,19 @@ Banco novo do zero: rode todas na ordem acima. É assim que a produção será i
 
 `tests/ci_seed.sql` é só do CI (cria 2 participantes fictícios num banco vazio). Nunca rode no DEV nem no PROD.
 
+### Rodar o banco do zero na sua máquina (opcional, precisa do Docker)
+
+O mesmo teste do job **Banco do zero** do CI, sem tocar no DEV nem no PROD:
+
+```bash
+npx supabase@3.2.0 db start          # sobe um Postgres local vazio (porta 54322)
+npx supabase@3.2.0 migration up      # aplica todas as migrations em ordem
+PSQL_CONTAINER=supabase_db_bolao-wdd bash scripts/ci-db-check.sh   # testes SQL
+npx supabase@3.2.0 stop --no-backup  # desliga e apaga o banco local
+```
+
+Na primeira vez o Docker baixa as imagens do Supabase (alguns minutos).
+
 ## Consumo (Supabase Free)
 
 | Ação no app | Antes da Fase 2 | Depois |
