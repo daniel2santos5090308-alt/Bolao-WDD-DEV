@@ -73,6 +73,16 @@ export function getCanonicalTeamName(teamName: string): string {
   return alias ? TEAM_ALIASES[alias] : trimmed;
 }
 
+/** Time da lista oficial (tem escudo cadastrado), depois de aplicar os apelidos. */
+export function isKnownTeam(teamName: string): boolean {
+  return Boolean(TEAM_LOGOS[getCanonicalTeamName(teamName)]);
+}
+
+/** Mesmo time, escrito de jeitos diferentes ("Vasco" e "Vasco da Gama"). */
+export function isSameTeam(a: string, b: string): boolean {
+  return normalizeText(getCanonicalTeamName(a)) === normalizeText(getCanonicalTeamName(b));
+}
+
 export function getTeamLogoUrl(teamName: string): string | null {
   return TEAM_LOGOS[getCanonicalTeamName(teamName)] || null;
 }

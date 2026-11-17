@@ -1,7 +1,9 @@
 import { useMemo, useState } from 'react';
 import type { FormEvent } from 'react';
 import type { CoinSettings } from '../hooks/useCoinSettings';
+import { ScheduleImport } from '../components/ScheduleImport';
 import { SeasonsAdmin } from '../components/SeasonsAdmin';
+import { getCanonicalTeamName } from '../services/teams';
 import { StandingsLegend, StandingsTable } from '../components/StandingsTable';
 import { useBolaoData } from '../hooks/useBolaoData';
 import { useCoinSettings } from '../hooks/useCoinSettings';
@@ -11,7 +13,7 @@ import * as storage from '../services/storage';
 import { requireSupabase } from '../services/supabase';
 import { generateId } from '../services/utils';
 
-type AdminTab = 'jogos' | 'pontuacao' | 'classificacao' | 'coins' | 'temporadas';
+type AdminTab = 'jogos' | 'importar' | 'pontuacao' | 'classificacao' | 'coins' | 'temporadas';
 
 interface CoinRoundProcess {
   id: string;
@@ -133,7 +135,8 @@ function parseStandingsCsv(csv: string): Omit<BolaoStanding, 'id'>[] {
   return lines.slice(1).map((line, lineIndex) => {
     const lineNumber = lineIndex + 2;
     const parts = line.split(delimiter).map((value) => value.trim());
-    const team = parts[index.team];
+    // Nome oficial: "Vasco da Gama" e "Vasco" viram o mesmo time.
+    const team = getCanonicalTeamName(parts[index.team] || '');
     if (!team) throw new Error(`Linha ${lineNumber}: time obrigatório.`);
 
     const position = parseInteger(parts[index.position], 'position', lineNumber);
@@ -271,8 +274,8 @@ export function AdminPage() {
       roundId: matchForm.roundId,
       date: matchForm.date,
       time: matchForm.time,
-      homeTeam: matchForm.homeTeam.trim(),
-      awayTeam: matchForm.awayTeam.trim(),
+      homeTeam: getCanonicalTeamName(matchForm.homeTeam),
+      awayTeam: getCanonicalTeamName(matchForm.awayTeam),
       isBonus: existing ? Boolean(existing.isBonus) : false,
       result: existing?.result || null,
       score: existing?.score || null
@@ -338,7 +341,7 @@ export function AdminPage() {
 
   async function handleSaveStanding(event: FormEvent) {
     event.preventDefault();
-    const payload = { ...standingForm, id: standingForm.id || generateId(), goalDiff: getGoalDiff(standingForm.goalsFor, standingForm.goalsAgainst) };
+    const payload = { ...standingForm, team: getCanonicalTeamName(standingForm.team), id: standingForm.id || generateId(), goalDiff: getGoalDiff(standingForm.goalsFor, standingForm.goalsAgainst) };
     const existing = standings.some((item) => item.id === payload.id);
     const success = existing ? await storage.updateStanding(payload) : await storage.addStanding(payload);
     if (!success) return fail('Não foi possível salvar a classificação.');
@@ -584,7 +587,7 @@ export function AdminPage() {
       </div>
 
       <nav className="admin-tabs">
-        {([['jogos', 'Jogos'], ['pontuacao', 'Pontuação'], ['classificacao', 'Classificação'], ['coins', 'WDD Coins'], ['temporadas', 'Temporadas']] as Array<[AdminTab, string]>).map(([id, label]) => (
+        {([['jogos', 'Jogos'], ['importar', 'Importar jogos'], ['pontuacao', 'Pontuação'], ['classificacao', 'Classificação'], ['coins', 'WDD Coins'], ['temporadas', 'Temporadas']] as Array<[AdminTab, string]>).map(([id, label]) => (
           <button key={id} type="button" className={activeTab === id ? 'is-active' : ''} onClick={() => setActiveTab(id)}>{label}</button>
         ))}
       </nav>
@@ -624,6 +627,7 @@ export function AdminPage() {
 
       {activeTab === 'pontuacao' ? <ScoringAdmin scoring={scoring} onChange={setScoringDraft} onSave={saveScoring} /> : null}
       {activeTab === 'classificacao' ? <StandingsAdmin standingForm={standingForm} setStandingForm={setStandingForm} onSave={handleSaveStanding} csvText={csvText} setCsvText={setCsvText} csvPreview={csvPreview} previewCsv={previewCsv} saveCsv={saveCsv} standings={standings} deleteStanding={deleteStanding} /> : null}
+      {activeTab === 'importar' ? <ScheduleImport seasonName={data?.season?.name || 'temporada ativa'} rounds={rounds} matches={matches} onNotify={notify} onFail={fail} onImported={syncAfterWrite} /> : null}
       {activeTab === 'temporadas' ? <SeasonsAdmin onNotify={notify} onFail={fail} /> : null}
       {activeTab === 'coins' ? <CoinsAdmin coins={coins} setCoinDraft={setCoinDraft} saveCoinSettings={saveCoinSettings} saving={coinSettings.saving} finishedRounds={finishedRounds} selectedRewardRoundId={selectedRewardRoundId} setSelectedRewardRoundId={setSelectedRewardRoundId} processRoundRewards={processRoundRewards} processing={processing} coinProcesses={coinProcesses} coinTransactions={coinTransactions} coinWallets={coinWallets} coinStoreItems={coinStoreItems} coinUserItems={coinUserItems} users={data?.users || []} rounds={rounds} loadCoinAdminData={loadCoinAdminData} coinAdminLoading={coinAdminLoading} coinAdminLoaded={coinAdminLoaded} initializeCoinWallets={initializeCoinWallets} walletInitializing={walletInitializing} adjustmentUserId={adjustmentUserId} setAdjustmentUserId={setAdjustmentUserId} adjustmentAmount={adjustmentAmount} setAdjustmentAmount={setAdjustmentAmount} adjustmentDescription={adjustmentDescription} setAdjustmentDescription={setAdjustmentDescription} adjustCoinWallet={adjustCoinWallet} adjustingWallet={adjustingWallet} /> : null}
     </section>

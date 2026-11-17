@@ -56,6 +56,7 @@ function buildMatches() {
 function createState() {
   return {
     matches: buildMatches(),
+    rounds: ['r1', 'r2', 'r3', 'r4'].map((id, index) => ({ id, name: `Rodada ${index + 1}`, number: index + 1, season_key: '2027' })),
     savedBets: [],
     calls: [],
     seasons: [
@@ -71,7 +72,7 @@ function snapshotFor(state, userId) {
     version: 1,
     season: active ? { key: active.key, name: active.name } : null,
     profiles: users,
-    rounds: ['r1', 'r2', 'r3', 'r4'].map((id, index) => ({ id, name: `Rodada ${index + 1}`, number: index + 1, season_key: '2027' })),
+    rounds: state.rounds,
     matches: state.matches,
     standings: TEAMS.map((team, index) => ({
       id: `s${index}`, position: index + 1, team, points: 30 - index * 2, played: 12, wins: 9 - Math.floor(index / 2),
@@ -206,6 +207,17 @@ async function installMockSupabase(context, options = {}) {
       });
       return json(null, 201);
     }
+    // Admin: importacao/cadastro de rodadas e jogos (upsert por id)
+    if ((table === 'rounds' || table === 'matches') && method === 'POST') {
+      const list = table === 'rounds' ? state.rounds : state.matches;
+      (Array.isArray(body) ? body : [body]).forEach((row) => {
+        const saved = table === 'rounds' ? { season_key: '2027', ...row } : row;
+        const index = list.findIndex((item) => item.id === saved.id);
+        if (index >= 0) list[index] = { ...list[index], ...saved };
+        else list.push(saved);
+      });
+      return json(null, 201);
+    }
     if (method !== 'GET') return json(null, 201);
 
     const tables = {
@@ -230,4 +242,4 @@ async function installMockSupabase(context, options = {}) {
   return state;
 }
 
-module.exports = { installMockSupabase, PASSWORD, users };
+module.exports = { installMockSupabase, PASSWORD, users, brasiliaDate };

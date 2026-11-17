@@ -1,6 +1,6 @@
 // Fluxos principais do app contra o Supabase simulado (tests/e2e/support/mockSupabase.js).
 const { test, expect } = require('@playwright/test');
-const { installMockSupabase, PASSWORD } = require('./support/mockSupabase');
+const { installMockSupabase, PASSWORD, brasiliaDate } = require('./support/mockSupabase');
 
 test.describe('login', () => {
   test('senha errada mostra erro em português', async ({ page, context }) => {
@@ -181,6 +181,37 @@ test.describe('admin', () => {
     await page.getByRole('button', { name: 'Criar temporada' }).click();
     await expect(page.getByText('A temporada 2027 já existe.')).toBeVisible();
     expect(state.calls.filter((call) => call.endsWith('/rpc/create_season'))).toHaveLength(0);
+  });
+
+  test('importa a tabela por CSV com prévia, remarcação e rodada nova', async ({ page, context }) => {
+    const state = await installMockSupabase(context, { loggedInAs: 'admin' });
+    await page.goto('/#/admin');
+    await page.getByRole('button', { name: 'Importar jogos' }).click();
+
+    const br = (offset) => { const iso = brasiliaDate(offset); return `${iso.slice(8)}/${iso.slice(5, 7)}/${iso.slice(0, 4)}`; };
+    const csv = [
+      'rodada;data;hora;mandante;visitante',
+      `4;${br(10)};20:00;Sao Paulo;Gremio`,
+      `5;${br(16)};19:00;Flamengo;Vasco da Gama`,
+      `5;${br(16)};21:30;Santos;Novo Clube FC`
+    ].join('\n');
+    await page.getByLabel('CSV da tabela de jogos').fill(csv);
+    await page.getByRole('button', { name: 'Pré-visualizar' }).click();
+
+    const preview = page.getByLabel('Prévia da importação');
+    await expect(preview).toContainText('1 rodada nova');
+    await expect(preview).toContainText('2 jogos novos');
+    await expect(preview).toContainText('1 remarcação');
+    await expect(preview).toContainText('São Paulo x Grêmio');
+    await expect(preview).toContainText('Novo Clube FC');
+
+    page.once('dialog', (dialog) => dialog.accept());
+    await page.getByRole('button', { name: 'Importar', exact: true }).click();
+    await expect(page.getByText('Importação concluída: 1 rodada nova, 2 jogos novos, 1 remarcação.')).toBeVisible();
+
+    expect(state.rounds.find((round) => round.number === 5)).toMatchObject({ name: 'Rodada 5', season_key: '2027' });
+    expect(state.matches.find((match) => match.id === 'r4m0')).toMatchObject({ match_date: brasiliaDate(10), match_time: '20:00', home_team: 'São Paulo' });
+    expect(state.matches.filter((match) => match.home_team === 'Flamengo' && match.away_team === 'Vasco')).toHaveLength(1);
   });
 
   test('lista de jogos abre na rodada atual', async ({ page, context }) => {
