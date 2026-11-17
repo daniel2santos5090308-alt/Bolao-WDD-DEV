@@ -61,6 +61,7 @@ function createState() {
     calls: [],
     users: users.map((user) => ({ ...user, active: true })),
     passwordResets: [],
+    userItems: [],
     seasons: [
       { key: '2026', name: 'Brasileirão 2026', starts_on: null, ends_on: '2026-12-06', is_active: false },
       { key: '2027', name: 'Brasileirão 2027', starts_on: '2027-01-27', ends_on: null, is_active: true }
@@ -257,7 +258,7 @@ async function installMockSupabase(context, options = {}) {
       coin_settings: [{ season_key: '2027', initial_balance: 100, first_place_reward: 50, second_place_reward: 30, third_place_reward: 15, exact_score_reward: 5, bonus_exact_score_reward: 10, full_round_participation_reward: 5 }],
       coin_transactions: coinTransactions,
       coin_store_items: storeItems,
-      coin_user_items: [],
+      coin_user_items: state.userItems,
       coin_round_processes: []
     };
     if (!(table in tables)) return json([]);

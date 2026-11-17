@@ -161,6 +161,17 @@ test.describe('participante', () => {
     await expect(page.getByRole('button', { name: 'Carregar loja' })).toHaveCount(0);
   });
 
+  test('item comprado em outra temporada aparece como adquirido na loja', async ({ page, context }) => {
+    const state = await installMockSupabase(context, { loggedInAs: 'u1' });
+    // Comprado em 2026 (outro id, mesmo codigo do item da loja atual)
+    state.userItems.push({ id: 'ui-old', user_id: 'u1', item_id: 'old-i1', season_key: '2026', purchased_at: '2026-10-01T12:00:00Z', is_equipped: false, item: { code: 'badge_cravador' } });
+    await page.goto('/#/coins');
+    const card = page.locator('.store-item-card', { hasText: 'Selo Cravador' }).first();
+    await expect(card.getByText('Adquirido')).toBeVisible();
+    const other = page.locator('.store-item-card', { hasText: 'Card Bônus Iluminado' }).first();
+    await expect(other.getByText('Adquirido')).toHaveCount(0);
+  });
+
   test('sair volta para o login', async ({ page, context }) => {
     await installMockSupabase(context, { loggedInAs: 'u1' });
     await page.goto('/#/perfil');

@@ -17,6 +17,10 @@ export interface CoinStoreItem {
 export interface CoinUserItem {
   id: string;
   itemId: string;
+  /** Codigo do item (igual em todas as temporadas): itens sao permanentes (Fase 10). */
+  itemCode: string;
+  /** Temporada em que foi comprado. */
+  seasonKey: string;
   purchasedAt: string;
   isEquipped: boolean;
 }
@@ -42,9 +46,12 @@ function mapStoreItem(row: Record<string, unknown>): CoinStoreItem {
 }
 
 function mapUserItem(row: Record<string, unknown>): CoinUserItem {
+  const item = (row.item && typeof row.item === 'object' ? row.item : {}) as Record<string, unknown>;
   return {
     id: String(row.id),
     itemId: String(row.item_id || ''),
+    itemCode: String(item.code || ''),
+    seasonKey: String(row.season_key || ''),
     purchasedAt: String(row.purchased_at || ''),
     isEquipped: Boolean(row.is_equipped)
   };
@@ -82,10 +89,10 @@ export function useCoinStore(userId: string, seasonKey: string) {
           .eq('season_key', seasonKey)
           .eq('is_active', true)
           .order('sort_order', { ascending: true }),
+        // Itens sao permanentes: todas as temporadas, com o codigo do item.
         supabaseClient
           .from('coin_user_items')
-          .select('id, item_id, purchased_at, is_equipped')
-          .eq('season_key', seasonKey)
+          .select('id, item_id, season_key, purchased_at, is_equipped, item:coin_store_items(code)')
           .eq('user_id', userId)
           .order('purchased_at', { ascending: false })
       ]);

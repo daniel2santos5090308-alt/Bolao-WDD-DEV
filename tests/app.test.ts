@@ -554,3 +554,20 @@ test('participants: erro da Edge Function vira mensagem util', async () => {
   assert.equal(describeFunctionError(401, null, 'x'), 'Sessão expirada. Saia e entre de novo.');
   assert.equal(describeFunctionError(500, null, 'Não foi possível criar o participante.'), 'Não foi possível criar o participante.');
 });
+
+/* ---------- Fase 10: itens permanentes ---------- */
+
+test('getOwnedItemCodes: item comprado em outra temporada conta como adquirido', async () => {
+  const { getOwnedItemCodes } = await import('../src/services/coinInventory.ts');
+  const items2028 = [
+    { id: 'new-1', code: 'badge_cravador', name: 'Selo', description: '', itemType: 'profile_badge', price: 200, rarity: 'raro', previewValue: '', isActive: true, sortOrder: 1 },
+    { id: 'new-2', code: 'frame_gold_goal', name: 'Moldura', description: '', itemType: 'profile_frame', price: 250, rarity: 'raro', previewValue: '', isActive: true, sortOrder: 2 }
+  ];
+  const inventory = [
+    { id: 'u1', itemId: 'old-1', itemCode: 'badge_cravador', seasonKey: '2027', purchasedAt: '', isEquipped: false },
+    { id: 'u2', itemId: 'new-2', itemCode: '', seasonKey: '2028', purchasedAt: '', isEquipped: false }
+  ];
+  const owned = getOwnedItemCodes(inventory, items2028);
+  assert.deepEqual([...owned].sort(), ['badge_cravador', 'frame_gold_goal']);
+  assert.equal(getOwnedItemCodes([], items2028).size, 0);
+});
