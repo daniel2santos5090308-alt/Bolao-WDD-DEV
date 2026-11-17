@@ -546,3 +546,11 @@ test('pwa: aviso de nova versao so com build diferente e fora do modo dev', asyn
   assert.equal(isIos('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)', 0), false);
   assert.equal(isIos('Mozilla/5.0 (Linux; Android 15; Pixel 7)', 5), false);
 });
+
+test('participants: erro da Edge Function vira mensagem util', async () => {
+  const { describeFunctionError, FUNCTION_NOT_DEPLOYED } = await import('../src/services/participants.ts');
+  assert.equal(describeFunctionError(404, { code: 'NOT_FOUND', message: 'Requested function was not found' }, 'x'), FUNCTION_NOT_DEPLOYED);
+  assert.equal(describeFunctionError(409, { error: 'O usuário ana já existe.' }, 'x'), 'O usuário ana já existe.');
+  assert.equal(describeFunctionError(401, null, 'x'), 'Sessão expirada. Saia e entre de novo.');
+  assert.equal(describeFunctionError(500, null, 'Não foi possível criar o participante.'), 'Não foi possível criar o participante.');
+});
