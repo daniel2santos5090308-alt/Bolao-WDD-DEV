@@ -1232,6 +1232,12 @@ textarea {
   gap: 8px;
 }
 
+/* Nome inteiro em uma linha: se nao couber, a tabela rola para o lado (coluna do time fixa). */
+.team-cell .team-badge__name {
+  overflow: visible;
+  white-space: nowrap;
+}
+
 .sticky-col {
   position: sticky;
   left: 0;
@@ -1936,7 +1942,8 @@ textarea {
     text-align: center;
   }
 
-  .team-badge__name {
+  /* So nos cards de jogo (casa x visitante dividem a largura). Na tabela o nome fica em uma linha. */
+  .team .team-badge__name {
     display: -webkit-box;
     max-width: 100%;
     font-size: 0.78rem;

@@ -129,6 +129,20 @@ test.describe('participante', () => {
     await expect(page).toHaveTitle('Ranking · Bolão WDD');
   });
 
+  test('tabela: nome do time em uma linha (sem quebrar no celular)', async ({ page, context }) => {
+    await installMockSupabase(context, { loggedInAs: 'u1' });
+    await page.goto('/#/classificacao');
+    const names = page.locator('.standings-table .team-badge__name');
+    await expect(names.first()).toBeVisible();
+    const boxes = await names.evaluateAll((elements) => elements.map((element) => {
+      const style = getComputedStyle(element);
+      const lineHeight = parseFloat(style.lineHeight) || parseFloat(style.fontSize) * 1.4;
+      return { text: element.textContent, height: element.getBoundingClientRect().height, lineHeight };
+    }));
+    expect(boxes.length).toBeGreaterThan(10);
+    for (const box of boxes) expect(box.height, `${box.text} quebrou em mais de uma linha`).toBeLessThan(box.lineHeight * 1.5);
+  });
+
   test('ranking mostra a ordem do banco', async ({ page, context }) => {
     await installMockSupabase(context, { loggedInAs: 'u1' });
     await page.goto('/#/ranking');
